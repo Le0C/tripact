@@ -1,4 +1,4 @@
-// .prodsync/escalations.json + resolve semantics + journal. UAC §7.
+// .tripact/escalations.json + resolve semantics + journal. UAC §7.
 
 import { createHash } from "node:crypto";
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";

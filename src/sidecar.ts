@@ -1,4 +1,4 @@
-// .prodsync/claims.json — committed, stable-serialised. UAC §3.2, §8.2.
+// .tripact/claims.json — committed, stable-serialised. UAC §3.2, §8.2.
 
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -66,7 +66,7 @@ export function emptyBacklog(): AcknowledgedBacklog {
   return { claims: [], sections: [] };
 }
 
-export const SIDECAR_DIR = ".prodsync";
+export const SIDECAR_DIR = ".tripact";
 
 export function sidecarPath(repoRoot: string): string {
   return path.join(repoRoot, SIDECAR_DIR, "claims.json");

@@ -30,7 +30,7 @@ export const TASKS_SCHEMA_VERSION = 1;
 /** `claims` → ClaimsReportJson (src/claims.ts). */
 export const CLAIMS_SCHEMA_VERSION = 1;
 
-/** `escalations` (MCP) / `.prodsync/escalations.json` → EscalationFile (src/escalation.ts). */
+/** `escalations` (MCP) / `.tripact/escalations.json` → EscalationFile (src/escalation.ts). */
 export const ESCALATIONS_SCHEMA_VERSION = 1;
 
 /** One public read surface: the same document under one or more CLI `--json` commands and MCP tools. */
@@ -90,7 +90,7 @@ export const PUBLIC_CONTRACT: readonly ContractSurface[] = [
   },
   {
     key: "escalations",
-    // No dedicated read command: the document `check` writes to .prodsync/escalations.json, exposed
+    // No dedicated read command: the document `check` writes to .tripact/escalations.json, exposed
     // over MCP as the `escalations` read tool. Pinned via that file / tool rather than a `--json` flag.
     cli: [],
     mcpTools: ["escalations"],

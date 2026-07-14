@@ -1,7 +1,7 @@
 // A scratch repository fixture with all three layers, wired by a hand-written tripact.yaml. tripact
 // ships no `init` command (layer detection is a judgement call, emitted as the `detect` skill), so
 // consumers author the config directly — exactly what these tests exercise. The committed sidecar
-// stays `.prodsync/` for now — a deliberate transitional choice.
+// lives in `.tripact/`.
 import { execFileSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import os from "node:os";
@@ -64,7 +64,7 @@ export const CONFIG = [
 
 /**
  * A git repo carrying all three layers plus a hand-written tripact.yaml. Runs `check` once so the
- * escalation queue document (.prodsync/escalations.json) exists for tests that read it. Returns the
+ * escalation queue document (.tripact/escalations.json) exists for tests that read it. Returns the
  * repo path; the caller is responsible for cleanup.
  */
 export function fullRepo(prefix = "tripact-fixture-"): string {
@@ -76,6 +76,6 @@ export function fullRepo(prefix = "tripact-fixture-"): string {
   writeFileSync(path.join(repo, "docs", "manual", "using.md"), MANUAL);
   mkdirSync(path.join(repo, "tests", "e2e"), { recursive: true });
   writeFileSync(path.join(repo, "tests", "e2e", "calc.spec.ts"), TESTS);
-  runCli(["check"], { cwd: repo }); // writes .prodsync/escalations.json
+  runCli(["check"], { cwd: repo }); // writes .tripact/escalations.json
   return repo;
 }

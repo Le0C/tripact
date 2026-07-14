@@ -282,7 +282,7 @@ export function buildProgram(): Command {
         console.log("aborted — nothing written, escalations untouched");
         process.exit(0);
       }
-      console.log("sidecar written: .prodsync/claims.json");
+      console.log("sidecar written: .tripact/claims.json");
       console.log("include this trailer in your commit message:");
       console.log("");
       console.log(`  ${SYNC_POINT_TRAILER}: ${r.hash}`);

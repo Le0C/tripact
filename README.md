@@ -114,7 +114,7 @@ $ tripact check
     PENDING       addition.adda-b-returns-sum          # linked, awaiting a baseline
 
 $ tripact accept --yes
-  tripact-sync-id: 277110193e543841        # baseline written to .prodsync/claims.json
+  tripact-sync-id: 277110193e543841        # baseline written to .tripact/claims.json
 
 $ tripact check
 edge spec ↔ tests: 1/1 covered
@@ -226,10 +226,6 @@ Author a minimal config, run `tripact skills`, and then use the emitted `detect`
 
 Extracted pre-alpha:
 
-- **The committed sidecar is still `.prodsync/`** — the one on-disk name that keeps prodsync
-  branding. Renaming it (with back-compat) is a separate migration: it touches every committed
-  sidecar. The config file (`tripact.yaml`) and baseline trailer (`tripact-sync-id:`) are already
-  renamed.
 - **No `init`, no run-book execution.** Layer detection is emitted as the `detect` skill (a
   judgement call, not a built-in heuristic); run-book _execution_ stays a harness concern. Skill and
   prompt _emission_ live in the kernel.

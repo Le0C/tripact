@@ -138,7 +138,7 @@ export function buildServer(repoRoot: string, identity: ServerIdentity = {}): Mc
     "escalations",
     {
       description:
-        "List the open escalation questions the engine could not decide deterministically — the same JSON document `tripact check` writes to .prodsync/escalations.json. Answer them with the `resolve` tool.",
+        "List the open escalation questions the engine could not decide deterministically — the same JSON document `tripact check` writes to .tripact/escalations.json. Answer them with the `resolve` tool.",
     },
     () =>
       guarded(() => {
@@ -210,7 +210,7 @@ export function buildServer(repoRoot: string, identity: ServerIdentity = {}): Mc
       "accept",
       {
         description:
-          "Baseline the current tree: write claim anchoring + verified states into .prodsync/claims.json and clear the escalation queue, returning the tripact-sync-id trailer. Exposed only under the `agents` accept policy. Refuses while reanchor/split-merge escalations are open. Runs with no prompt.",
+          "Baseline the current tree: write claim anchoring + verified states into .tripact/claims.json and clear the escalation queue, returning the tripact-sync-id trailer. Exposed only under the `agents` accept policy. Refuses while reanchor/split-merge escalations are open. Runs with no prompt.",
       },
       () =>
         guarded(() => {

@@ -74,7 +74,7 @@ export function adjudicateSkill(opts?: SkillOptions): EmittedSkill {
   const content = `---
 name: ${r.namePrefix}-adjudicate
 description: >
-  Adjudicate ${r.cli} escalation questions in .prodsync/escalations.json — ambiguous
+  Adjudicate ${r.cli} escalation questions in .tripact/escalations.json — ambiguous
   claim re-anchorings and split/merge cases the deterministic engine will not guess at.
   Use when the user says "resolve the ${r.cli} escalations", "adjudicate the sync
   questions", after \`${r.cli} check\` reports open escalations, or before \`${r.cli} accept\`.
@@ -90,7 +90,7 @@ guessing. Your job: answer those questions with semantic judgment.
 
 ## Steps
 
-1. Read \`.prodsync/escalations.json\` (or run \`${r.cli} prompt <question-id>\` for a
+1. Read \`.tripact/escalations.json\` (or run \`${r.cli} prompt <question-id>\` for a
    ready-made per-question brief). Each question has:
    - \`kind\`: \`reanchor\` (old claims vs new texts in one section), \`split-merge\`, or
      \`fork-review\` (a group lost an old atom and gained a new one — identity forked;
@@ -119,7 +119,7 @@ guessing. Your job: answer those questions with semantic judgment.
 
 - ${acceptRule(r)}
 - When genuinely uncertain, ask the user rather than deciding.
-- Do not edit \`.prodsync/*.json\` by hand — always go through \`${r.cli} resolve\`.
+- Do not edit \`.tripact/*.json\` by hand — always go through \`${r.cli} resolve\`.
 - ${policyNote(r)}
 `;
   return { name: `${r.namePrefix}-adjudicate`, content };
@@ -178,7 +178,7 @@ is your job, under human review.
 ## Rules
 
 - ${acceptRule(r)}
-- Never edit \`.prodsync/*\` by hand.
+- Never edit \`.tripact/*\` by hand.
 - Never invent spec: if a claim seems wrong or missing, report it; do not add or
   reword prescriptive atoms unless the user explicitly asked.
 - ${policyNote(r)}
@@ -231,7 +231,7 @@ and edit; acceptance happens as the configured accept policy allows.
 - ${acceptRule(r)}
 - Never edit the spec silently: if a claim seems wrong or missing, report it; do not add or
   reword prescriptive atoms unless the user explicitly asked.
-- Never edit \`.prodsync/*\` by hand — go through \`${r.cli} resolve\`.
+- Never edit \`.tripact/*\` by hand — go through \`${r.cli} resolve\`.
 - ${policyNote(r)}
 `;
   return { name: `${r.namePrefix}-sync`, content };
@@ -365,7 +365,7 @@ export function taskPrompt(task: Task, opts?: SkillOptions): string {
     "```",
     "",
     "## When done",
-    `Validate with \`${r.cli} check\` and the repo's own test command; the check must not regress. Do not edit \`.prodsync/*\` by hand.`,
+    `Validate with \`${r.cli} check\` and the repo's own test command; the check must not regress. Do not edit \`.tripact/*\` by hand.`,
     "",
   ].join("\n");
 }
@@ -405,7 +405,7 @@ export function escalationPrompt(q: Escalation, opts?: SkillOptions): string {
       ? `- Genuinely two different requirements → \`${r.cli} resolve ${q.id} --dismiss\``
       : "",
     "",
-    `Re-run \`${r.cli} check\` when done. Do not edit \`.prodsync/*\` by hand.`,
+    `Re-run \`${r.cli} check\` when done. Do not edit \`.tripact/*\` by hand.`,
     "",
   ].join("\n");
 }

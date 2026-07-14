@@ -20,7 +20,7 @@ contract, not two.
 | **check** | `check --json`, `status --json` | `check`, `status` | `CHECK_SCHEMA_VERSION` = 1 | `schemaVersion`, `scope`, `syncPoint`, `changedPaths`, `verdicts`, `orphans`, `escalations`, `affectedLayers`, `unsupportedEdges`, `derivedStale`, `counts`, `exitCode` |
 | **tasks** | `tasks --json` | `tasks` | `TASKS_SCHEMA_VERSION` = 1 | `schemaVersion`, `tasks` |
 | **claims** | `claims --json` | `claims` | `CLAIMS_SCHEMA_VERSION` = 1 | `schemaVersion`, `claims` |
-| **escalations** | — (the document `check` writes to `.prodsync/escalations.json`) | `escalations` | `ESCALATIONS_SCHEMA_VERSION` = 1 | `schemaVersion`, `questions` |
+| **escalations** | — (the document `check` writes to `.tripact/escalations.json`) | `escalations` | `ESCALATIONS_SCHEMA_VERSION` = 1 | `schemaVersion`, `questions` |
 
 The write tools — `resolve` (always) and `accept` (only under the `agents` accept policy) — are part
 of the MCP surface but are not read documents.

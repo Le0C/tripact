@@ -28,19 +28,20 @@ describe("skill generators (pure)", () => {
     expect(adj.name).toBe("tripact-adjudicate");
     expect(adj.content).toContain("generatedBy: tripact@");
     expect(adj.content).toContain("`tripact resolve <question-id>");
-    expect(adj.content).toContain(".prodsync/escalations.json");
+    expect(adj.content).toContain(".tripact/escalations.json");
   });
 
   it("re-brand every command and name for a driving harness", () => {
-    const opts = { cli: "prodsync", namePrefix: "prodsync", version: "9.9.9", reEmitCommand: "prodsync init --force" };
+    const opts = { cli: "acme", namePrefix: "acme", version: "9.9.9", reEmitCommand: "acme init --force" };
     const rep = repairSkill(opts);
-    expect(rep.name).toBe("prodsync-repair");
-    expect(rep.content).toContain("generatedBy: prodsync@9.9.9");
-    expect(rep.content).toContain("`prodsync tasks --json`");
-    expect(rep.content).toContain("prodsync init --force"); // re-emit hint uses the harness path
-    // The command word is fully rebranded — no default `tripact <command>` leaks. (The fixed config
-    // filename `tripact.yaml` is not a command word and is expected regardless of branding.)
-    expect(rep.content.replace(/tripact\.yaml/g, "")).not.toContain("tripact");
+    expect(rep.name).toBe("acme-repair");
+    expect(rep.content).toContain("generatedBy: acme@9.9.9");
+    expect(rep.content).toContain("`acme tasks --json`");
+    expect(rep.content).toContain("acme init --force"); // re-emit hint uses the harness path
+    // The command word is fully rebranded — no default `tripact <command>` leaks. (The fixed on-disk
+    // names `tripact.yaml` (config) and `.tripact/` (sidecar) are not command words and are expected
+    // regardless of branding.)
+    expect(rep.content.replace(/tripact\.yaml/g, "").replace(/\.tripact\b/g, "")).not.toContain("tripact");
   });
 
   it("bake the accept policy into the guidance", () => {

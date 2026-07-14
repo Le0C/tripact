@@ -40,7 +40,7 @@ describe("tripact CLI end-to-end", () => {
     const accept = runCli(["accept", "--yes"], { cwd: repo });
     expect(accept.status, `accept\n${accept.stderr}`).toBe(0);
     expect(accept.stdout).toContain("tripact-sync-id:");
-    expect(existsSync(path.join(repo, ".prodsync", "claims.json")), "sidecar written").toBe(true);
+    expect(existsSync(path.join(repo, ".tripact", "claims.json")), "sidecar written").toBe(true);
 
     // The next check is level → 0.
     expect(runCli(["check"], { cwd: repo }).status, "check after accept — backlog is not drift").toBe(0);

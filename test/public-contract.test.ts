@@ -32,8 +32,8 @@ function liveDocument(repo: string, surface: (typeof PUBLIC_CONTRACT)[number]): 
       throw new Error(`tripact ${args.join(" ")} did not print JSON (status ${r.status})\n${r.stderr}`);
     }
   }
-  // No CLI command (escalations): the document `check` writes to .prodsync/escalations.json.
-  return JSON.parse(readFileSync(path.join(repo, ".prodsync", "escalations.json"), "utf8"));
+  // No CLI command (escalations): the document `check` writes to .tripact/escalations.json.
+  return JSON.parse(readFileSync(path.join(repo, ".tripact", "escalations.json"), "utf8"));
 }
 
 describe("tripact public contract", () => {
