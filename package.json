@@ -5,6 +5,14 @@
   "type": "module",
   "license": "MIT",
   "author": "Leo Coleman <leo.coleman@gscan.eu>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Le0C/tripact.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Le0C/tripact/issues"
+  },
+  "homepage": "https://github.com/Le0C/tripact#readme",
   "keywords": [
     "traceability",
     "spec-driven-development",
