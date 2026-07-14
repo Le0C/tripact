@@ -140,7 +140,7 @@ export function saveSidecar(repoRoot: string, sidecar: Sidecar): void {
   writeFileSync(p, serializeSidecar(sidecar), "utf8");
 }
 
-/** Content hash of the serialised sidecar — the Prodsync-Point trailer value (UAC §8.1). */
+/** Content hash of the serialised sidecar — the tripact-sync-id trailer value (UAC §8.1). */
 export function sidecarContentHash(sidecar: Sidecar): string {
   return createHash("sha256").update(serializeSidecar(sidecar), "utf8").digest("hex").slice(0, 16);
 }

@@ -4,11 +4,21 @@
   "description": "The deterministic traceability kernel — keep spec, docs, and tests describing the same behaviour. A three-way pact any harness can drive.",
   "type": "module",
   "license": "MIT",
+  "author": "Leo Coleman <leo.coleman@gscan.eu>",
+  "keywords": [
+    "traceability",
+    "spec-driven-development",
+    "requirements",
+    "testing",
+    "agents",
+    "deterministic",
+    "drift"
+  ],
   "engines": {
     "node": ">=22"
   },
   "bin": {
-    "tripact": "./bin/tripact.js"
+    "tripact": "./dist/cli.js"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -26,7 +36,8 @@
     "dev": "tsx src/cli.ts",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",

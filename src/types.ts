@@ -8,7 +8,7 @@ export interface Atom {
   /** Stable slug id from the sidecar, e.g. "init.requires-git" (UAC §3.2). */
   id: string;
   layer: string;
-  /** Full heading path, e.g. "1. Project Initialisation > 1.1 prodsync init". */
+  /** Full heading path, e.g. "1. Project Initialisation > 1.1 Project Setup". */
   groupPath: string;
   /** Numbering-stripped, normalised heading path — stable across renumbering (UAC §3.1). */
   groupKey: string;

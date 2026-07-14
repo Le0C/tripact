@@ -24,6 +24,7 @@ export * from "./parser.js";
 export * from "./report.js";
 export * from "./sidecar.js";
 export * from "./similarity.js";
+export * from "./skills.js";
 export * from "./tasks.js";
 export * from "./types.js";
 export * from "./version.js";

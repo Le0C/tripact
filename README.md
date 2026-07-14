@@ -1,35 +1,130 @@
 # tripact
 
-**The deterministic traceability kernel — keep spec, docs, and tests describing the same
-behaviour.**
+**tripact** is a deterministic traceability kernel which helps keep spec, doc and tests in sync.
 
-tripact is a three-way pact between your product specification, your user documentation, and your
-tests. It turns requirements and docs into *claims* with stable identities, links those claims to
+**tripact** builds a three-way pact between your product specification, your user documentation, and your
+tests. It turns requirements and docs into _claims_ with stable identities, links those claims to
 tests through explicit tags, and reports when any side drifts out of accord with the others.
 
-Everything tripact does is **pure and deterministic** — no LLM, no network, byte-identical output
-for the same repository state. The questions that genuinely need judgement (has a reworded
-requirement stayed the *same* requirement, or become a new one?) are not guessed: they surface as a
-structured queue for a human or a coding agent to answer, and the answer is persisted.
+It works by parsing every list item in your prescriptive (spec) and descriptive (docs) files into a
+**claim**: a normalised statement with a stable, content-derived id. Tests declare which claims they
+cover with tags — `@specs:<id>` for spec claims, `@manual:<slug>` for doc sections. On every `check`,
+tripact re-derives the claims, **re-anchors** each one to its previous identity so an id survives
+rewording, and reports the state of every spec↔test and docs↔test edge: what is covered, what is
+newly uncovered, and what went **stale** because a claim or its test changed since it was baselined.
 
-That determinism is the point. tripact is the **kernel** any harness can drive — a coding agent, an
-Archon or Spec Kit workflow, a GitHub Action, a pre-commit hook — because it is a callable that
-computes truth, not a workflow that orchestrates one.
+No LLM is used in this process, so the output is completely deterministic. Any ambiguous claims that require judgement - like "is this reworded requirement functionally the same as it was before, or is it now a new claim?" - are surfaced as a structured queue for evaluation.
 
-> **Status: pre-alpha, extracted from [prodsync](../prodsync).** tripact is the kernel that prodsync
-> was built around; prodsync is now becoming one harness that drives it. See
-> `prodsync/docs/architecture/kernel-harness.md` for the decomposition.
+**tripact** is intended to be a **kernel** that any agent or harness can drive, because it is an executable that emits claims and instructions rather than a complete harness.
+
+- **Spec-driven development with coding agents.** Every specification you write becomes a claim with
+  a stable id; tag the test that proves it and tripact confirms the link — so you always know which
+  requirements are actually covered. (Full [walkthrough](#walkthrough) below.)
+
+  ```console
+  $ tripact check                 # a spec claim exists, but no test references it
+  edge spec ↔ tests: 0/1 covered
+    NEW-UNCOVERED addition.adda-b-returns-sum — "add(a, b) returns the sum of two integers"
+  ✗ drift detected                # exit 1
+
+  # …tag the test with @specs:addition.adda-b-returns-sum, baseline once…
+  $ tripact check
+  edge spec ↔ tests: 1/1 covered
+  ✓ level                         # exit 0 — the requirement is provably tested
+  ```
+
+- **Archon or another workflow-driven harness.** Archon owns the loop; tripact owns the truth. Every
+  step is a deterministic `--json` command, so the workflow never has to understand claims or hashes —
+  it reads queues and shells work out to agents. The node DSL below is _illustrative_.
+
+  ```yaml
+  trigger: pull_request
+  steps:
+    - run: tripact check --json           # exit 0 clean → stop; 1 → work exists; 2 → fail the run
+    - for_each: "{{ check.escalations }}"  # reworded claims the engine won't guess at
+        agent: decide same-or-new          # → tripact resolve <id> --match|--new|--dead
+    - run: tripact tasks --json            # the repair / generation task queue
+    - for_each: "{{ tasks.tasks }}"
+        agent: "{{ shell: tripact prompt <id> }}"   # a per-task brief, with payload inlined
+    - run: npm test                        # your real validation
+    - approve: "Baseline this?"            # acceptance policy (escalate to a human or agent based on config)
+    - run: tripact accept                  # prints the tripact hashed ID for commit trailer
+  ```
+
+- **An agentic coding loop.** tripact links the loop's _goal_ to its _verification_: the spec claims
+  are the goals, the tagged tests are the proof. Open the loop by writing or refining the spec
+  (`tripact check` shows what is newly uncovered); close it by running `tripact check` to prove every
+  goal is linked to a test. Where it isn't, `tripact tasks` plus `tripact prompt <id>` — or the
+  emitted `tripact skills` — hand the agent the exact repair work, already contextualised.
 
 ## Install
 
 Requires Git and Node.js ≥ 22.
 
 ```bash
-# once published:
 npm install tripact
-# for now, from a sibling checkout:
-#   "tripact": "link:../tripact"
 ```
+
+> Pre-alpha (0.x): the `--json` contract and CLI are still moving. Pin an exact version.
+
+## Walkthrough
+
+Take a one-claim spec from uncovered to provably tested. Given `SPEC.md`:
+
+```markdown
+# Calculator
+
+## Addition
+
+- [ ] add(a, b) returns the sum of two integers
+```
+
+and a `tripact.yaml` declaring a `spec` (prescriptive) → `tests` (verificatory) edge, tripact sees
+the claim but no test covering it:
+
+```console
+$ tripact check
+edge spec ↔ tests: 0/1 covered
+  Addition
+    NEW-UNCOVERED addition.adda-b-returns-sum — "add(a, b) returns the sum of two integers" (SPEC.md:5)
+✗ drift detected                          # exit 1
+
+$ tripact claims --json                   # the claim's stable id — tag tests with this, never prose
+{
+  "schemaVersion": 1,
+  "claims": [
+    { "id": "addition.adda-b-returns-sum", "layer": "spec", "verdict": "uncovered", "alive": true }
+  ]
+}
+```
+
+Tag the test with that id:
+
+```ts
+test("@specs:addition.adda-b-returns-sum - adds two integers", () => {
+  expect(add(2, 3)).toBe(5);
+});
+```
+
+The claim is now linked but not yet baselined; `accept` records the baseline, and the next check is
+level:
+
+```console
+$ tripact check
+    PENDING       addition.adda-b-returns-sum          # linked, awaiting a baseline
+
+$ tripact accept --yes
+  tripact-sync-id: 277110193e543841        # baseline written to .prodsync/claims.json
+
+$ tripact check
+edge spec ↔ tests: 1/1 covered
+✓ level                                   # exit 0 — the requirement is provably tested
+```
+
+Reword the claim later and its **identity survives**: the id stays `addition.adda-b-returns-sum`, and
+the linked test is flagged **STALE** for re-verification rather than silently dropped. A reword too
+large to re-anchor with confidence becomes an **escalation** instead — a question for you or your
+agent (answered with `tripact resolve`).
 
 ## Two ways to use it
 
@@ -40,19 +135,21 @@ contract (see [docs/architecture/public-contract.md](./docs/architecture/public-
 
 ```bash
 tripact check --json        # deterministic drift check → exit 0 level, 1 drift, 2 error
-tripact tasks --json        # the repair/generation work queue
-tripact claims --json       # every alive claim + its id (use these ids when tagging tests)
-tripact resolve <id> --match 'old-id="new text"'   # adjudicate a reworded requirement
+tripact tasks --json        # create a repair/generation work queue
+tripact claims --json       # print every claim + its id (use these ids when tagging tests)
+tripact resolve <question-id> --match '<claim-id>="reworded text"'   # answer an escalation: this reworded text is still <claim-id>
 tripact diff                # preview what accept would baseline; writes nothing
-tripact accept --yes        # baseline the tree; prints the Prodsync-Point trailer
+tripact accept --yes        # baseline the tree; prints the tripact-sync-id trailer
 tripact verify <hash>       # check a trailer against the current sidecar
+tripact generate [name]     # regenerate declared derived outputs (deterministic)
+tripact skills              # emit detect/adjudicate/repair/sync agent skills to .claude/skills/
+tripact prompt <id>         # print a ready-to-run prompt for one task or escalation
 tripact mcp-serve           # serve the read tools + resolve over MCP stdio
 ```
 
-The canonical agent loop: **`check` → adjudicate any `escalations` → `tasks` → repair each →
-re-check → `accept`.** Adjudication comes before repair (accept refuses while identity questions are
-open). This is exactly the control flow a foreign harness encodes — the kernel commands stay
-identical whether prodsync's own runner, an Archon workflow, or a shell script drives them.
+An example workflow/loop using tripact commands looks like this:
+
+**`check` → `adjudicate` skill examines `escalations` → create `tasks` queue → agent works each task → `check` against the diff → `accept`**
 
 ### 2. As a library
 
@@ -60,24 +157,58 @@ identical whether prodsync's own runner, an Archon workflow, or a shell script d
 import { analyze, toJsonReport, deriveTasks } from "tripact";
 
 const analysis = analyze(process.cwd());
-const report = toJsonReport(analysis);   // the same document `check --json` prints
-const queue = deriveTasks(analysis);     // the same document `tasks --json` prints
+const report = toJsonReport(analysis); // the same document `check --json` prints
+const queue = deriveTasks(analysis); // the same document `tasks --json` prints
 ```
 
-`buildServer` / `serveMcp` are exported too, so a harness can embed the MCP server under its own
-identity.
+`buildServer` / `serveMcp` are exported too, so a harness can embed the MCP server under its own identity. So are the prompt/skill generators — `agentSkills`, `adjudicateSkill`, `repairSkill`, `taskPrompt`, `escalationPrompt`.
+
+### Agent skills & per-item prompts
+
+tripact emits the prompts an agent needs to _work_ the queues, but the consuming harness is responsible for running the tasks. `tripact skills` writes four `.claude/skills/<name>/SKILL.md` files — `detect` (scaffold a `tripact.yaml` by classifying the repo's files into layers), `adjudicate`, `repair`, and `sync` — that teach an agent how to set up tripact, answer escalations, and repair drift using only kernel commands. `tripact prompt <id>` prints a ready-to-hand-off brief for a single task or escalation, with its self-contained payload inlined — the per-work-item context a foreign harness shells out with.
+
+## Concepts
+
+**Layers and roles.** You group your files into named _layers_, each with one of three roles:
+
+| Role             | Typical files                         | Unit tracked                                             |
+| ---------------- | ------------------------------------- | -------------------------------------------------------- |
+| **prescriptive** | product spec, acceptance criteria     | each list item is a claim                                |
+| **descriptive**  | user manuals, guides                  | list items are claims; coverage is evaluated per section |
+| **verificatory** | end-to-end / integration / unit tests | tags link tests to claims and sections                   |
+
+**Edges.** You declare which layers must agree — e.g. `[spec, tests]`. **tripact** only checks the edges
+you declare, making **tripact** work even if you only have a prescriptive or descriptive layer. Direct spec↔docs comparison is a
+judgement task, offered as a reconciliation step rather than being checked programmatically.
+
+**Claims and ids.** Each tracked item becomes a claim with a stable id derived from its group path
+and normalised text. Tag tests with the id (`@specs:<id>`) — never with claim prose, which drifts.
+
+**The verdict lifecycle.** Every claim sits at one verdict, and `check` reports the set:
+
+| Verdict      | Meaning                                                                                                        |
+| ------------ | -------------------------------------------------------------------------------------------------------------- |
+| `uncovered`  | no test references the claim (a _new-uncovered_ claim is drift, but _acknowledged_ backlog task are not)       |
+| `pending`    | a test now references the claim, but the link has not been baselined yet                                       |
+| `covered`    | the link was baselined at the last `accept`                                                                    |
+| `stale`      | the claim text or its test changed since baselining — re-verify                                                |
+| _orphan tag_ | a test tags an id that no live claim owns — fix or remove the tag                                              |
+| _escalation_ | a reworded claim tripact cannot re-anchor with confidence — a question, answered with `resolve`, never guessed |
+
+`accept` baselines the current tree and prints a `tripact-sync-id: <hash>` trailer; `verify <hash>`
+later confirms the sidecar has not changed since.
 
 ## Configuration
 
-tripact reads `prodsync.yaml` from the repository root — a declaration of the layers it tracks
+tripact reads `tripact.yaml` from the repository root — a declaration of the layers it tracks
 (prescriptive / descriptive / verificatory) and the edges to check between them. Minimal example:
 
 ```yaml
 schemaVersion: 1
 layers:
-  uac:
+  specs:
     role: prescriptive
-    paths: [UAC.md]
+    paths: [SPECS.md]
   manual:
     role: descriptive
     paths: [docs/manual/**/*.md]
@@ -85,19 +216,22 @@ layers:
     role: verificatory
     paths: [tests/**/*.spec.ts]
 edges:
-  - [uac, tests]
+  - [specs, tests]
   - [manual, tests]
 ```
 
-tripact ships no `init` command — scaffolding the config and emitting agent skills are harness
-concerns. Author the config directly, or use a full harness (prodsync) to generate it.
+Author a minimal config, run `tripact skills`, and then use the emitted `detect` skill to locate the prescriptive / descriptive / verificatory artefacts and flesh the config out. tripact ships no `init` command — classifying a repo's files is a judgement call, so it is emitted as agent guidance rather than baked in as a heuristic.
 
 ## Transitional notes
 
-Extracted pre-alpha; some names still carry prodsync branding and will be migrated deliberately:
+Extracted pre-alpha:
 
-- **On-disk names**: the config file is `prodsync.yaml`, the committed sidecar is `.prodsync/`, and
-  the baseline trailer is `Prodsync-Point:`. Renaming these (with back-compat) is a separate
-  migration — it touches committed sidecars and every consumer's config.
-- **No `init` / no skill emission / no run-book execution** — those are harness surface, not kernel.
-- **Not yet published** — consumed via a local `link:` dependency for now.
+- **The committed sidecar is still `.prodsync/`** — the one on-disk name that keeps prodsync
+  branding. Renaming it (with back-compat) is a separate migration: it touches every committed
+  sidecar. The config file (`tripact.yaml`) and baseline trailer (`tripact-sync-id:`) are already
+  renamed.
+- **No `init`, no run-book execution.** Layer detection is emitted as the `detect` skill (a
+  judgement call, not a built-in heuristic); run-book _execution_ stays a harness concern. Skill and
+  prompt _emission_ live in the kernel.
+- **Pre-alpha (0.x)** — the public contract (`--json` schemas, exit codes, MCP tools) is versioned
+  but still evolving; breaking changes may land in minor 0.x bumps. Pin an exact version.

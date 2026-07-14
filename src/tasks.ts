@@ -20,7 +20,7 @@ export interface Task {
   id: string;
   kind: TaskKind;
   title: string;
-  /** Everything an agent needs to act — self-contained, no prodsync internals required. */
+  /** Everything an agent needs to act — self-contained, no tripact internals required. */
   payload: Record<string, unknown>;
   /** Advisory dispatch hints from `routing`/`models` config (UAC §16.1). Absent without config. */
   effort?: EffortTier;
@@ -99,7 +99,7 @@ export function deriveTasks(analysis: Analysis, reconcile?: { prescriptive: stri
       payload: {
         group,
         claims: ids.sort().map((id) => ({ id, text: claimText.get(id) ?? "" })),
-        tagFormat: "@uac:<id>",
+        tagFormat: "@specs:<id>",
       },
     });
   }
@@ -113,7 +113,7 @@ export function deriveTasks(analysis: Analysis, reconcile?: { prescriptive: stri
       id: taskId("regenerate-derived", name),
       kind: "regenerate-derived",
       title: `Derived output "${name}" is stale — regenerate it`,
-      payload: { name, output: d?.output ?? "", invocation: `prodsync generate ${name}` },
+      payload: { name, output: d?.output ?? "", invocation: `tripact generate ${name}` },
     });
   }
 
@@ -179,7 +179,7 @@ export function deriveTasks(analysis: Analysis, reconcile?: { prescriptive: stri
 export function renderTasksHuman(queue: TaskQueue, opts: { long?: boolean } = {}): string {
   const long = opts.long === true;
   if (queue.tasks.length === 0) return "no tasks — all edges in accord";
-  const lines: string[] = [`prodsync tasks — ${queue.tasks.length} task(s)`];
+  const lines: string[] = [`tripact tasks — ${queue.tasks.length} task(s)`];
   const byKind = new Map<string, Task[]>();
   for (const t of queue.tasks) {
     const arr = byKind.get(t.kind);

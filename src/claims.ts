@@ -1,4 +1,4 @@
-// `prodsync claims` — alive-claim listing for tag discovery. UAC §6.2.
+// `tripact claims` — alive-claim listing for tag discovery. UAC §6.2.
 // Deterministic: layer order, then document order; dead entries sorted by id.
 
 import { CLAIMS_SCHEMA_VERSION } from "./contract.js";
@@ -90,7 +90,7 @@ export function renderClaimsHuman(report: ClaimsReportJson): string {
   const alive = report.claims.filter((c) => c.alive);
   const dead = report.claims.filter((c) => !c.alive);
   const lines: string[] = [];
-  lines.push(`prodsync claims — ${alive.length} alive${dead.length ? ` · ${dead.length} dead` : ""}`);
+  lines.push(`tripact claims — ${alive.length} alive${dead.length ? ` · ${dead.length} dead` : ""}`);
   lines.push("");
   const byLayer = new Map<string, ClaimListing[]>();
   for (const c of report.claims) {

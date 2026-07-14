@@ -1,5 +1,5 @@
 // Derived outputs (UAC §18): deterministically regenerable artefacts declared in
-// prodsync.yaml under `derived`. Two generator kinds: builtin generators (reserved names
+// tripact.yaml under `derived`. Two generator kinds: builtin generators (reserved names
 // rendered in-process — no spawning, byte-identical across runs) and arbitrary shell
 // commands (stdout captured as the file content). Determinism is the contract: the same
 // code + config always produce byte-identical output.
@@ -72,7 +72,7 @@ export function generateContent(root: string, d: DerivedOutput): string {
     if (!render) {
       throw new GenerateError(
         `builtin generator "${d.generator}" for derived output "${d.name}" is not registered; ` +
-          `the prodsync harness must register it before generation (see src/generators.ts)`,
+          `the harness must register it before generation (see src/generators.ts)`,
       );
     }
     return render();

@@ -30,7 +30,7 @@ import { TRIPACT_VERSION } from "./version.js";
 
 /**
  * How the MCP server names itself in the initialize handshake. Defaults to tripact's own identity;
- * a harness embedding the kernel (e.g. prodsync serving `mcp-serve`) passes its own name/version so
+ * a harness embedding the kernel (e.g. a harness serving `mcp-serve`) passes its own name/version so
  * the server advertises under the harness the operator actually invoked.
  */
 export interface ServerIdentity {
@@ -49,10 +49,10 @@ function jsonDoc(doc: unknown): ToolResult {
 }
 
 function errorResult(message: string): ToolResult {
-  return { content: [{ type: "text", text: `prodsync: ${message}` }], isError: true };
+  return { content: [{ type: "text", text: `tripact: ${message}` }], isError: true };
 }
 
-/** Runs a handler, converting known prodsync errors into MCP tool errors. */
+/** Runs a handler, converting known tripact errors into MCP tool errors. */
 function guarded(fn: () => ToolResult): ToolResult {
   try {
     return fn();
@@ -72,7 +72,7 @@ export function buildServer(repoRoot: string, identity: ServerIdentity = {}): Mc
     "tasks",
     {
       description:
-        "Derive the repair/generation work queue from the current repository state — the same JSON `prodsync tasks --json` prints. Each task's payload is self-contained; tasks may carry advisory `effort`/`model` dispatch hints when the config binds them. Optionally pass a reconcile pair to also emit a layer-reconciliation task.",
+        "Derive the repair/generation work queue from the current repository state — the same JSON `tripact tasks --json` prints. Each task's payload is self-contained; tasks may carry advisory `effort`/`model` dispatch hints when the config binds them. Optionally pass a reconcile pair to also emit a layer-reconciliation task.",
       inputSchema: {
         reconcile: z
           .string()
@@ -102,7 +102,7 @@ export function buildServer(repoRoot: string, identity: ServerIdentity = {}): Mc
     "claims",
     {
       description:
-        "List every alive claim with id, layer, group path, normalised text, and best edge verdict — the same JSON `prodsync claims --json` prints. Use these exact ids when tagging tests; never derive an id from claim text. Set `all` to include dead claims with their last known text.",
+        "List every alive claim with id, layer, group path, normalised text, and best edge verdict — the same JSON `tripact claims --json` prints. Use these exact ids when tagging tests; never derive an id from claim text. Set `all` to include dead claims with their last known text.",
       inputSchema: {
         all: z.boolean().optional().describe("Include dead (retired) claims, marked with their last text"),
       },
@@ -115,12 +115,12 @@ export function buildServer(repoRoot: string, identity: ServerIdentity = {}): Mc
     "check",
     {
       description:
-        "Run the deterministic drift check across declared edges and refresh the escalation queue — the same JSON `prodsync check --json` prints (verdicts, orphan tags, escalations, exitCode: 0 clean / 1 drift).",
+        "Run the deterministic drift check across declared edges and refresh the escalation queue — the same JSON `tripact check --json` prints (verdicts, orphan tags, escalations, exitCode: 0 clean / 1 drift).",
     },
     () =>
       guarded(() => {
         const analysis = analyze(repoRoot);
-        writeEscalations(repoRoot, analysis.escalations); // same side effect as `prodsync check`
+        writeEscalations(repoRoot, analysis.escalations); // same side effect as `tripact check`
         return jsonDoc(toJsonReport(analysis));
       }),
   );
@@ -129,7 +129,7 @@ export function buildServer(repoRoot: string, identity: ServerIdentity = {}): Mc
     "status",
     {
       description:
-        "Read-only traceability summary of the current state — the same JSON `prodsync status --json` prints. Never writes anything.",
+        "Read-only traceability summary of the current state — the same JSON `tripact status --json` prints. Never writes anything.",
     },
     () => guarded(() => jsonDoc(toJsonReport(analyze(repoRoot)))),
   );
@@ -138,7 +138,7 @@ export function buildServer(repoRoot: string, identity: ServerIdentity = {}): Mc
     "escalations",
     {
       description:
-        "List the open escalation questions the engine could not decide deterministically — the same JSON document `prodsync check` writes to .prodsync/escalations.json. Answer them with the `resolve` tool.",
+        "List the open escalation questions the engine could not decide deterministically — the same JSON document `tripact check` writes to .prodsync/escalations.json. Answer them with the `resolve` tool.",
     },
     () =>
       guarded(() => {
@@ -210,7 +210,7 @@ export function buildServer(repoRoot: string, identity: ServerIdentity = {}): Mc
       "accept",
       {
         description:
-          "Baseline the current tree: write claim anchoring + verified states into .prodsync/claims.json and clear the escalation queue, returning the Prodsync-Point trailer. Exposed only under the `agents` accept policy. Refuses while reanchor/split-merge escalations are open. Runs with no prompt.",
+          "Baseline the current tree: write claim anchoring + verified states into .prodsync/claims.json and clear the escalation queue, returning the tripact-sync-id trailer. Exposed only under the `agents` accept policy. Refuses while reanchor/split-merge escalations are open. Runs with no prompt.",
       },
       () =>
         guarded(() => {

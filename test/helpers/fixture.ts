@@ -1,15 +1,16 @@
-// A scratch repository fixture with all three layers, wired by a hand-written prodsync.yaml. tripact
-// ships no `init` command (layer scaffolding is a harness concern), so foreign consumers author the
-// config directly — exactly what these tests exercise. The on-disk names keep prodsync branding for
-// now (prodsync.yaml, .prodsync/) — a deliberate transitional choice.
+// A scratch repository fixture with all three layers, wired by a hand-written tripact.yaml. tripact
+// ships no `init` command (layer detection is a judgement call, emitted as the `detect` skill), so
+// consumers author the config directly — exactly what these tests exercise. The committed sidecar
+// stays `.prodsync/` for now — a deliberate transitional choice.
 import { execFileSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { runCli } from "./cli.js";
 
-export const UAC = [
-  "# User Acceptance Criteria — Example",
+/** Prescriptive layer content (written to SPECS.md). */
+export const SPECS = [
+  "# Product Specification — Example",
   "",
   "## 1. Calculator",
   "",
@@ -32,7 +33,7 @@ export const MANUAL = [
 
 // Untagged on purpose: the tests exist but tag no claim, so every claim starts life uncovered —
 // the drift state the exit-code and payload assertions rely on.
-export const SPEC = [
+export const TESTS = [
   'test("addNumbers sums two integers", () => {});',
   'test("Add button shows the sum", () => {});',
   "",
@@ -42,10 +43,10 @@ export const CONFIG = [
   "schemaVersion: 1",
   "",
   "layers:",
-  "  uac:",
+  "  specs:",
   "    role: prescriptive",
   "    paths:",
-  "      - UAC.md",
+  "      - SPECS.md",
   "  manual:",
   "    role: descriptive",
   "    paths:",
@@ -56,25 +57,25 @@ export const CONFIG = [
   "      - tests/**/*.spec.ts",
   "",
   "edges:",
-  "  - [uac, tests]",
+  "  - [specs, tests]",
   "  - [manual, tests]",
   "",
 ].join("\n");
 
 /**
- * A git repo carrying all three layers plus a hand-written prodsync.yaml. Runs `check` once so the
+ * A git repo carrying all three layers plus a hand-written tripact.yaml. Runs `check` once so the
  * escalation queue document (.prodsync/escalations.json) exists for tests that read it. Returns the
  * repo path; the caller is responsible for cleanup.
  */
 export function fullRepo(prefix = "tripact-fixture-"): string {
   const repo = mkdtempSync(path.join(os.tmpdir(), prefix));
   execFileSync("git", ["init", "-b", "main"], { cwd: repo });
-  writeFileSync(path.join(repo, "UAC.md"), UAC);
-  writeFileSync(path.join(repo, "prodsync.yaml"), CONFIG);
+  writeFileSync(path.join(repo, "SPECS.md"), SPECS);
+  writeFileSync(path.join(repo, "tripact.yaml"), CONFIG);
   mkdirSync(path.join(repo, "docs", "manual"), { recursive: true });
   writeFileSync(path.join(repo, "docs", "manual", "using.md"), MANUAL);
   mkdirSync(path.join(repo, "tests", "e2e"), { recursive: true });
-  writeFileSync(path.join(repo, "tests", "e2e", "calc.spec.ts"), SPEC);
+  writeFileSync(path.join(repo, "tests", "e2e", "calc.spec.ts"), TESTS);
   runCli(["check"], { cwd: repo }); // writes .prodsync/escalations.json
   return repo;
 }

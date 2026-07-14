@@ -2,7 +2,7 @@
 
 import { spawnSync } from "node:child_process";
 
-export const SYNC_POINT_TRAILER = "Prodsync-Point";
+export const SYNC_POINT_TRAILER = "tripact-sync-id";
 
 function git(repoRoot: string, args: string[]): { ok: boolean; out: string; err: string } {
   const r = spawnSync("git", args, { cwd: repoRoot, encoding: "utf8" });
@@ -29,7 +29,7 @@ export interface SyncPoint {
   sidecarHash: string;
 }
 
-/** Most recent commit carrying a `Prodsync-Point:` trailer (UAC §8.1). */
+/** Most recent commit carrying a `tripact-sync-id:` trailer (UAC §8.1). */
 export function findSyncPoint(repoRoot: string): SyncPoint | null {
   const r = git(repoRoot, [
     "log",
@@ -52,7 +52,7 @@ export function stage(repoRoot: string, paths: string[]): { ok: boolean; err: st
 
 /**
  * Create a commit with the given full message (UAC §8.5). The caller supplies the message body
- * already carrying the `Prodsync-Point:` trailer; this only commits the current index and never
+ * already carrying the `tripact-sync-id:` trailer; this only commits the current index and never
  * stages anything itself. Returns git's stderr on failure (e.g. nothing staged → empty commit).
  */
 export function commit(repoRoot: string, message: string): { ok: boolean; err: string } {

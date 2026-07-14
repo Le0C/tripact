@@ -1,11 +1,11 @@
-// prodsync.yaml loading + validation. UAC §2.
+// tripact.yaml loading + validation. UAC §2.
 
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { parse as parseYaml } from "yaml";
 import { z } from "zod";
 
-export const CONFIG_FILENAME = "prodsync.yaml";
+export const CONFIG_FILENAME = "tripact.yaml";
 
 // Effort routing (UAC §16.1). Task classes are the five task kinds (src/tasks.ts),
 // `adjudicate` for escalation questions, plus the derive-* bootstrap kinds (§15)
@@ -87,14 +87,14 @@ export class ConfigError extends Error {
   }
 }
 
-export const DEFAULT_TAG_PATTERN = "@uac:([a-z0-9.-]+)";
+export const DEFAULT_TAG_PATTERN = "@specs:([a-z0-9.-]+)";
 export const DEFAULT_SECTION_TAG_PATTERN = "@manual:([a-z0-9.-]+)";
 
 /** Reports ALL validation problems at once (UAC §2.2). */
 export function loadConfig(repoRoot: string): Config {
   const p = path.join(repoRoot, CONFIG_FILENAME);
   if (!existsSync(p)) {
-    throw new ConfigError([`${CONFIG_FILENAME} not found — run \`prodsync init\` first`]);
+    throw new ConfigError([`${CONFIG_FILENAME} not found — author one (see the tripact README) or emit the scaffolding skill with \`tripact skills\``]);
   }
   let doc: unknown;
   try {

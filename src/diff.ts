@@ -1,4 +1,4 @@
-// Acceptance preview (UAC §8.4) + the pre-write summary `prodsync accept` prints (§8.3).
+// Acceptance preview (UAC §8.4) + the pre-write summary `tripact accept` prints (§8.3).
 // Computes the delta between the committed sidecar (loadSidecar) and the sidecar a real
 // accept would write (buildAcceptedSidecar): claims created / re-anchored / retired, and
 // per-edge verified-state changes (newly recorded vs re-baselined). Pure — writes nothing.
@@ -54,7 +54,7 @@ export interface AcceptanceDelta {
     /** Subjects that were backlog but are now covered — the ratchet moving down. */
     coveredSince: string[];
   };
-  /** Content hash of the committed sidecar (the current Prodsync-Point trailer). */
+  /** Content hash of the committed sidecar (the current tripact-sync-id trailer). */
   currentTrailer: string;
   /** Content hash a real accept would print. */
   wouldBeTrailer: string;
@@ -188,11 +188,11 @@ function idList(label: string, ids: string[], lines: string[]): void {
 
 /**
  * Human render of the acceptance delta. `trailers` toggles the current→would-be trailer
- * footer — on for `prodsync diff` (§8.4), off for the `accept` pre-write summary (§8.3),
+ * footer — on for `tripact diff` (§8.4), off for the `accept` pre-write summary (§8.3),
  * which prints its own official trailer line afterwards.
  */
 export function renderDeltaHuman(d: AcceptanceDelta, opts: { trailers?: boolean } = {}): string {
-  const lines: string[] = ["prodsync diff — what acceptance would change", ""];
+  const lines: string[] = ["tripact diff — what acceptance would change", ""];
   if (deltaIsEmpty(d)) {
     lines.push("  nothing would change — the sidecar already reflects the current tree.");
   } else {

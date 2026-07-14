@@ -1,22 +1,25 @@
-// Command construction for tripact's thin reference CLI. This is the harness ring's minimum: it
-// wires only the kernel commands (check, status, claims, tasks, resolve, verify, diff, accept,
-// mcp-serve) — the deterministic surface a foreign harness would otherwise shell out to. Layer
-// scaffolding, skill emission, run-book execution, bootstrap, doctor, and git commit are harness
-// concerns and live in a full harness (e.g. prodsync), not here.
+// Command construction for tripact's CLI. Wires the deterministic kernel commands (check, status,
+// claims, tasks, resolve, verify, diff, accept, generate, mcp-serve) plus the agent-facing surface
+// (skills, prompt) — the whole callable a foreign harness drives. Run-book execution and git-commit
+// orchestration are harness concerns and live in a driving harness, not here.
 //
 // buildProgram() must stay free of I/O at construction time; all work happens inside command
 // actions. Exit convention (Cross-Cutting): 0 clean, 1 findings/drift, 2 usage or environment error.
 
+import { mkdirSync, writeFileSync } from "node:fs";
+import path from "node:path";
 import readline from "node:readline";
 import { Command } from "commander";
 import { listClaims, renderClaimsHuman } from "./claims.js";
-import { ConfigError } from "./config.js";
+import { acceptPolicy, ConfigError, loadConfig } from "./config.js";
+import { deriveOutputs, generateContent, GenerateError } from "./derived.js";
 import { computeAcceptanceDelta, renderDeltaHuman } from "./diff.js";
 import { analyze, buildAcceptedSidecar } from "./engine.js";
 import { resolve as applyResolution, ResolveError, writeEscalations } from "./escalation.js";
 import { isGitRepo, repoRootOf, SYNC_POINT_TRAILER } from "./git.js";
 import { exitCodeFor, renderHuman, renderStatus, toJsonReport } from "./report.js";
 import { loadSidecar, saveSidecar, sidecarContentHash } from "./sidecar.js";
+import { emitSkills, escalationPrompt, taskPrompt } from "./skills.js";
 import { deriveTasks, renderTasksHuman } from "./tasks.js";
 import { TRIPACT_VERSION } from "./version.js";
 
@@ -229,7 +232,7 @@ export function buildProgram(): Command {
 
   program
     .command("verify")
-    .description("Compare a Prodsync-Point trailer value against the current sidecar's content hash (UAC §8.2)")
+    .description("Compare a tripact-sync-id trailer value against the current sidecar's content hash (UAC §8.2)")
     .argument("<hash>", "trailer value to verify")
     .action((hash: string) => {
       const root = requireRepoRoot();
@@ -260,7 +263,7 @@ export function buildProgram(): Command {
 
   program
     .command("accept")
-    .description("Write anchoring + verified states to the sidecar; prints the Prodsync-Point trailer (UAC §8.3)")
+    .description("Write anchoring + verified states to the sidecar; prints the tripact-sync-id trailer (UAC §8.3)")
     .option("--dry-run", "print the would-be trailer without writing the sidecar or clearing escalations (UAC §8.2)")
     .option("--yes", "skip the interactive confirmation prompt (UAC §8.3)")
     .action(async (opts: { dryRun?: boolean; yes?: boolean }) => {
@@ -283,6 +286,96 @@ export function buildProgram(): Command {
       console.log("include this trailer in your commit message:");
       console.log("");
       console.log(`  ${SYNC_POINT_TRAILER}: ${r.hash}`);
+      process.exit(0);
+    });
+
+  program
+    .command("generate")
+    .description("Regenerate declared derived outputs and write them to disk — deterministic, byte-identical across runs; no name regenerates all (UAC §18.1)")
+    .argument("[name]", "one declared derived output; omit to regenerate every declared output")
+    .action((name: string | undefined) => {
+      const root = requireRepoRoot();
+      let config;
+      try {
+        config = loadConfig(root);
+      } catch (e) {
+        if (e instanceof ConfigError) fail(e.message);
+        throw e;
+      }
+      const outputs = deriveOutputs(config);
+      const declared = outputs.map((o) => o.name).join(", ") || "(none declared)";
+      let targets = outputs;
+      if (name !== undefined) {
+        const found = outputs.find((o) => o.name === name);
+        if (!found) fail(`unknown derived output "${name}" (declared: ${declared})`);
+        targets = [found];
+      }
+      if (targets.length === 0) {
+        console.log("no derived outputs declared in tripact.yaml — nothing to generate");
+        process.exit(0);
+      }
+      try {
+        for (const d of targets) {
+          const content = generateContent(root, d);
+          const abs = path.join(root, d.output);
+          mkdirSync(path.dirname(abs), { recursive: true });
+          writeFileSync(abs, content, "utf8");
+          console.log(`wrote ${d.output} (${d.name})`);
+        }
+      } catch (e) {
+        if (e instanceof GenerateError) fail(e.message); // generator failure → exit 2
+        throw e;
+      }
+      process.exit(0);
+    });
+
+  program
+    .command("skills")
+    .description("Emit the agent skills (detect, adjudicate, repair, sync) as .claude/skills/<name>/SKILL.md — deterministic prompts any coding agent can pick up (UAC §1.2)")
+    .option("--dir <path>", "repo root to write into (default: the git repository root)")
+    .option("--force", "overwrite existing skill files (default: leave existing files untouched)")
+    .action((opts: { dir?: string; force?: boolean }) => {
+      const root = opts.dir ?? requireRepoRoot();
+      // Bake the configured accept policy into the guidance when there is a config; fall back to the
+      // safe `human` default when none is present (skills can be emitted before any check).
+      let policy: "human" | "agents" = "human";
+      try {
+        policy = acceptPolicy(loadConfig(root));
+      } catch {
+        policy = "human";
+      }
+      const { written } = emitSkills(root, { cli: "tripact", policy, version: TRIPACT_VERSION, force: opts.force === true });
+      if (written.length === 0) {
+        console.log("skills already present — pass --force to overwrite");
+      } else {
+        for (const w of written) console.log(`wrote ${w}`);
+      }
+      process.exit(0);
+    });
+
+  program
+    .command("prompt")
+    .description("Print a ready-to-hand-to-an-agent prompt for one work item — a task id or an escalation question id (UAC §10.1, §7.2)")
+    .argument("<id>", "a task id (from `tasks`) or an escalation question id (from `check`/`escalations`)")
+    .option("--reconcile <pair>", "include reconciliation tasks when resolving the id, e.g. uac:manual")
+    .action((id: string, opts: { reconcile?: string }) => {
+      const root = requireRepoRoot();
+      const analysis = runAnalysis(root);
+      // Escalation ids and task ids share no namespace; check escalations first, then the queue.
+      const esc = analysis.escalations.find((e) => e.id === id);
+      if (esc) {
+        console.log(escalationPrompt(esc, { cli: "tripact" }));
+        process.exit(0);
+      }
+      let reconcile: { prescriptive: string; descriptive: string } | undefined;
+      if (opts.reconcile !== undefined) {
+        const [p, d] = opts.reconcile.split(":");
+        if (!p || !d) fail("--reconcile expects <prescriptive-layer>:<descriptive-layer>");
+        reconcile = { prescriptive: p, descriptive: d };
+      }
+      const task = deriveTasks(analysis, reconcile).tasks.find((t) => t.id === id);
+      if (!task) fail(`no task or escalation with id "${id}" (list them with \`tripact tasks\` / \`tripact check\`)`, 1);
+      console.log(taskPrompt(task, { cli: "tripact" }));
       process.exit(0);
     });
 

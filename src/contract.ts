@@ -1,6 +1,6 @@
 // The kernel's public contract (docs/architecture/public-contract.md). These are the machine-
 // readable documents any foreign harness — the reference CLI, an Archon workflow, a Spec Kit
-// extension, a GitHub Action — reads to drive prodsync without understanding claims, hashes, or
+// extension, a GitHub Action — reads to drive tripact without understanding claims, hashes, or
 // re-anchoring. They are the kernel's API, and they are versioned deliberately: this file is the
 // single source of truth for the schema versions, replacing the magic `1` literals that used to be
 // scattered across the report/queue/listing builders.

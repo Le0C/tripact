@@ -118,7 +118,7 @@ export function renderHuman(analysis: Analysis, opts: { long?: boolean } = {}): 
   const head = analysis.syncPoint
     ? `sync-point ${analysis.syncPoint.commit.slice(0, 8)} · scope: diff (${analysis.changedPaths.length} changed paths)`
     : "no sync-point found — full audit";
-  lines.push(`prodsync check — ${head}`);
+  lines.push(`tripact check — ${head}`);
   if (analysis.affectedLayers.length) {
     lines.push(
       `⚠ changed code maps to layers via pathMap: ${analysis.affectedLayers.join(", ")} — their claims may no longer describe the product; re-run their tests`,
@@ -205,7 +205,7 @@ export function renderHuman(analysis: Analysis, opts: { long?: boolean } = {}): 
     if (!long && ordered.length > LISTING_THRESHOLD) {
       lines.push(`    … and ${ordered.length - LISTING_THRESHOLD} more — run with --long to see all`);
     }
-    if (backlog > 0) lines.push(`  backlog: ${backlog} acknowledged items — see prodsync tasks`);
+    if (backlog > 0) lines.push(`  backlog: ${backlog} acknowledged items — see tripact tasks`);
     lines.push("");
   }
   if (analysis.orphans.length) {
@@ -218,7 +218,7 @@ export function renderHuman(analysis: Analysis, opts: { long?: boolean } = {}): 
     lines.push("");
   }
   if (analysis.escalations.length) {
-    lines.push(`escalations (${analysis.escalations.length}) — run the prodsync-adjudicate skill or \`prodsync resolve\`:`);
+    lines.push(`escalations (${analysis.escalations.length}) — run the tripact-adjudicate skill or \`tripact resolve\`:`);
     const details = analysis.escalations.map(
       (e) => `  [${e.kind}] ${e.id} in "${e.groupPath}" — ${e.deleted.length} old / ${e.created.length} new`,
     );
@@ -227,7 +227,7 @@ export function renderHuman(analysis: Analysis, opts: { long?: boolean } = {}): 
   }
   if (analysis.derivedStale.length) {
     lines.push(
-      `derived outputs stale (${analysis.derivedStale.length}) — regenerate with \`prodsync generate\`:`,
+      `derived outputs stale (${analysis.derivedStale.length}) — regenerate with \`tripact generate\`:`,
     );
     lines.push(...truncateListing(analysis.derivedStale.map((name) => `  ${name}`), long, "  "));
     lines.push("");
@@ -245,7 +245,7 @@ export function renderHuman(analysis: Analysis, opts: { long?: boolean } = {}): 
     // Level: no stale/new-uncovered/orphans/escalations/derived-stale (UAC §5.1). Name the
     // acknowledged backlog count when non-zero so the debt stays visible.
     const backlog = acknowledgedBacklogCount(analysis);
-    lines.push(backlog > 0 ? `✓ level — ${backlog} acknowledged backlog items (see prodsync tasks)` : "✓ level");
+    lines.push(backlog > 0 ? `✓ level — ${backlog} acknowledged backlog items (see tripact tasks)` : "✓ level");
   } else {
     lines.push("✗ drift detected");
   }
@@ -254,7 +254,7 @@ export function renderHuman(analysis: Analysis, opts: { long?: boolean } = {}): 
 
 export function renderStatus(analysis: Analysis): string {
   const lines: string[] = [];
-  lines.push("prodsync status");
+  lines.push("tripact status");
   lines.push("");
   for (const layer of analysis.layers.values()) {
     if (layer.role === "verificatory") {

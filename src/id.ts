@@ -1,4 +1,4 @@
-// Human-readable stable claim ids, e.g. "prodsync-init.requires-git". UAC §3.2.
+// Human-readable stable claim ids, e.g. "tripact-init.requires-git". UAC §3.2.
 
 const STOPWORDS = new Set([
   "the", "a", "an", "is", "are", "to", "of", "and", "or", "in", "with", "for",

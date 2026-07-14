@@ -1,5 +1,5 @@
 // End-to-end smoke of tripact's thin CLI, driven the way a foreign harness would: a scratch git
-// repo with a hand-written prodsync.yaml (no `init`), then the kernel commands over a full lifecycle.
+// repo with a hand-written tripact.yaml (no `init`), then the kernel commands over a full lifecycle.
 // Proves the extracted kernel is usable standalone — check → tasks → accept → level, the 0/1/2 exit
 // convention, and byte-identical output for an unchanged tree (the determinism property the kernel
 // guarantees, checked here in miniature since determinism.test.ts's full harness form stays in a
@@ -10,7 +10,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import { runCli } from "./helpers/cli.js";
-import { fullRepo, UAC } from "./helpers/fixture.js";
+import { fullRepo, SPECS } from "./helpers/fixture.js";
 
 const scratch: string[] = [];
 afterAll(() => {
@@ -39,7 +39,7 @@ describe("tripact CLI end-to-end", () => {
     // backlog, which is not drift. accept exits 0, writes the sidecar, and prints the trailer.
     const accept = runCli(["accept", "--yes"], { cwd: repo });
     expect(accept.status, `accept\n${accept.stderr}`).toBe(0);
-    expect(accept.stdout).toContain("Prodsync-Point:");
+    expect(accept.stdout).toContain("tripact-sync-id:");
     expect(existsSync(path.join(repo, ".prodsync", "claims.json")), "sidecar written").toBe(true);
 
     // The next check is level → 0.
@@ -50,7 +50,7 @@ describe("tripact CLI end-to-end", () => {
     const repo = track(fullRepo("tripact-cli-verify-"));
     const accept = runCli(["accept", "--yes"], { cwd: repo });
     expect(accept.status, accept.stderr).toBe(0);
-    const trailer = accept.stdout.match(/Prodsync-Point:\s*(\S+)/)?.[1];
+    const trailer = accept.stdout.match(/tripact-sync-id:\s*(\S+)/)?.[1];
     expect(trailer, "trailer present in accept output").toBeTruthy();
 
     expect(runCli(["verify", trailer!], { cwd: repo }).status, "verify matching hash").toBe(0);
@@ -81,7 +81,7 @@ describe("tripact CLI end-to-end", () => {
 
     // 2 — environment error. Outside a git repo the kernel has no history to anchor sync-points to.
     const noGit = track(mkdtempSync(path.join(os.tmpdir(), "tripact-cli-nogit-")));
-    writeFileSync(path.join(noGit, "UAC.md"), UAC);
+    writeFileSync(path.join(noGit, "SPECS.md"), SPECS);
     expect(runCli(["check"], { cwd: noGit }).status, "check outside a git repo").toBe(2);
   });
 
