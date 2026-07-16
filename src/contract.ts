@@ -33,10 +33,13 @@ export const CLAIMS_SCHEMA_VERSION = 1;
 /** `escalations` (MCP) / `.tripact/escalations.json` → EscalationFile (src/escalation.ts). */
 export const ESCALATIONS_SCHEMA_VERSION = 1;
 
+/** `reconcile` → ReconcileReport (src/reconcile.ts). Propose-only; advisory (never exit 1). */
+export const RECONCILE_SCHEMA_VERSION = 1;
+
 /** One public read surface: the same document under one or more CLI `--json` commands and MCP tools. */
 export interface ContractSurface {
   /** Stable identifier for the surface. */
-  readonly key: "check" | "tasks" | "claims" | "escalations";
+  readonly key: "check" | "tasks" | "claims" | "escalations" | "reconcile";
   /** CLI invocations (beyond the leading command) that emit this exact document; all share the schema. */
   readonly cli: readonly (readonly string[])[];
   /** MCP read tools that return this document verbatim (byte-identical to the CLI `--json`). */
@@ -88,6 +91,13 @@ export const PUBLIC_CONTRACT: readonly ContractSurface[] = [
     mcpTools: ["claims"],
     schemaVersion: CLAIMS_SCHEMA_VERSION,
     fields: ["claims", "schemaVersion"],
+  },
+  {
+    key: "reconcile",
+    cli: [["reconcile", "--json"]],
+    mcpTools: [],
+    schemaVersion: RECONCILE_SCHEMA_VERSION,
+    fields: ["candidates", "schemaVersion"],
   },
   {
     key: "escalations",

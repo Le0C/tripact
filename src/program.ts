@@ -21,6 +21,7 @@ import { matchesGlob } from "./glob.js";
 import { exitCodeFor, renderHuman, renderStatus, toJsonReport } from "./report.js";
 import { loadSidecar, saveSidecar, sidecarContentHash } from "./sidecar.js";
 import { emitSkills, escalationPrompt, taskPrompt } from "./skills.js";
+import { reconcile as scanReconcile, recordDismissal, renderReconcileHuman } from "./reconcile.js";
 import { deriveTasks, renderTasksHuman } from "./tasks.js";
 import { TRIPACT_VERSION } from "./version.js";
 
@@ -196,6 +197,31 @@ export function buildProgram(): Command {
       if (opts.json) console.log(JSON.stringify(queue, null, 2));
       else console.log(renderTasksHuman(queue, { long: opts.long === true }));
       process.exit(queue.tasks.length ? 1 : 0);
+    });
+
+  program
+    .command("reconcile")
+    .description("Propose existing untagged tests that may already assert an uncovered claim (UAC §10.3)")
+    .option("--json", "machine-readable proposal queue on stdout")
+    .option("--dismiss", "record a dismissal for a claim/test pairing instead of scanning")
+    .argument("[claimId]", "with --dismiss: the claim id")
+    .argument("[file]", "with --dismiss: the candidate test file")
+    .argument("[line]", "with --dismiss: the candidate test line")
+    .action((claimId: string | undefined, file: string | undefined, line: string | undefined, opts: { json?: boolean; dismiss?: boolean }) => {
+      const root = requireRepoRoot();
+      const analysis = runAnalysis(root);
+      if (opts.dismiss) {
+        if (!claimId || !file || !line || !/^\d+$/.test(line)) fail("reconcile --dismiss expects <claimId> <file> <line>");
+        const r = recordDismissal(analysis, claimId as string, file as string, Number(line));
+        if (!r.ok) fail(r.error ?? "dismissal failed");
+        saveSidecar(root, analysis.sidecar);
+        console.log(`dismissed reconcile candidate: ${claimId} ↔ ${file}:${line}`);
+        process.exit(0);
+      }
+      const report = scanReconcile(analysis);
+      if (opts.json) console.log(JSON.stringify(report, null, 2));
+      else console.log(renderReconcileHuman(report));
+      process.exit(0); // advisory — never exits 1 (UAC §10.3)
     });
 
   program

@@ -21,6 +21,7 @@ export * from "./escalation.js";
 export * from "./git.js";
 export * from "./id.js";
 export * from "./parser.js";
+export * from "./reconcile.js";
 export * from "./report.js";
 export * from "./sidecar.js";
 export * from "./similarity.js";

@@ -75,6 +75,22 @@ export interface Sidecar {
    * deterministic in that pair). Absent when nothing has been dismissed — additive, sorted.
    */
   dismissedForks?: string[];
+  /**
+   * Reconcile candidates the operator has dismissed with `reconcile --dismiss` (UAC §10.3). A
+   * dismissal is keyed by claim id + test identity (file:line) and carries a hash of the claim/test
+   * text at dismissal, so it is re-proposed once either side's text changes. Additive, sorted.
+   */
+  dismissedReconcile?: ReconcileDismissal[];
+}
+
+/** A dismissed reconcile pairing (UAC §10.3). Lives in the sidecar; shape kept here to avoid a
+ *  cycle with the reconcile module. */
+export interface ReconcileDismissal {
+  claim: string;
+  file: string;
+  line: number;
+  /** contentHash(claimNorm + "\n" + testNorm) at dismissal — a change on either side re-proposes. */
+  hash: string;
 }
 
 export function emptyBacklog(): AcknowledgedBacklog {
@@ -140,9 +156,19 @@ export function serializeSidecar(sidecar: Sidecar): string {
     sections: [...sidecar.backlog.sections].sort(),
   };
   const dismissedForks = [...new Set(sidecar.dismissedForks ?? [])].sort();
+  const dismissedReconcile = [...(sidecar.dismissedReconcile ?? [])]
+    .sort((a, b) => (a.claim !== b.claim ? (a.claim < b.claim ? -1 : 1) : a.file !== b.file ? (a.file < b.file ? -1 : 1) : a.line - b.line))
+    .map((d) => ({ claim: d.claim, file: d.file, line: d.line, hash: d.hash }));
   return (
     JSON.stringify(
-      { schemaVersion: 1, claims, groups, backlog, ...(dismissedForks.length ? { dismissedForks } : {}) },
+      {
+        schemaVersion: 1,
+        claims,
+        groups,
+        backlog,
+        ...(dismissedForks.length ? { dismissedForks } : {}),
+        ...(dismissedReconcile.length ? { dismissedReconcile } : {}),
+      },
       null,
       2,
     ) + "\n"

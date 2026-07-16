@@ -385,5 +385,8 @@ export function buildAcceptedSidecar(repoRoot: string, analysis: Analysis): Side
     else backlogSections.add(v.subject);
   }
   const backlog = { claims: [...backlogClaims].sort(), sections: [...backlogSections].sort() };
-  return { schemaVersion: 1, claims, groups, backlog };
+  // Reconcile dismissals (UAC §10.3) survive an accept — a dismissed pairing stays dismissed until
+  // its text changes, which is independent of baselining.
+  const dismissedReconcile = analysis.sidecar.dismissedReconcile;
+  return { schemaVersion: 1, claims, groups, backlog, ...(dismissedReconcile?.length ? { dismissedReconcile } : {}) };
 }
