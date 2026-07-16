@@ -157,8 +157,10 @@ is your job, under human review.
 2. Before editing a layer, read its \`conventions\` file if \`tripact.yaml\` declares
    one, and match the existing voice and structure of the artefacts you touch.
 3. Work task kinds like this:
-   - **write-tests**: add tests that genuinely assert each claim, tagged \`@specs:<id>\`
-     in the test title. Never tag a test that does not assert the claim.
+   - **write-tests** (find-or-write): first search the verificatory layer for an existing
+     untagged test that already asserts the claim and tag it in place; write a new test
+     only when none is found. Tag in the test title using the task's \`tagFormat\`. Never
+     tag a test that does not assert the claim.
    - **reconcile-stale**: read the claim and its tagged test; align whichever is wrong
      (test asserts the old behaviour → update the test; claim text drifted → flag to
      the user rather than editing the spec silently).

@@ -15,6 +15,10 @@ export interface ClaimListing {
   verdict: EdgeVerdictKind | null;
   tbd: boolean;
   alive: boolean;
+  /** Declaring location of the claim, so it can be opened from the listing and used as a
+   * navigation target (UAC §6.2). Present on alive claims; a dead claim has no live declaration. */
+  file?: string;
+  line?: number;
   /** Set on dead claims only (UAC §6.2). */
   lastText?: string;
 }
@@ -55,6 +59,8 @@ export function listClaims(analysis: Analysis, opts: { all?: boolean } = {}): Cl
         verdict: atom.tbd ? null : (bestBySubject.get(subject) ?? null),
         tbd: atom.tbd,
         alive: true,
+        file: atom.file,
+        line: atom.line,
       });
     }
   }
@@ -102,7 +108,8 @@ export function renderClaimsHuman(report: ClaimsReportJson): string {
     lines.push(`layer ${layer}: ${cs.filter((c) => c.alive).length} alive claims`);
     for (const c of cs) {
       const verdict = !c.alive ? "dead" : c.tbd ? "tbd" : (c.verdict ?? "-");
-      lines.push(`  ${verdict.toUpperCase().padEnd(9)} ${c.id} · ${c.groupPath}`);
+      const loc = c.alive && c.file ? ` · ${c.file}:${c.line}` : "";
+      lines.push(`  ${verdict.toUpperCase().padEnd(9)} ${c.id} · ${c.groupPath}${loc}`);
       lines.push(`            ${c.alive ? c.text : `last text: "${c.text}"`}`);
     }
     lines.push("");

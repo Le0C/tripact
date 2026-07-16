@@ -110,11 +110,18 @@ export function deriveTasks(analysis: Analysis, reconcile?: { prescriptive: stri
     tasks.push({
       id: taskId("write-tests", group, tagFormat, ...ids),
       kind: "write-tests",
-      title: `Write tagged tests for ${ids.length} uncovered claim(s) in "${group}"`,
+      // Find-or-write (UAC §10.1): tag an existing untagged test that already asserts the claim, or
+      // write a new one only when none exists. The payload names both options and the exact tag
+      // format so the agent can search-then-tag before reaching for a fresh test.
+      title: `Tag an existing test or write one for ${ids.length} uncovered claim(s) in "${group}"`,
       payload: {
         group,
         claims: ids.sort().map((id) => ({ id, text: claimText.get(id) ?? "" })),
         tagFormat,
+        options: [
+          "tag an existing untagged test that already asserts the claim",
+          "write a new tagged test only when none exists",
+        ],
       },
     });
   }

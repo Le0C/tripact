@@ -12,7 +12,7 @@ import { checkPV, scanTags, type TagHit } from "./edges/pv.js";
 import { escalationId } from "./escalation.js";
 import { matchesGlob } from "./glob.js";
 import { changedPathsSince, findSyncPoint, headSha, type SyncPoint } from "./git.js";
-import { leafOf, mintId } from "./id.js";
+import { assignIds } from "./id.js";
 import { contentHash, disambiguateSlugs, parseMarkdownLayer } from "./parser.js";
 import {
   loadSidecar,
@@ -125,9 +125,7 @@ export function analyze(repoRoot: string): Analysis {
     const result = anchor(prev, layer.atoms, DEFAULT_ANCHOR_CONFIG, rejected, contentHash);
     anchorResults.set(layer.name, result);
     for (const m of result.matched) m.next.id = m.oldId;
-    for (const created of result.created) {
-      created.id = mintId(leafOf(created.groupKey), created.norm, taken);
-    }
+    assignIds(result.created, taken);
 
     // reanchor escalations: group unresolved candidate pairs by group path (UAC §7.1)
     const byGroup = new Map<string, typeof result.candidates>();
