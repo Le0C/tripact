@@ -37,7 +37,7 @@ export function checkPV(
   for (const t of tags) {
     const arr = tagsById.get(t.id);
     if (arr) arr.push(t);
-    else tagsById.set(t.id, arr ?? [t]);
+    else tagsById.set(t.id, [t]);
   }
   const verdicts: EdgeVerdict[] = [];
   const liveIds = new Set<string>();

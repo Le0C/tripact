@@ -16,6 +16,8 @@ export interface CheckReportJson {
   unsupportedEdges: string[];
   /** Declared derived outputs whose committed file is stale versus a fresh regeneration (UAC §18.2). */
   derivedStale: string[];
+  /** Declared generators whose back-to-back regenerations disagreed — non-deterministic (UAC §18). */
+  nonDeterministicGenerators: string[];
   counts: Record<string, number>;
   exitCode: 0 | 1 | 2;
 }
@@ -50,7 +52,8 @@ export function exitCodeFor(analysis: Analysis): 0 | 1 {
     (analysis.strict && acknowledgedBacklogCount(analysis) > 0) ||
     analysis.orphans.length > 0 ||
     analysis.escalations.length > 0 ||
-    analysis.derivedStale.length > 0;
+    analysis.derivedStale.length > 0 ||
+    analysis.nonDeterministicGenerators.length > 0;
   return drift ? 1 : 0;
 }
 
@@ -65,6 +68,7 @@ export function toJsonReport(analysis: Analysis): CheckReportJson {
   counts["orphans"] = analysis.orphans.length;
   counts["escalations"] = analysis.escalations.length;
   counts["derivedStale"] = analysis.derivedStale.length;
+  counts["nonDeterministicGenerators"] = analysis.nonDeterministicGenerators.length;
   // Fork count (UAC §5.2): re-anchoring recall as a live metric, not run-log archaeology.
   counts["forks"] = forkCount(analysis);
   return {
@@ -78,6 +82,7 @@ export function toJsonReport(analysis: Analysis): CheckReportJson {
     affectedLayers: analysis.affectedLayers,
     unsupportedEdges: analysis.unsupportedEdges,
     derivedStale: analysis.derivedStale,
+    nonDeterministicGenerators: analysis.nonDeterministicGenerators,
     counts,
     exitCode: exitCodeFor(analysis),
   };
@@ -230,6 +235,13 @@ export function renderHuman(analysis: Analysis, opts: { long?: boolean } = {}): 
       `derived outputs stale (${analysis.derivedStale.length}) — regenerate with \`tripact generate\`:`,
     );
     lines.push(...truncateListing(analysis.derivedStale.map((name) => `  ${name}`), long, "  "));
+    lines.push("");
+  }
+  if (analysis.nonDeterministicGenerators.length) {
+    lines.push(
+      `non-deterministic generators (${analysis.nonDeterministicGenerators.length}) — two back-to-back regenerations disagreed; make the generator deterministic (no clock/network/host state):`,
+    );
+    lines.push(...truncateListing(analysis.nonDeterministicGenerators.map((name) => `  ${name}`), long, "  "));
     lines.push("");
   }
   // Fork count (UAC §5.2): re-anchoring recall metric. Forked groups already surface as

@@ -28,6 +28,10 @@ export function contentHash(norm: string): string {
   return createHash("sha256").update(norm, "utf8").digest("hex").slice(0, 16);
 }
 
+// NOTE (ASCII assumption, UAC §3.1): `slugify` keeps only lowercased `[a-z0-9\s-]` — it does not
+// transliterate. A heading in a non-Latin script slugs to "" (which `disambiguateSlugs` below then
+// makes unique but un-mnemonic). Deterministic, but such sections are effectively un-taggable by a
+// readable slug; a future transliteration pass would lift this.
 export function slugify(text: string, maxWords = 8): string {
   return text
     .toLowerCase()
@@ -36,6 +40,31 @@ export function slugify(text: string, maxWords = 8): string {
     .split(/\s+/)
     .slice(0, maxWords)
     .join("-");
+}
+
+/**
+ * Make section slugs unique within a descriptive layer (UAC §4.2). `slugify` keeps only the first
+ * few lowercased ASCII words, so two distinct sections — different files, or heading paths that
+ * happen to share their leading words — can collapse to one slug. That is a silent correctness hole:
+ * a single `@manual:<slug>` tag would mark BOTH sections covered, and one section's sidecar group
+ * would overwrite the other's. When two or more groups share a base slug we append a short suffix
+ * derived from each group's OWN identity (file + heading path), so a group's slug depends only on itself
+ * — adding or removing a colliding sibling never reshuffles which suffix belongs to which section.
+ * Groups whose slug is already unique keep their bare slug. Mutates the groups in place.
+ */
+export function disambiguateSlugs(groups: Group[]): void {
+  const bySlug = new Map<string, Group[]>();
+  for (const g of groups) {
+    const arr = bySlug.get(g.slug);
+    if (arr) arr.push(g);
+    else bySlug.set(g.slug, [g]);
+  }
+  for (const gs of bySlug.values()) {
+    if (gs.length < 2) continue;
+    for (const g of gs) {
+      g.slug = `${g.slug}-${contentHash(`${g.file} ${g.groupPath}`).slice(0, 6)}`;
+    }
+  }
 }
 
 export interface ParsedFile {

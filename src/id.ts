@@ -5,6 +5,11 @@ const STOPWORDS = new Set([
   "its", "it", "on", "at", "by", "be", "as", "that", "this", "via", "when",
 ]);
 
+// ASCII assumption (UAC §3.2): `words` keeps only lowercased `[a-z0-9\s-]` and does not
+// transliterate. Text with no Latin word characters (a heading in another script) yields an empty
+// list, so mintId falls back to the generic "root"/"atom" parts and relies on the `taken` counter
+// for uniqueness — deterministic, but the id carries no mnemonic. A future transliteration pass
+// would lift this; the same assumption governs parser.ts `slugify`.
 function words(text: string): string[] {
   return text
     .toLowerCase()

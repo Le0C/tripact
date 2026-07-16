@@ -10,9 +10,10 @@ import { deriveOutputs, generateContent } from "./derived.js";
 import { checkDV, groupHash, scanSectionTags } from "./edges/dv.js";
 import { checkPV, scanTags, type TagHit } from "./edges/pv.js";
 import { escalationId } from "./escalation.js";
+import { matchesGlob } from "./glob.js";
 import { changedPathsSince, findSyncPoint, headSha, type SyncPoint } from "./git.js";
 import { leafOf, mintId } from "./id.js";
-import { contentHash, parseMarkdownLayer } from "./parser.js";
+import { contentHash, disambiguateSlugs, parseMarkdownLayer } from "./parser.js";
 import {
   loadSidecar,
   type Sidecar,
@@ -49,15 +50,21 @@ export interface Analysis {
   unsupportedEdges: string[];
   /** Names of declared derived outputs whose committed file no longer matches a fresh regeneration (UAC §18.2). */
   derivedStale: string[];
+  /** Declared generators whose two back-to-back regenerations disagreed — non-deterministic, so
+   * never reported as stale (regeneration can't fix them); a config fault to surface (UAC §18). */
+  nonDeterministicGenerators: string[];
 }
 
-export function collectFiles(repoRoot: string, globs: string[]): Map<string, string> {
+export function collectFiles(repoRoot: string, globs: string[], exclude: string[] = []): Map<string, string> {
   const files = new Map<string, string>();
   const seen = new Set<string>();
   for (const g of globs) {
     for (const rel of globSync(g, { cwd: repoRoot })) {
       const p = rel.split(path.sep).join("/");
       if (p.startsWith("node_modules/") || p.startsWith(".git/") || seen.has(p)) continue;
+      // Configured `exclude` globs (UAC §2): archived duplicates, vendored trees, generated
+      // derived outputs — dropped before parsing so they never become source atoms.
+      if (exclude.some((e) => matchesGlob(p, e))) continue;
       seen.add(p);
       files.set(p, readFileSync(path.join(repoRoot, rel), "utf8"));
     }
@@ -83,7 +90,7 @@ export function analyze(repoRoot: string): Analysis {
   // 1. read + parse layers
   const layers = new Map<string, LayerData>();
   for (const [name, lc] of Object.entries(config.layers).sort()) {
-    const files = collectFiles(repoRoot, lc.paths);
+    const files = collectFiles(repoRoot, lc.paths, config.exclude ?? []);
     const atoms: Atom[] = [];
     const groups: Group[] = [];
     if (lc.role !== "verificatory") {
@@ -93,6 +100,9 @@ export function analyze(repoRoot: string): Analysis {
         groups.push(...parsed.groups);
       }
     }
+    // Section slugs are the D↔V coverage key (UAC §4.2); make them unique across the layer's files
+    // so two sections can't collapse to one slug (silent double-coverage + sidecar overwrite).
+    if (lc.role === "descriptive") disambiguateSlugs(groups);
     layers.set(name, { name, role: lc.role, files, atoms, groups });
   }
 
@@ -225,14 +235,21 @@ export function analyze(repoRoot: string): Analysis {
   const changedPaths = syncPoint ? changedPathsSince(repoRoot, syncPoint.commit) : [];
   const affectedLayers = new Set<string>();
   for (const [glob, layerNames] of Object.entries(config.pathMap ?? {})) {
-    if (changedPaths.some((p) => path.matchesGlob(p, glob))) {
+    if (changedPaths.some((p) => matchesGlob(p, glob))) {
       for (const l of layerNames) affectedLayers.add(l);
     }
   }
 
   // 5. derived-output freshness (UAC §18.2): regenerate each declared output in memory and
   //    byte-compare with the committed file. A missing file, or any mismatch, is derived-stale.
+  //    Determinism is the generator's contract; when a regeneration disagrees with the committed
+  //    file we regenerate ONCE more and compare the two regenerations. If they differ, the
+  //    generator itself is non-deterministic — regenerating would never make `check` pass — so we
+  //    report it as `nonDeterministicGenerators` (a fixable config fault) rather than mislabelling
+  //    it `derivedStale` (which would be permanent, misdiagnosed phantom drift). The clean case
+  //    (committed matches) pays only the single regeneration.
   const derivedStale: string[] = [];
+  const nonDeterministicGenerators: string[] = [];
   for (const d of deriveOutputs(config)) {
     const abs = path.join(repoRoot, d.output);
     const committed = existsSync(abs) ? readFileSync(abs, "utf8") : null;
@@ -244,7 +261,21 @@ export function analyze(repoRoot: string): Analysis {
       derivedStale.push(d.name);
       continue;
     }
-    if (committed === null || committed !== expected) derivedStale.push(d.name);
+    if (committed !== null && committed === expected) continue; // fresh
+    if (committed !== null) {
+      let second: string;
+      try {
+        second = generateContent(repoRoot, d);
+      } catch {
+        derivedStale.push(d.name);
+        continue;
+      }
+      if (second !== expected) {
+        nonDeterministicGenerators.push(d.name);
+        continue;
+      }
+    }
+    derivedStale.push(d.name); // missing file, or a stable mismatch — genuine staleness
   }
 
   return {
@@ -263,6 +294,7 @@ export function analyze(repoRoot: string): Analysis {
     affectedLayers: [...affectedLayers].sort(),
     unsupportedEdges,
     derivedStale,
+    nonDeterministicGenerators,
   };
 }
 
@@ -290,8 +322,15 @@ export function buildAcceptedSidecar(repoRoot: string, analysis: Analysis): Side
       file: t.file,
       targetFileHash: hashOf(t.file) ?? "",
     }));
-    if (isPV) verifiedByAtom.set(v.subject, states);
-    else verifiedByGroup.set(`${layer}:${v.subject}`, states);
+    // A single source atom / group can be tagged on more than one edge (e.g. specs↔unit and
+    // specs↔e2e). Each edge's states carry their own `edge` tuple and must coexist, so accumulate
+    // rather than replace — otherwise the last edge processed wins and every other edge loses its
+    // verified state, flipping back to `pending` on the next check (unrecoverable phantom drift).
+    const bucket = isPV ? verifiedByAtom : verifiedByGroup;
+    const key = isPV ? v.subject : `${layer}:${v.subject}`;
+    const existing = bucket.get(key);
+    if (existing) existing.push(...states);
+    else bucket.set(key, states);
   }
 
   for (const layer of analysis.layers.values()) {

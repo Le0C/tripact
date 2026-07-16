@@ -17,6 +17,7 @@ import { computeAcceptanceDelta, renderDeltaHuman } from "./diff.js";
 import { analyze, buildAcceptedSidecar } from "./engine.js";
 import { resolve as applyResolution, ResolveError, writeEscalations } from "./escalation.js";
 import { isGitRepo, repoRootOf, SYNC_POINT_TRAILER } from "./git.js";
+import { matchesGlob } from "./glob.js";
 import { exitCodeFor, renderHuman, renderStatus, toJsonReport } from "./report.js";
 import { loadSidecar, saveSidecar, sidecarContentHash } from "./sidecar.js";
 import { emitSkills, escalationPrompt, taskPrompt } from "./skills.js";
@@ -152,7 +153,10 @@ export function buildProgram(): Command {
       const analysis = runAnalysis(root);
       if (opts.json) console.log(JSON.stringify(toJsonReport(analysis), null, 2));
       else console.log(renderStatus(analysis));
-      process.exit(0);
+      // Follow the 0/1 convention like `check` (UAC Cross-Cutting): the shared JSON document embeds
+      // `exitCode`, so exiting 0 unconditionally would contradict its own payload under drift. Same
+      // document, same exit.
+      process.exit(exitCodeFor(analysis));
     });
 
   program
@@ -316,6 +320,18 @@ export function buildProgram(): Command {
       }
       try {
         for (const d of targets) {
+          // Self-ingest guard (UAC §18): a derived output written into a layer's own paths becomes
+          // a source atom on the next check — the generated doc would demand coverage of itself and
+          // churn on every regeneration. Warn (don't block: the operator may intend it) and name the
+          // fix — an `exclude:` entry — unless one already covers it.
+          const inLayer = Object.entries(config.layers).find(([, lc]) => lc.paths.some((g) => matchesGlob(d.output, g)));
+          const excluded = (config.exclude ?? []).some((e) => matchesGlob(d.output, e));
+          if (inLayer && !excluded) {
+            console.error(
+              `tripact: warning — derived output "${d.name}" (${d.output}) falls inside layer "${inLayer[0]}"'s paths; ` +
+                `it will be re-ingested as a source atom on the next check. Add "${d.output}" to \`exclude:\` in tripact.yaml.`,
+            );
+          }
           const content = generateContent(root, d);
           const abs = path.join(root, d.output);
           mkdirSync(path.dirname(abs), { recursive: true });
@@ -371,6 +387,11 @@ export function buildProgram(): Command {
       if (opts.reconcile !== undefined) {
         const [p, d] = opts.reconcile.split(":");
         if (!p || !d) fail("--reconcile expects <prescriptive-layer>:<descriptive-layer>");
+        // Same layer-existence check as `tasks --reconcile` — a typo'd layer must error, not
+        // silently produce no reconcile task.
+        if (!analysis.layers.has(p) || !analysis.layers.has(d)) {
+          fail(`--reconcile: unknown layer in "${opts.reconcile}" (declared: ${[...analysis.layers.keys()].join(", ")})`);
+        }
         reconcile = { prescriptive: p, descriptive: d };
       }
       const task = deriveTasks(analysis, reconcile).tasks.find((t) => t.id === id);

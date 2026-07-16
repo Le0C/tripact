@@ -29,19 +29,26 @@ export interface SyncPoint {
   sidecarHash: string;
 }
 
-/** Most recent commit carrying a `tripact-sync-id:` trailer (UAC §8.1). */
+/** Most recent commit carrying a real `tripact-sync-id:` trailer (UAC §8.1). `--grep` narrows to
+ * commits whose message *mentions* the string, but a commit that only names it in prose (no actual
+ * trailer) yields an empty trailer value — so we scan the newest matches and return the first with a
+ * genuine trailer, rather than stopping at `-1` and masking an older real sync-point. */
 export function findSyncPoint(repoRoot: string): SyncPoint | null {
   const r = git(repoRoot, [
     "log",
     `--grep=${SYNC_POINT_TRAILER}:`,
-    "-1",
-    "--format=%H%n%(trailers:key=" + SYNC_POINT_TRAILER + ",valueonly)",
+    "-n",
+    "20",
+    "--format=%H%x1f%(trailers:key=" + SYNC_POINT_TRAILER + ",valueonly)%x1e",
   ]);
   if (!r.ok || !r.out) return null;
-  const [commit, ...rest] = r.out.split("\n");
-  const value = rest.join("").trim();
-  if (!commit || !value) return null;
-  return { commit, sidecarHash: value };
+  for (const record of r.out.split("\x1e")) {
+    const [commit, value] = record.split("\x1f");
+    const c = (commit ?? "").trim();
+    const v = (value ?? "").trim();
+    if (c && v) return { commit: c, sidecarHash: v };
+  }
+  return null;
 }
 
 /** Stage the given paths (UAC §8.5). Returns git's stderr on failure so the caller can report it. */

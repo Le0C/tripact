@@ -2,7 +2,13 @@
 // never mutates artefacts, sidecar, or escalations.
 
 import { createHash } from "node:crypto";
-import { hintsFor, type EffortTier } from "./config.js";
+import {
+  DEFAULT_SECTION_TAG_PATTERN,
+  DEFAULT_TAG_PATTERN,
+  hintsFor,
+  tagFormatFromPattern,
+  type EffortTier,
+} from "./config.js";
 import { TASKS_SCHEMA_VERSION } from "./contract.js";
 import { deriveOutputs } from "./derived.js";
 import type { Analysis } from "./engine.js";
@@ -43,8 +49,10 @@ export function taskId(kind: string, ...parts: string[]): string {
 export function deriveTasks(analysis: Analysis, reconcile?: { prescriptive: string; descriptive: string }): TaskQueue {
   const tasks: Task[] = [];
 
-  // uncovered claims, grouped per claim group (UAC §10.1)
-  const uncoveredByGroup = new Map<string, string[]>();
+  // uncovered claims, grouped per claim group (UAC §10.1). Keyed by (group, tagFormat) so the task
+  // can name the exact tag the verificatory layer's scanner recognises — a group covered via two
+  // edges with different tag patterns splits into two tasks rather than emitting one ambiguous tag.
+  const uncoveredByGroup = new Map<string, { group: string; ids: string[]; tagFormat: string }>();
   const claimText = new Map(analysis.sidecar.claims.map((c) => [c.id, c.text]));
   for (const layer of analysis.layers.values()) {
     for (const atom of layer.atoms) claimText.set(atom.id, atom.norm);
@@ -57,9 +65,13 @@ export function deriveTasks(analysis: Analysis, reconcile?: { prescriptive: stri
     if (v.kind === "uncovered") {
       const atom = source.atoms.find((a) => a.id === v.subject);
       const group = atom?.groupPath ?? "(unknown group)";
-      const arr = uncoveredByGroup.get(group);
-      if (arr) arr.push(v.subject);
-      else uncoveredByGroup.set(group, [v.subject]);
+      const verif = v.edge[0] === layer ? v.edge[1] : v.edge[0];
+      const pattern = analysis.config.layers[verif]?.tagPattern ?? DEFAULT_TAG_PATTERN;
+      const tagFormat = tagFormatFromPattern(pattern, "<id>");
+      const key = `${group} ${tagFormat}`;
+      const entry = uncoveredByGroup.get(key);
+      if (entry) entry.ids.push(v.subject);
+      else uncoveredByGroup.set(key, { group, ids: [v.subject], tagFormat });
     } else if (v.kind === "stale") {
       // Only `stale` (verified once, then drifted) earns a reconcile task here. `pending`
       // (tagged, never verified) deliberately falls through and emits nothing — its only cure
@@ -91,15 +103,18 @@ export function deriveTasks(analysis: Analysis, reconcile?: { prescriptive: stri
       });
     }
   }
-  for (const [group, ids] of [...uncoveredByGroup.entries()].sort()) {
+  const groupBuckets = [...uncoveredByGroup.entries()]
+    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+    .map(([, bucket]) => bucket);
+  for (const { group, ids, tagFormat } of groupBuckets) {
     tasks.push({
-      id: taskId("write-tests", group, ...ids),
+      id: taskId("write-tests", group, tagFormat, ...ids),
       kind: "write-tests",
       title: `Write tagged tests for ${ids.length} uncovered claim(s) in "${group}"`,
       payload: {
         group,
         claims: ids.sort().map((id) => ({ id, text: claimText.get(id) ?? "" })),
-        tagFormat: "@specs:<id>",
+        tagFormat,
       },
     });
   }
@@ -131,6 +146,8 @@ export function deriveTasks(analysis: Analysis, reconcile?: { prescriptive: stri
     const source = analysis.layers.get(layer);
     if (!source || source.role !== "descriptive" || v.kind !== "uncovered") continue;
     const group = source.groups.find((g) => g.slug === v.subject);
+    const verif = v.edge[0] === layer ? v.edge[1] : v.edge[0];
+    const pattern = analysis.config.layers[verif]?.sectionTagPattern ?? DEFAULT_SECTION_TAG_PATTERN;
     tasks.push({
       id: taskId("cover-section", layer, v.subject),
       kind: "cover-section",
@@ -140,7 +157,7 @@ export function deriveTasks(analysis: Analysis, reconcile?: { prescriptive: stri
         slug: v.subject,
         groupPath: group?.groupPath ?? "",
         file: group?.file ?? "",
-        tagFormat: "@manual:<slug>",
+        tagFormat: tagFormatFromPattern(pattern, "<slug>"),
       },
     });
   }

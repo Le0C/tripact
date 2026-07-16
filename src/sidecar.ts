@@ -11,6 +11,21 @@ export interface VerifiedState {
   targetFileHash: string;
 }
 
+/**
+ * Total order over verified states for stable serialisation. A subject can now carry states from
+ * several edges (one atom tagged on specs↔unit and specs↔e2e), so file alone is not a total order —
+ * two states can share a file across edges. Compare edge, then file, then targetFileHash so the
+ * serialisation is byte-identical regardless of insertion order and never relies on sort stability.
+ */
+export function compareVerified(a: VerifiedState, b: VerifiedState): number {
+  const ae = a.edge.join(" ");
+  const be = b.edge.join(" ");
+  if (ae !== be) return ae < be ? -1 : 1;
+  if (a.file !== b.file) return a.file < b.file ? -1 : 1;
+  if (a.targetFileHash !== b.targetFileHash) return a.targetFileHash < b.targetFileHash ? -1 : 1;
+  return 0;
+}
+
 export interface SidecarEntry {
   id: string;
   layer: string;
@@ -109,7 +124,7 @@ export function serializeSidecar(sidecar: Sidecar): string {
       alive: c.alive,
       ...(c.lastText !== undefined ? { lastText: c.lastText } : {}),
       ...(c.rejectedMatches && c.rejectedMatches.length ? { rejectedMatches: [...c.rejectedMatches].sort() } : {}),
-      verified: [...c.verified].sort((a, b) => (a.file < b.file ? -1 : 1)),
+      verified: [...c.verified].sort(compareVerified),
     }));
   const groups = [...sidecar.groups]
     .sort((a, b) => (a.layer + a.slug < b.layer + b.slug ? -1 : 1))
@@ -118,7 +133,7 @@ export function serializeSidecar(sidecar: Sidecar): string {
       slug: g.slug,
       groupPath: g.groupPath,
       hash: g.hash,
-      verified: [...g.verified].sort((a, b) => (a.file < b.file ? -1 : 1)),
+      verified: [...g.verified].sort(compareVerified),
     }));
   const backlog = {
     claims: [...sidecar.backlog.claims].sort(),

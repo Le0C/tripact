@@ -50,6 +50,9 @@ export const ConfigSchema = z.object({
   layers: z.record(z.string(), LayerSchema),
   edges: z.array(z.tuple([z.string(), z.string()])),
   pathMap: z.record(z.string(), z.array(z.string())).optional(),
+  // Globs subtracted from every layer's file set after collection (UAC §2). Archived duplicates,
+  // vendored trees, and generated derived outputs live here so they never parse as source atoms.
+  exclude: z.array(z.string()).optional(),
   // accept.policy validated against ACCEPT_POLICIES in loadConfig (all-at-once, §2.2)
   accept: z.object({ policy: z.string() }).optional(),
   // values validated against EFFORT_TIERS / KNOWN_TASK_CLASSES in loadConfig so that
@@ -89,6 +92,57 @@ export class ConfigError extends Error {
 
 export const DEFAULT_TAG_PATTERN = "@specs:([a-z0-9.-]+)";
 export const DEFAULT_SECTION_TAG_PATTERN = "@manual:([a-z0-9.-]+)";
+
+// --- tag-format derivation (UAC §4.1/§4.2) -------------------------------------------------------
+// A repair task must instruct the SAME literal tag the engine's scanner matches — the configured
+// `tagPattern` / `sectionTagPattern` regex. If deriveTasks hard-codes `@specs:<id>` while a layer
+// scans with a custom `@covers:(…)` pattern, the agent writes a tag `check` never recognises and
+// coverage silently never lands. So we derive the example tag from the pattern itself: drop the
+// first capturing group in favour of a placeholder and unescape the literal segments.
+
+/** Byte offset of the first *capturing* group's `(` and one-past its matching `)`, or null. */
+function firstCaptureGroup(pattern: string): { start: number; end: number } | null {
+  let inClass = false;
+  for (let i = 0; i < pattern.length; i++) {
+    const c = pattern[i];
+    if (c === "\\") { i++; continue; } // escaped char — skip the next
+    if (inClass) { if (c === "]") inClass = false; continue; }
+    if (c === "[") { inClass = true; continue; }
+    if (c !== "(") continue;
+    // `(?:`, `(?=`, `(?!`, `(?<=`, `(?<!` are non-capturing / lookaround — skip; anything else captures.
+    if (/^\(\?(:|=|!|<=|<!)/.test(pattern.slice(i))) continue;
+    let depth = 0;
+    let cls = false;
+    for (let j = i; j < pattern.length; j++) {
+      const d = pattern[j];
+      if (d === "\\") { j++; continue; }
+      if (cls) { if (d === "]") cls = false; continue; }
+      if (d === "[") { cls = true; continue; }
+      if (d === "(") depth++;
+      else if (d === ")" && --depth === 0) return { start: i, end: j + 1 };
+    }
+    return null; // unbalanced
+  }
+  return null;
+}
+
+/** Turn a literal regex segment into plain text: drop `^`/`$` anchors and unescape metacharacters. */
+function unescapeRegexLiteral(seg: string): string {
+  return seg
+    .replace(/^\^/, "")
+    .replace(/\$$/, "")
+    .replace(/\\([\\.^$*+?()[\]{}|/-])/g, "$1");
+}
+
+/**
+ * A human/agent-facing example tag for a tag-scan pattern, e.g. `@specs:([a-z0-9.-]+)` → `@specs:<id>`
+ * and a custom `@covers:([a-z0-9.-]+)` → `@covers:<id>`. `placeholder` is the id/slug stand-in.
+ */
+export function tagFormatFromPattern(pattern: string, placeholder: string): string {
+  const g = firstCaptureGroup(pattern);
+  if (!g) return unescapeRegexLiteral(pattern); // no capture group — degenerate; return the literal
+  return unescapeRegexLiteral(pattern.slice(0, g.start)) + placeholder + unescapeRegexLiteral(pattern.slice(g.end));
+}
 
 /** Reports ALL validation problems at once (UAC §2.2). */
 export function loadConfig(repoRoot: string): Config {
@@ -134,6 +188,9 @@ export function loadConfig(repoRoot: string): Config {
     for (const g of layer.paths) {
       if (g.trim() === "") problems.push(`layers.${name}.paths: empty glob`);
     }
+  }
+  for (const [i, g] of (cfg.exclude ?? []).entries()) {
+    if (g.trim() === "") problems.push(`exclude[${i}]: empty glob`);
   }
   const tiers: readonly string[] = EFFORT_TIERS;
   const classes: readonly string[] = KNOWN_TASK_CLASSES;
