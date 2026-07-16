@@ -82,7 +82,7 @@ export function fileHasher(layers: Map<string, LayerData>): (file: string) => st
   return (file) => cache.get(file) ?? null;
 }
 
-export function analyze(repoRoot: string): Analysis {
+export function analyze(repoRoot: string, opts: { skipDerived?: boolean } = {}): Analysis {
   const config = loadConfig(repoRoot);
   const sidecar = loadSidecar(repoRoot);
   const claimsById = new Map(sidecar.claims.map((c) => [c.id, c]));
@@ -248,7 +248,9 @@ export function analyze(repoRoot: string): Analysis {
   //    (committed matches) pays only the single regeneration.
   const derivedStale: string[] = [];
   const nonDeterministicGenerators: string[] = [];
-  for (const d of deriveOutputs(config)) {
+  // A derived generator (e.g. hotlink-map, §20.3) may itself call analyze(); `skipDerived` breaks
+  // that recursion by leaving derived-output freshness uncomputed for the inner analysis.
+  for (const d of opts.skipDerived ? [] : deriveOutputs(config)) {
     const abs = path.join(repoRoot, d.output);
     const committed = existsSync(abs) ? readFileSync(abs, "utf8") : null;
     let expected: string;

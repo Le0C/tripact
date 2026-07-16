@@ -66,6 +66,10 @@ export const ConfigSchema = z.object({
   // derived outputs (UAC §18.1): name → { output path, generator }. `output`/`generator`
   // non-emptiness validated in loadConfig so §18 problems report all-at-once too.
   derived: z.record(z.string(), z.object({ output: z.string(), generator: z.string() })).optional(),
+  // Navigational code↔spec links (UAC §20.1): a code file set + tag pattern scanned for claim-id
+  // tags. Declared OUTSIDE layers/edges — a code file set is never a layer role and never an edge,
+  // so it never produces a coverage verdict. `tagPattern` defaults to the verificatory layer's.
+  codeLinks: z.object({ paths: z.array(z.string()).min(1), tagPattern: z.string().optional() }).optional(),
 });
 
 export type LayerConfig = z.infer<typeof LayerSchema>;
@@ -191,6 +195,18 @@ export function loadConfig(repoRoot: string): Config {
   }
   for (const [i, g] of (cfg.exclude ?? []).entries()) {
     if (g.trim() === "") problems.push(`exclude[${i}]: empty glob`);
+  }
+  if (cfg.codeLinks) {
+    for (const [i, g] of cfg.codeLinks.paths.entries()) {
+      if (g.trim() === "") problems.push(`codeLinks.paths[${i}]: empty glob`);
+    }
+    if (cfg.codeLinks.tagPattern !== undefined) {
+      try {
+        new RegExp(cfg.codeLinks.tagPattern);
+      } catch (e) {
+        problems.push(`codeLinks.tagPattern: invalid pattern ${JSON.stringify(cfg.codeLinks.tagPattern)} — ${(e as Error).message}`);
+      }
+    }
   }
   const tiers: readonly string[] = EFFORT_TIERS;
   const classes: readonly string[] = KNOWN_TASK_CLASSES;

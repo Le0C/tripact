@@ -17,6 +17,9 @@ import type { Config } from "./config.js";
 /** The builtin `cli-reference` generator name. Reserved here; implemented by the harness. */
 export const CLI_REFERENCE = "cli-reference";
 
+/** The builtin `hotlink-map` generator name (UAC §20.3). Reserved here; implemented by the harness. */
+export const HOTLINK_MAP = "hotlink-map";
+
 /**
  * Reserved builtin generator names. A `derived` entry naming one of these is rendered in-process
  * by a harness-registered function rather than run as a shell command. The kernel reserves the
@@ -24,17 +27,18 @@ export const CLI_REFERENCE = "cli-reference";
  * code. An output declaring a reserved generator that was never registered is a wiring error — not
  * a shell command — so generateContent throws rather than trying to exec the name.
  */
-export const RESERVED_BUILTINS: ReadonlySet<string> = new Set([CLI_REFERENCE]);
+export const RESERVED_BUILTINS: ReadonlySet<string> = new Set([CLI_REFERENCE, HOTLINK_MAP]);
 
-/** Harness-injected implementations for reserved builtin generators, keyed by name. */
-const generatorRegistry = new Map<string, () => string>();
+/** Harness-injected implementations for reserved builtin generators, keyed by name. Called with the
+ *  repo root so a generator that projects repo state (e.g. hotlink-map) can analyse it. */
+const generatorRegistry = new Map<string, (root: string) => string>();
 
 /**
  * Register a builtin generator implementation. Called by the harness at startup
  * (src/generators.ts). Only reserved names may be registered, keeping the builtin namespace
  * closed and deterministic; registering an unreserved name is a programming error.
  */
-export function registerGenerator(name: string, render: () => string): void {
+export function registerGenerator(name: string, render: (root: string) => string): void {
   if (!RESERVED_BUILTINS.has(name)) {
     throw new Error(`cannot register unknown builtin generator "${name}"`);
   }
@@ -75,7 +79,7 @@ export function generateContent(root: string, d: DerivedOutput): string {
           `the harness must register it before generation (see src/generators.ts)`,
       );
     }
-    return render();
+    return render(root);
   }
   const r = spawnSync(d.generator, {
     cwd: root,

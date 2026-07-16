@@ -22,6 +22,7 @@ import { exitCodeFor, renderHuman, renderStatus, toJsonReport } from "./report.j
 import { loadSidecar, saveSidecar, sidecarContentHash } from "./sidecar.js";
 import { emitSkills, escalationPrompt, taskPrompt } from "./skills.js";
 import { reconcile as scanReconcile, recordDismissal, renderReconcileHuman } from "./reconcile.js";
+import { scanHotlinks, renderHotlinksHuman } from "./hotlinks.js";
 import { deriveTasks, renderTasksHuman } from "./tasks.js";
 import { TRIPACT_VERSION } from "./version.js";
 
@@ -222,6 +223,19 @@ export function buildProgram(): Command {
       if (opts.json) console.log(JSON.stringify(report, null, 2));
       else console.log(renderReconcileHuman(report));
       process.exit(0); // advisory — never exits 1 (UAC §10.3)
+    });
+
+  program
+    .command("hotlinks")
+    .description("Report navigational code↔spec links from the configured codeLinks file set (UAC §20.2)")
+    .option("--json", "machine-readable link map on stdout")
+    .action((opts: { json?: boolean }) => {
+      const root = requireRepoRoot();
+      const analysis = runAnalysis(root);
+      const report = scanHotlinks(analysis, root);
+      if (opts.json) console.log(JSON.stringify(report, null, 2));
+      else console.log(renderHotlinksHuman(report));
+      process.exit(0); // advisory — navigation, never gates (UAC §20.2)
     });
 
   program

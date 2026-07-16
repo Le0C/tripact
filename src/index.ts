@@ -19,6 +19,7 @@ export * from "./edges/pv.js";
 export * from "./engine.js";
 export * from "./escalation.js";
 export * from "./git.js";
+export * from "./hotlinks.js";
 export * from "./id.js";
 export * from "./parser.js";
 export * from "./reconcile.js";
