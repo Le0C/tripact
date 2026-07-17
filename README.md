@@ -142,7 +142,7 @@ tripact diff                # preview what accept would baseline; writes nothing
 tripact accept --yes        # baseline the tree; prints the tripact-sync-id trailer
 tripact verify <hash>       # check a trailer against the current sidecar
 tripact generate [name]     # regenerate declared derived outputs (deterministic)
-tripact skills              # emit detect/adjudicate/repair/sync agent skills to .claude/skills/
+tripact skills              # emit the six agent skills to .claude/skills/
 tripact prompt <id>         # print a ready-to-run prompt for one task or escalation
 tripact mcp-serve           # serve the read tools + resolve over MCP stdio
 ```
@@ -169,7 +169,7 @@ const queue = deriveTasks(analysis); // the same document `tasks --json` prints
 
 ### Agent skills & per-item prompts
 
-tripact emits the prompts an agent needs to _work_ the queues; the consuming harness is responsible for running the tasks. `tripact skills` writes four `.claude/skills/<name>/SKILL.md` files - `detect` (scaffold a `tripact.yaml` by classifying the repo's files into layers), `adjudicate`, `repair`, and `sync` - that teach an agent how to set up tripact, answer escalations, and repair drift using only engine commands. `tripact prompt <id>` prints a ready-to-hand-off brief for a single task or escalation, with its self-contained payload inlined: the per-work-item context a foreign harness shells out with.
+tripact emits the prompts an agent needs to _work_ the queues; the consuming harness is responsible for running the tasks. `tripact skills` writes six `.claude/skills/<name>/SKILL.md` files - `detect` (scaffold a `tripact.yaml` by classifying the repo's files into layers), `adjudicate`, `reconcile`, `repair`, `sync`, and `hotlink-decoration` - that teach an agent how to set up tripact, answer escalations, and repair drift using only engine commands. `tripact prompt <id>` prints a ready-to-hand-off brief for a single task or escalation, with its self-contained payload inlined: the per-work-item context a foreign harness shells out with.
 
 ## Concepts
 

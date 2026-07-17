@@ -1,5 +1,5 @@
 // Agent-facing prompt & skill generation. This is kernel, not harness: generating the prose an
-// agent reads is deterministic text (no LLM, no network) — what must stay in a harness is *invoking*
+// agent reads is deterministic text (no LLM, no network) - what must stay in a harness is *invoking*
 // the agent, not writing the prompt it consumes. Keeping this here is what lets any harness pick up
 // the kernel and immediately have well-formed adjudication/repair guidance and per-work-item prompts,
 // rather than re-deriving them.
@@ -56,8 +56,8 @@ export interface EmittedSkill {
 
 function acceptRule(r: Resolved): string {
   return r.policy === "agents"
-    ? `Run \`${r.cli} accept\` only after validation passes (\`${r.cli} check\` and the repo's test command) with no open escalations — the configured \`agents\` accept policy permits it. Never accept while validation is red or escalations remain.`
-    : `Never run \`${r.cli} accept\` — under the configured \`human\` accept policy, baselining is a person's call.`;
+    ? `Run \`${r.cli} accept\` only after validation passes (\`${r.cli} check\` and the repo's test command) with no open escalations - the configured \`agents\` accept policy permits it. Never accept while validation is red or escalations remain.`
+    : `Never run \`${r.cli} accept\` - under the configured \`human\` accept policy, baselining is a person's call.`;
 }
 
 function policyNote(r: Resolved): string {
@@ -74,7 +74,7 @@ export function adjudicateSkill(opts?: SkillOptions): EmittedSkill {
   const content = `---
 name: ${r.namePrefix}-adjudicate
 description: >
-  Adjudicate ${r.cli} escalation questions in .tripact/escalations.json — ambiguous
+  Adjudicate ${r.cli} escalation questions in .tripact/escalations.json - ambiguous
   claim re-anchorings and split/merge cases the deterministic engine will not guess at.
   Use when the user says "resolve the ${r.cli} escalations", "adjudicate the sync
   questions", after \`${r.cli} check\` reports open escalations, or before \`${r.cli} accept\`.
@@ -93,7 +93,7 @@ guessing. Your job: answer those questions with semantic judgment.
 1. Read \`.tripact/escalations.json\` (or run \`${r.cli} prompt <question-id>\` for a
    ready-made per-question brief). Each question has:
    - \`kind\`: \`reanchor\` (old claims vs new texts in one section), \`split-merge\`, or
-     \`fork-review\` (a group lost an old atom and gained a new one — identity forked;
+     \`fork-review\` (a group lost an old atom and gained a new one - identity forked;
      advisory, never blocks \`accept\`)
    - \`deleted\`: old claims (id + text) that no longer match anything
    - \`created\`: new texts that match no existing claim
@@ -105,21 +105,21 @@ guessing. Your job: answer those questions with semantic judgment.
    - Forked identity is genuinely two different requirements (fork-review) →
      \`${r.cli} resolve <question-id> --dismiss\` to accept the fork; or \`--match\` to
      reunite the old id with the new text if it was the same requirement all along.
-   Resolving one atom shrinks a multi-atom question in place — the remaining atoms keep
+   Resolving one atom shrinks a multi-atom question in place - the remaining atoms keep
    the same question id, so answer them one at a time without re-running \`check\`.
    A split (one old → several new) is expressed as one \`--match\` for the closest
    successor plus \`--new\` for the others; a merge as \`--match\` for the surviving
    text's closest ancestor plus \`--dead\` for the rest.
 3. Re-run \`${r.cli} check\`. Repeat until no \`reanchor\`/\`split-merge\` escalations remain
-   (\`fork-review\` questions are advisory — dismiss or match them, but they never gate accept).
-4. Report to the user what you decided and why, per question — they review before
+   (\`fork-review\` questions are advisory - dismiss or match them, but they never gate accept).
+4. Report to the user what you decided and why, per question - they review before
    \`${r.cli} accept\`.
 
 ## Rules
 
 - ${acceptRule(r)}
 - When genuinely uncertain, ask the user rather than deciding.
-- Do not edit \`.tripact/*.json\` by hand — always go through \`${r.cli} resolve\`.
+- Do not edit \`.tripact/*.json\` by hand - always go through \`${r.cli} resolve\`.
 - ${policyNote(r)}
 `;
   return { name: `${r.namePrefix}-adjudicate`, content };
@@ -134,7 +134,7 @@ export function reconcileSkill(opts?: SkillOptions): EmittedSkill {
   const content = `---
 name: ${r.namePrefix}-reconcile
 description: >
-  Work ${r.cli}'s reconcile queue — existing untagged tests that may already assert an
+  Work ${r.cli}'s reconcile queue - existing untagged tests that may already assert an
   uncovered claim. Use when the user says "reconcile the untagged tests", "link claims to
   existing tests", or after \`${r.cli} check\` shows a large uncovered backlog on a repo that
   already has tests.
@@ -146,7 +146,7 @@ metadata:
 
 On a repo with existing tests, many claims read uncovered only because no test carries a tag
 yet. \`${r.cli} reconcile\` proposes, per uncovered claim, existing tests whose title resembles
-the claim — a propose-only queue. Your job: confirm the genuine matches and tag them, and
+the claim - a propose-only queue. Your job: confirm the genuine matches and tag them, and
 dismiss the rest. ${r.cli} never tags for you.
 
 ## Steps
@@ -154,7 +154,7 @@ dismiss the rest. ${r.cli} never tags for you.
 1. Run \`${r.cli} reconcile --json\`. Each entry has a \`claimId\`, the \`claimText\`, the exact
    \`tagFormat\` to use, and ranked \`candidates\` (each a test \`file\`, \`line\`, \`title\`, and
    similarity \`score\`).
-2. For each candidate, open the test and read what it actually asserts — the score is a hint,
+2. For each candidate, open the test and read what it actually asserts - the score is a hint,
    not proof. Then either:
    - It genuinely asserts the claim → add the tag (\`tagFormat\` with the \`claimId\`) to that
      test's title, exactly as \`${r.cli} check\` scans for it. Never tag a test that does not
@@ -177,7 +177,7 @@ dismiss the rest. ${r.cli} never tags for you.
 /**
  * The hotlink-decoration skill: place navigational hotlink comments in product-code docstrings so a
  * developer can jump from a function to the spec claim it implements (UAC §20.3). Writing the comment
- * is agent work — the kernel only reads the tags back with `hotlinks`.
+ * is agent work - the kernel only reads the tags back with `hotlinks`.
  */
 export function hotlinkDecorationSkill(opts?: SkillOptions): EmittedSkill {
   const r = resolveOpts(opts);
@@ -196,7 +196,7 @@ metadata:
 A \`codeLinks\` block declares which product-code files carry claim-id tags. Your job: place a
 clickable hotlink comment in the docstring of each function that implements a claim, so a
 developer hovering it in their editor can open the spec claim and its tests. ${r.cli} never edits
-product code — you do; ${r.cli} only reads the tags back with \`${r.cli} hotlinks\`.
+product code - you do; ${r.cli} only reads the tags back with \`${r.cli} hotlinks\`.
 
 ## Steps
 
@@ -206,12 +206,13 @@ product code — you do; ${r.cli} only reads the tags back with \`${r.cli} hotli
    - the claim-id tag in the repo's \`codeLinks.tagPattern\` form, so \`${r.cli} hotlinks\` links it
    - a back-link to the claim's spec FILE, and forward links to its covering test files, each written
      as a markdown link whose target is a \`{@link}\` tag:
-     \`- spec: [SPEC.md — §3.1 Section name]({@link ./../SPEC.md})\`
+     \`- spec: [SPEC.md - §3.1 Section name]({@link ./../SPEC.md})\`
      That combined form is the one that both renders as a label and navigates from an editor hover.
    - Link to the file, never to a line or a heading. A \`#L42\` or \`#some-heading\` fragment renders
      but refuses to navigate: JSDoc has no file-link support (microsoft/TypeScript#47718 is still
-     open, and line numbers are an unmet ask in that thread). A line number would rot anyway —
-     nothing re-checks the back-link text, so it goes silently wrong the moment the spec shifts.
+     open, and line numbers are an unmet ask in that thread). A line number would rot anyway -
+     nothing re-checks the back-link text, so it goes wrong the moment the spec shifts and
+     tells no one.
      Put the section name in the link label instead: it is greppable and survives edits.
 3. Re-run \`${r.cli} hotlinks\`: the function shows as a link, not an orphan. Fix any orphan code tag
    (unknown or dead id) by correcting it to a live id from \`${r.cli} claims\`.
@@ -219,8 +220,8 @@ product code — you do; ${r.cli} only reads the tags back with \`${r.cli} hotli
 
 ## Rules
 
-- Never invent a claim id — copy it from \`${r.cli} claims\` / \`${r.cli} hotlinks\` output.
-- A code tag is navigation, not verification: it never makes a claim "covered" — only a tagged test
+- Never invent a claim id - copy it from \`${r.cli} claims\` / \`${r.cli} hotlinks\` output.
+- A code tag is navigation, not verification: it never makes a claim "covered" - only a tagged test
   does that.
 - ${policyNote(r)}
 `;
@@ -237,7 +238,7 @@ export function repairSkill(opts?: SkillOptions): EmittedSkill {
   const content = `---
 name: ${r.namePrefix}-repair
 description: >
-  Execute ${r.cli} repair and generation tasks — write missing tagged tests, reconcile
+  Execute ${r.cli} repair and generation tasks - write missing tagged tests, reconcile
   stale claims, fix orphan tags, cover undocumented docs sections, and reconcile a
   descriptive layer against its prescriptive layer. Use when the user says "work the
   ${r.cli} backlog", "repair the drift", "reconcile the docs with the spec", or after
@@ -248,7 +249,7 @@ metadata:
 
 # Execute ${r.cli} repair tasks
 
-${r.cli} detects drift; you repair it. The engine never edits artefact content — that
+${r.cli} detects drift; you repair it. The engine never edits artefact content - that
 is your job, under human review.
 
 ## Steps
@@ -265,8 +266,8 @@ is your job, under human review.
      tag a test that does not assert the claim.
    - **reconcile-stale**: read the claim and its tagged test; align whichever is wrong
      (test asserts the old behaviour → update the test; claim text drifted → flag to
-     the user rather than editing the spec silently).
-   - **fix-orphan-tag**: the tag references a retired or mistyped id — find the right
+     the user rather than editing the spec without saying so).
+   - **fix-orphan-tag**: the tag references a retired or mistyped id - find the right
      live id with \`${r.cli} status --json\`, or remove the tag if the claim is gone.
    - **cover-section**: write or tag a test that walks the docs section's steps,
      tagged \`@docs:<slug>\`.
@@ -300,7 +301,7 @@ export function loopSkill(opts?: SkillOptions): EmittedSkill {
   const content = `---
 name: ${r.namePrefix}-sync
 description: >
-  Run one full ${r.cli} reconciliation loop — check, adjudicate, repair, validate, and honour
+  Run one full ${r.cli} reconciliation loop - check, adjudicate, repair, validate, and honour
   the accept policy at the final gate. Use when the user says "sync ${r.cli}", "run the full
   loop", "bring the spec, docs, and tests back into agreement", or after a feature change.
 metadata:
@@ -314,10 +315,10 @@ and edit; acceptance happens as the configured accept policy allows.
 
 ## Steps
 
-1. **Check.** Run \`${r.cli} check --json\`. Exit 0 means level — stop, nothing to do.
+1. **Check.** Run \`${r.cli} check --json\`. Exit 0 means level - stop, nothing to do.
    Exit 1 means drift; read the report's \`escalations\` and \`verdicts\`.
 2. **Adjudicate first.** If \`escalations\` is non-empty, work them with the
-   **${r.namePrefix}-adjudicate** skill (or \`${r.cli} resolve\` directly) before any repair —
+   **${r.namePrefix}-adjudicate** skill (or \`${r.cli} resolve\` directly) before any repair -
    \`accept\` refuses while identity questions are open. Re-run \`${r.cli} check\` after.
 3. **Repair.** Run \`${r.cli} tasks --json\` and execute each task with the
    **${r.namePrefix}-repair** skill, matching the declared layer conventions. Re-run
@@ -333,9 +334,9 @@ and edit; acceptance happens as the configured accept policy allows.
 ## Rules
 
 - ${acceptRule(r)}
-- Never edit the spec silently: if a claim seems wrong or missing, report it; do not add or
+- Never edit the spec without saying so: if a claim seems wrong or missing, report it; do not add or
   reword prescriptive atoms unless the user explicitly asked.
-- Never edit \`.tripact/*\` by hand — go through \`${r.cli} resolve\`.
+- Never edit \`.tripact/*\` by hand - go through \`${r.cli} resolve\`.
 - ${policyNote(r)}
 `;
   return { name: `${r.namePrefix}-sync`, content };
@@ -344,7 +345,7 @@ and edit; acceptance happens as the configured accept policy allows.
 /**
  * The detect skill: scaffold `tripact.yaml` by classifying the repository's artefacts into
  * prescriptive / descriptive / verificatory layers and declaring the edges between them. tripact has
- * no `init` command — layer detection is a judgement task (which files are the spec? which are docs?),
+ * no `init` command - layer detection is a judgement task (which files are the spec? which are docs?),
  * so it is emitted as agent guidance rather than baked into the kernel as a heuristic.
  */
 export function detectSkill(opts?: SkillOptions): EmittedSkill {
@@ -352,7 +353,7 @@ export function detectSkill(opts?: SkillOptions): EmittedSkill {
   const content = `---
 name: ${r.namePrefix}-detect
 description: >
-  Scaffold a tripact.yaml for this repository — classify its files into prescriptive (spec),
+  Scaffold a tripact.yaml for this repository - classify its files into prescriptive (spec),
   descriptive (docs), and verificatory (test) layers and declare the edges to check between them.
   Use when the user says "set up ${r.cli}", "detect the layers", "scaffold the ${r.cli} config",
   or when \`${r.cli} check\` reports that tripact.yaml is missing.
@@ -363,12 +364,12 @@ metadata:
 # Scaffold a tripact.yaml
 
 tripact needs a \`tripact.yaml\` declaring which files hold requirements, which hold user
-documentation, and which hold tests — and which of those must agree. Deciding that is a judgement
+documentation, and which hold tests - and which of those must agree. Deciding that is a judgement
 call, so it is your job, not a fixed heuristic. Propose the config, confirm with the user, write it.
 
 ## Steps
 
-1. **Survey the repository.** Look for each role — do not assume conventional paths:
+1. **Survey the repository.** Look for each role - do not assume conventional paths:
    - **prescriptive** (the source of truth): a product spec, acceptance criteria, PRD, or
      requirements checklist. Common names: \`SPECS.md\`, \`UAC.md\`, \`REQUIREMENTS.md\`, \`docs/spec/**\`.
      The unit tracked is each Markdown list item.
@@ -377,8 +378,8 @@ call, so it is your job, not a fixed heuristic. Propose the config, confirm with
    - **verificatory** (tests): end-to-end, integration, or unit tests. Detect the framework from
      the repo (Playwright \`*.spec.ts\`, Vitest/Jest \`*.test.ts\`, pytest \`test_*.py\`, …).
 2. **Choose layers and globs.** Give each layer a short name and the narrowest glob that captures its
-   files. A repo need not have all three — tripact checks only the edges you declare.
-3. **Declare edges.** Supported edges are prescriptive↔verificatory and descriptive↔verificatory —
+   files. A repo need not have all three - tripact checks only the edges you declare.
+3. **Declare edges.** Supported edges are prescriptive↔verificatory and descriptive↔verificatory -
    e.g. \`[specs, tests]\`, \`[docs, tests]\`. (Direct spec↔docs is a reconciliation task, not an edge.)
 4. **Write \`tripact.yaml\`** at the repository root. Minimal shape:
    \`\`\`yaml
@@ -391,7 +392,7 @@ call, so it is your job, not a fixed heuristic. Propose the config, confirm with
      - [specs, tests]
      - [docs, tests]
    \`\`\`
-5. **Verify.** Run \`${r.cli} check\` — it should parse without a config error and report the initial
+5. **Verify.** Run \`${r.cli} check\` - it should parse without a config error and report the initial
    drift (everything uncovered until tests are tagged). Then emit the working skills with
    \`${r.cli} skills\` and hand off to the ${r.namePrefix}-repair skill.
 
@@ -409,7 +410,7 @@ call, so it is your job, not a fixed heuristic. Propose the config, confirm with
 /** All portable agent skills the kernel emits: detect (scaffold), adjudicate, repair, and full-loop sync. */
 // Emitted in the order an agent meets them: scaffold the config, answer the identity questions,
 // link claims to tests that already exist, write the ones that don't, drive the whole loop, then
-// decorate the code for navigation. `reconcile` precedes `repair` deliberately — find-or-write
+// decorate the code for navigation. `reconcile` precedes `repair` deliberately - find-or-write
 // (§10.1) wants an existing test tagged before a new one is written.
 export function agentSkills(opts?: SkillOptions): EmittedSkill[] {
   return [
@@ -444,7 +445,7 @@ export function emitSkills(
 }
 
 /**
- * A ready-to-hand-to-an-agent prompt for one derived task — the kind-specific instructions plus the
+ * A ready-to-hand-to-an-agent prompt for one derived task - the kind-specific instructions plus the
  * task's own self-contained payload inlined. This is the per-work-item context a foreign harness
  * shells out with, without having to know how each task kind should be worked.
  */
@@ -454,7 +455,7 @@ export function taskPrompt(task: Task, opts?: SkillOptions): string {
     "write-tests":
       "Write tests that genuinely assert each listed claim, tagging each with the payload's `tagFormat` in the test title. Never tag a test that does not assert the claim.",
     "reconcile-stale":
-      "Read the claim and its tagged test. Align whichever drifted: if the test asserts old behaviour, update the test; if the claim text changed, flag it to the user rather than editing the spec silently.",
+      "Read the claim and its tagged test. Align whichever drifted: if the test asserts old behaviour, update the test; if the claim text changed, flag it to the user rather than editing the spec without saying so.",
     "fix-orphan-tag":
       `The tag references no live claim. Find the correct live id (\`${r.cli} status --json\`) and fix the tag, or remove it if the claim is gone.`,
     "cover-section":
@@ -486,7 +487,7 @@ export function taskPrompt(task: Task, opts?: SkillOptions): string {
 }
 
 /**
- * A ready-to-hand-to-an-agent prompt for one escalation question — the deleted/created atoms and
+ * A ready-to-hand-to-an-agent prompt for one escalation question - the deleted/created atoms and
  * candidate pairings, plus the exact \`resolve\` commands to answer it.
  */
 export function escalationPrompt(q: Escalation, opts?: SkillOptions): string {
@@ -495,7 +496,7 @@ export function escalationPrompt(q: Escalation, opts?: SkillOptions): string {
   const created = q.created.map((c) => `  - "${c.text}" (${c.file}:${c.line})`).join("\n") || "  (none)";
   const candidates =
     q.candidates.map((c) => `  - ${c.oldId} ↔ "${c.newText}"  (ratio ${c.ratio.toFixed(2)})`).join("\n") || "  (none)";
-  const advisory = q.kind === "fork-review" ? " (advisory — never blocks accept)" : "";
+  const advisory = q.kind === "fork-review" ? " (advisory - never blocks accept)" : "";
   return [
     `# ${r.cli} escalation: ${q.id}`,
     "",

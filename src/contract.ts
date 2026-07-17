@@ -39,6 +39,12 @@ export const RECONCILE_SCHEMA_VERSION = 1;
 /** `hotlinks` → HotlinksReport (src/hotlinks.ts). Navigational code↔spec links; advisory (never exit 1). */
 export const HOTLINKS_SCHEMA_VERSION = 1;
 
+/** `audit <claim-id>` → AuditReport (src/audit.ts). Advisory (never exit 1). Not a PUBLIC_CONTRACT
+ * surface: like `resolve` and `verify` it takes an argument, so there is no argument-free
+ * invocation for the shape-pin test to drive — the version constant still lives here so a bump is
+ * a deliberate contract event. */
+export const AUDIT_SCHEMA_VERSION = 1;
+
 /** One public read surface: the same document under one or more CLI `--json` commands and MCP tools. */
 export interface ContractSurface {
   /** Stable identifier for the surface. */

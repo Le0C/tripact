@@ -9,6 +9,7 @@
 //
 // The whole surface is deterministic and does no network I/O — that is what makes it embeddable.
 export * from "./anchor.js";
+export * from "./audit.js";
 export * from "./claims.js";
 export * from "./config.js";
 export * from "./contract.js";

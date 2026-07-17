@@ -10,6 +10,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import readline from "node:readline";
 import { Command } from "commander";
+import { AuditError, renderAuditHuman, runAudit } from "./audit.js";
 import { listClaims, renderClaimsHuman } from "./claims.js";
 import { acceptPolicy, ConfigError, loadConfig } from "./config.js";
 import { deriveOutputs, generateContent, GenerateError } from "./derived.js";
@@ -174,6 +175,30 @@ export function buildProgram(): Command {
       else console.log(renderClaimsHuman(listing));
       // no process.exit(0): the listing can exceed the pipe buffer, and exiting before stdout
       // drains would truncate it — fall through to a natural exit
+    });
+
+  program
+    .command("audit")
+    .description("Recorded history of one claim — sidecar archaeology, adjudications, verifying-test history (UAC §21.1)")
+    .argument("<claim-id>", "the claim id to audit; find ids with `tripact claims`")
+    .option("--json", "machine-readable report on stdout")
+    .option("--long", "print every timeline event instead of truncating past a fixed threshold (Cross-Cutting: Human output)")
+    .action((claimId: string, opts: { json?: boolean; long?: boolean }) => {
+      const root = requireRepoRoot();
+      const analysis = runAnalysis(root);
+      let report;
+      try {
+        report = runAudit(root, analysis, claimId);
+      } catch (e) {
+        if (e instanceof AuditError) {
+          const hint = e.suggestions.length ? ` — nearest known ids: ${e.suggestions.join(", ")}` : "";
+          fail(`${e.message}${hint}`);
+        }
+        throw e;
+      }
+      if (opts.json) console.log(JSON.stringify(report, null, 2));
+      else console.log(renderAuditHuman(report, { long: opts.long === true }));
+      // advisory: exits 0 (natural, letting stdout drain) or 2 above — never 1 (UAC §21.1)
     });
 
   program
@@ -387,7 +412,7 @@ export function buildProgram(): Command {
 
   program
     .command("skills")
-    .description("Emit the agent skills (detect, adjudicate, repair, sync) as .claude/skills/<name>/SKILL.md — deterministic prompts any coding agent can pick up (UAC §1.2)")
+    .description("Emit the agent skills (detect, adjudicate, reconcile, repair, sync, hotlink-decoration) as .claude/skills/<name>/SKILL.md — deterministic prompts any coding agent can pick up (UAC §1.2)")
     .option("--dir <path>", "repo root to write into (default: the git repository root)")
     .option("--force", "overwrite existing skill files (default: leave existing files untouched)")
     .action((opts: { dir?: string; force?: boolean }) => {

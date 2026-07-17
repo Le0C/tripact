@@ -73,3 +73,46 @@ export function changedPathsSince(repoRoot: string, commit: string): string[] {
   if (!r.ok) return [];
   return r.out ? r.out.split("\n").filter(Boolean).sort() : [];
 }
+
+/** One commit as audit evidence (UAC §21.1). `date` is the author date, strict ISO 8601. */
+export interface CommitInfo {
+  sha: string;
+  shortSha: string;
+  author: string;
+  date: string;
+  subject: string;
+  /** `tripact-sync-id` trailer value, empty when the commit carries none. */
+  syncId: string;
+}
+
+const COMMIT_FORMAT = `%H%x1f%h%x1f%an%x1f%aI%x1f%s%x1f%(trailers:key=${SYNC_POINT_TRAILER},valueonly)%x1e`;
+
+function parseCommits(out: string): CommitInfo[] {
+  const commits: CommitInfo[] = [];
+  for (const record of out.split("\x1e")) {
+    const [sha, shortSha, author, date, subject, syncId] = record.split("\x1f");
+    if (!sha?.trim()) continue;
+    commits.push({
+      sha: sha.trim(),
+      shortSha: (shortSha ?? "").trim(),
+      author: (author ?? "").trim(),
+      date: (date ?? "").trim(),
+      subject: (subject ?? "").trim(),
+      syncId: (syncId ?? "").trim(),
+    });
+  }
+  return commits;
+}
+
+/** Commits that touched `relPath` (file or directory), newest first (UAC §21.1). */
+export function commitsTouching(repoRoot: string, relPath: string): CommitInfo[] {
+  const r = git(repoRoot, ["log", `--format=${COMMIT_FORMAT}`, "--", relPath]);
+  if (!r.ok || !r.out) return [];
+  return parseCommits(r.out);
+}
+
+/** Content of `relPath` as committed at `sha`, or null when absent from that tree. */
+export function fileAtCommit(repoRoot: string, sha: string, relPath: string): string | null {
+  const r = spawnSync("git", ["show", `${sha}:${relPath}`], { cwd: repoRoot, encoding: "utf8" });
+  return r.status === 0 ? (r.stdout ?? "") : null;
+}

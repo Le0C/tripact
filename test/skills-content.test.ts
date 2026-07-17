@@ -121,7 +121,7 @@ describe("tripact-reconcile skill content (§1.2)", () => {
     expect(content).toContain("`tripact reconcile --json`");
     expect(content).toContain("propose-only queue");
     // …reads the test rather than trusting the score…
-    expect(content).toContain("open the test and read what it actually asserts — the score is a hint,\n   not proof");
+    expect(content).toContain("open the test and read what it actually asserts - the score is a hint,\n   not proof");
     // …tags only a genuine match, and dismisses the rest so it is not re-proposed.
     expect(content).toContain("Never tag a test that does not\n     assert the claim");
     expect(content).toContain("reconcile --dismiss <claimId> <file> <line>");
@@ -174,7 +174,7 @@ describe("tripact-hotlink-decoration skill content (§1.2)", () => {
     expect(content).toContain("If a `hotlink-map` derived output is declared, refresh it with `tripact generate`");
     // The division of labour §20.3 fixes: the agent writes the comment, the kernel only reads it back.
     expect(content).toContain("tripact never edits");
-    expect(content).toContain("product code — you do");
+    expect(content).toContain("product code - you do");
   });
 
   // @specs:agent-skill-emission.tripact-hotlink-decoration-skill-instructs-agent

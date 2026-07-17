@@ -9,3 +9,4 @@
   "oldId": "root.archon-another-workflow-driven-harness",
   "newText": "**Archon or another workflow-driven harness.** Archon owns the loop; every step it needs from"
 }{"at":"2026-07-17T10:04:04.809Z","action":"resolve-match","questionId":"reanchor-0bc0131f7a","oldId":"declaration-generation.kernel-reserves-builtin-names","newText":"The kernel reserves the builtin generator names `cli-reference` and `hotlink-map`, and a config naming a reserved builtin with no registered implementation fails generation with a clear wiring error"}
+{"at":"2026-07-17T12:23:38.605Z","action":"resolve-match","questionId":"reanchor-1d50cb725f","oldId":"re-anchoring.match-above-auto-accept-threshold","newText":"A match at or above the auto-accept threshold (0.9) is taken without asking; a weaker match becomes a `reanchor` escalation question (§7.1) instead of being linked"}
