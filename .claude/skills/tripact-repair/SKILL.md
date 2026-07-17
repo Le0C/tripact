@@ -1,25 +1,25 @@
 ---
-name: prodsync-repair
+name: tripact-repair
 description: >
-  Execute prodsync repair and generation tasks — write missing tagged tests, reconcile
+  Execute tripact repair and generation tasks — write missing tagged tests, reconcile
   stale claims, fix orphan tags, cover undocumented manual sections, and reconcile a
   descriptive layer against its prescriptive layer. Use when the user says "work the
-  prodsync backlog", "repair the drift", "reconcile the manual with the spec", or after
-  `prodsync tasks` reports open work.
+  tripact backlog", "repair the drift", "reconcile the manual with the spec", or after
+  `tripact tasks` reports open work.
 metadata:
-  generatedBy: prodsync@0.0.1
+  generatedBy: tripact@0.0.1
 ---
 
-# Execute prodsync repair tasks
+# Execute tripact repair tasks
 
-prodsync detects drift; you repair it. The engine never edits artefact content — that
+tripact detects drift; you repair it. The engine never edits artefact content — that
 is your job, under human review.
 
 ## Steps
 
-1. Run `prodsync tasks --json` (add `--reconcile <p>:<d>` if asked to reconcile
+1. Run `tripact tasks --json` (add `--reconcile <p>:<d>` if asked to reconcile
    documentation against the spec). Each task's `payload` is self-contained; for a
-   ready-made brief on a single task run `prodsync prompt <task-id>`.
+   ready-made brief on a single task run `tripact prompt <task-id>`.
 2. Before editing a layer, read its `conventions` file if `tripact.yaml` declares
    one, and match the existing voice and structure of the artefacts you touch.
 3. Work task kinds like this:
@@ -31,7 +31,7 @@ is your job, under human review.
      (test asserts the old behaviour → update the test; claim text drifted → flag to
      the user rather than editing the spec silently).
    - **fix-orphan-tag**: the tag references a retired or mistyped id — find the right
-     live id with `prodsync status --json`, or remove the tag if the claim is gone.
+     live id with `tripact status --json`, or remove the tag if the claim is gone.
    - **cover-section**: write or tag a test that walks the manual section's steps,
      tagged `@manual:<slug>`.
    - **reconcile-layers**: judge which claims lack user-facing documentation and write
@@ -39,14 +39,14 @@ is your job, under human review.
      user-operable behaviour; skip internals.
    - **regenerate-derived**: run the payload's `invocation` to regenerate the stale
      derived output deterministically; never hand-edit a generated file.
-4. Validate before reporting: run `prodsync check` AND the repo's own test command.
+4. Validate before reporting: run `tripact check` AND the repo's own test command.
    New tests must pass; the check must not regress (no new orphans or escalations).
 5. Report per task: what you changed, why, and anything you chose not to do.
 
 ## Rules
 
-- Never run `prodsync accept` — under the configured `human` accept policy, baselining is a person's call.
+- Run `tripact accept` only after validation passes (`tripact check` and the repo's test command) with no open escalations — the configured `agents` accept policy permits it. Never accept while validation is red or escalations remain.
 - Never edit `.tripact/*` by hand.
 - Never invent spec: if a claim seems wrong or missing, report it; do not add or
   reword prescriptive atoms unless the user explicitly asked.
-- The accept policy is read from `tripact.yaml` (`accept.policy`, default `human`). If you change it, re-emit the skills with `prodsync init --force`.
+- The accept policy is read from `tripact.yaml` (`accept.policy`, default `human`). If you change it, re-emit the skills with `tripact skills --force`.

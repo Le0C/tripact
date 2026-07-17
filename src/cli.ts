@@ -9,11 +9,15 @@
 // a real usage error). Runtime errors thrown by a command action reject with a plain Error and fall
 // through to exit 2 (environment/usage), unchanged.
 //
-// Unlike a full harness, tripact registers no builtin derived generators: the `cli-reference`
-// builtin needs the harness's own command tree, so it stays a harness concern. A tripact config
-// that declares `cli-reference` surfaces a clear "not registered" GenerateError by design.
+// Builtin derived generators (UAC §18.1) are registered at boot, from the binary surface rather than
+// the library barrel — see generators.ts. The kernel implements `hotlink-map` (it renders from its
+// own analysis); `cli-reference` needs the harness's own command tree, so it stays a harness concern
+// and a tripact config declaring it surfaces a clear "not registered" GenerateError by design.
 import { CommanderError } from "commander";
+import { registerBuiltinGenerators } from "./generators.js";
 import { buildProgram } from "./program.js";
+
+registerBuiltinGenerators();
 
 const program = buildProgram();
 // exitOverride is per-command in commander, so a usage error raised while parsing a subcommand

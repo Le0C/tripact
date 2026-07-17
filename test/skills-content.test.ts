@@ -1,13 +1,15 @@
-// The *content* of two emitted agent skills (UAC §1.2): `tripact-detect` (layer classification +
-// tripact.yaml scaffolding, the judgement task the kernel deliberately does not automate) and
-// `tripact-sync` (the stage-by-stage host run-book that honours the accept policy at the final gate).
+// The *content* of four emitted agent skills (UAC §1.2): `tripact-detect` (layer classification +
+// tripact.yaml scaffolding, the judgement task the kernel deliberately does not automate),
+// `tripact-sync` (the stage-by-stage host run-book that honours the accept policy at the final gate),
+// `tripact-reconcile` (working the propose-only queue that links claims to existing tests, §10.3),
+// and `tripact-hotlink-decoration` (writing navigational spec back-links into product code, §20.3).
 // test/skills.test.ts covers emission mechanics (which files, determinism, --force); this file covers
-// what the two documents actually instruct an agent to do — pure generator assertions plus the
-// on-disk files a real `tripact skills` run produces.
+// what the documents actually instruct an agent to do — pure generator assertions plus the on-disk
+// files a real `tripact skills` run produces.
 import { readFileSync, rmSync } from "node:fs";
 import path from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
-import { detectSkill, loopSkill } from "../src/skills.js";
+import { detectSkill, hotlinkDecorationSkill, loopSkill, reconcileSkill } from "../src/skills.js";
 import { runCli } from "./helpers/cli.js";
 import { fullRepo } from "./helpers/fixture.js";
 
@@ -16,7 +18,7 @@ afterAll(() => {
   for (const d of scratch) rmSync(d, { recursive: true, force: true });
 });
 
-/** A fixture repo with the four skills emitted; returns the repo path. */
+/** A fixture repo with the six skills emitted; returns the repo path. */
 function repoWithSkills(prefix: string): string {
   const repo = fullRepo(prefix);
   scratch.push(repo);
@@ -105,5 +107,76 @@ describe("tripact-sync skill content (§1.2)", () => {
     expect(content).toContain("check, adjudicate, repair, validate, and honour");
     // Under the fixture's default (human) policy the final gate withholds accept authority.
     expect(content).toContain("Under the configured `human` policy, stop before accept");
+  });
+});
+
+describe("tripact-reconcile skill content (§1.2)", () => {
+  // @specs:agent-skill-emission.tripact-reconcile-skill-instructs-agent
+  it("instructs reading what each candidate actually asserts, tagging only genuine matches, dismissing the rest", () => {
+    const { name, content } = reconcileSkill();
+    expect(name).toBe("tripact-reconcile");
+    expect(content).toBe(reconcileSkill().content); // deterministic
+    expect(content).toContain("# Reconcile untagged tests");
+    // It drives the propose-only queue…
+    expect(content).toContain("`tripact reconcile --json`");
+    expect(content).toContain("propose-only queue");
+    // …reads the test rather than trusting the score…
+    expect(content).toContain("open the test and read what it actually asserts — the score is a hint,\n   not proof");
+    // …tags only a genuine match, and dismisses the rest so it is not re-proposed.
+    expect(content).toContain("Never tag a test that does not\n     assert the claim");
+    expect(content).toContain("reconcile --dismiss <claimId> <file> <line>");
+    expect(content).toContain("re-proposed until either side's text changes");
+  });
+
+  // @specs:agent-skill-emission.tripact-reconcile-skill-instructs-agent
+  it("makes clear the kernel proposes but never tags on the agent's behalf", () => {
+    const content = reconcileSkill().content;
+    expect(content).toContain("tripact never tags for you");
+    expect(content).toContain("`reconcile` proposes; you decide");
+  });
+
+  // @specs:agent-skill-emission.tripact-reconcile-skill-instructs-agent
+  it("is emitted to disk by a real `tripact skills` run", () => {
+    const repo = repoWithSkills("tripact-reconcile-content-");
+    const content = skillFile(repo, "tripact-reconcile");
+    expect(content).toContain("name: tripact-reconcile");
+    expect(content).toContain("existing untagged tests that may already assert an");
+  });
+});
+
+describe("tripact-hotlink-decoration skill content (§1.2)", () => {
+  // @specs:agent-skill-emission.tripact-hotlink-decoration-skill-instructs-agent
+  it("instructs writing a claim-id tag and a spec back-link into the implementing function's docstring", () => {
+    const { name, content } = hotlinkDecorationSkill();
+    expect(name).toBe("tripact-hotlink-decoration");
+    expect(content).toContain("# Decorate code with spec hotlinks");
+    // The decoration itself: the tag in the codeLinks form, plus a back-link to the claim and
+    // forward links to its covering tests — placed in the implementing function's docstring.
+    expect(content).toContain("docstring of each function that implements a claim");
+    expect(content).toContain("`codeLinks.tagPattern` form");
+    expect(content).toContain("a clickable back-link to the claim's spec `file:line`");
+    expect(content).toContain("forward links to its covering tests");
+    // It reads the links back through the kernel rather than inventing them.
+    expect(content).toContain("`tripact hotlinks --json`");
+    expect(content).toContain("Never invent a claim id");
+    // A code tag navigates; it never confers coverage (§20.2).
+    expect(content).toContain("A code tag is navigation, not verification");
+  });
+
+  // @specs:agent-skill-emission.tripact-hotlink-decoration-skill-instructs-agent
+  it("tells the agent to refresh a declared hotlink-map, and that the kernel never edits product code", () => {
+    const content = hotlinkDecorationSkill().content;
+    expect(content).toContain("If a `hotlink-map` derived output is declared, refresh it with `tripact generate`");
+    // The division of labour §20.3 fixes: the agent writes the comment, the kernel only reads it back.
+    expect(content).toContain("tripact never edits");
+    expect(content).toContain("product code — you do");
+  });
+
+  // @specs:agent-skill-emission.tripact-hotlink-decoration-skill-instructs-agent
+  it("is emitted to disk by a real `tripact skills` run", () => {
+    const repo = repoWithSkills("tripact-hotlink-content-");
+    const content = skillFile(repo, "tripact-hotlink-decoration");
+    expect(content).toContain("name: tripact-hotlink-decoration");
+    expect(content).toContain("Decorate product-code functions with navigational hotlinks");
   });
 });

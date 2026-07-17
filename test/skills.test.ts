@@ -57,7 +57,14 @@ describe("skill generators (pure)", () => {
   it("emit exactly the portable skills, deterministically", () => {
     const a = agentSkills();
     const b = agentSkills();
-    expect(a.map((s) => s.name)).toEqual(["tripact-detect", "tripact-adjudicate", "tripact-repair", "tripact-sync"]);
+    expect(a.map((s) => s.name)).toEqual([
+      "tripact-detect",
+      "tripact-adjudicate",
+      "tripact-reconcile",
+      "tripact-repair",
+      "tripact-sync",
+      "tripact-hotlink-decoration",
+    ]);
     expect(a).toEqual(b); // same options → byte-identical
   });
 
@@ -97,12 +104,19 @@ describe("skill generators (pure)", () => {
 
 describe("skills + prompt commands (e2e)", () => {
   // @specs:agent-skill-emission.existing-skill-file-left
-  it("`tripact skills` writes the four SKILL.md files", () => {
+  it("`tripact skills` writes the six SKILL.md files", () => {
     const repo = fullRepo("tripact-skills-");
     scratch.push(repo);
     const r = runCli(["skills"], { cwd: repo });
     expect(r.status, r.stderr).toBe(0);
-    for (const name of ["tripact-detect", "tripact-adjudicate", "tripact-repair", "tripact-sync"]) {
+    for (const name of [
+      "tripact-detect",
+      "tripact-adjudicate",
+      "tripact-reconcile",
+      "tripact-repair",
+      "tripact-sync",
+      "tripact-hotlink-decoration",
+    ]) {
       const p = path.join(repo, ".claude", "skills", name, "SKILL.md");
       expect(existsSync(p), `${name} written`).toBe(true);
       expect(readFileSync(p, "utf8")).toContain(`name: ${name}`);

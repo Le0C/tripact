@@ -25,11 +25,13 @@ skill emission below.
 
 ### 1.2 Agent skill emission
 
-- `tripact skills` writes four agent skills as `.claude/skills/<name>/SKILL.md` files — `tripact-detect`, `tripact-adjudicate`, `tripact-repair`, and `tripact-sync`
+- `tripact skills` writes six agent skills as `.claude/skills/<name>/SKILL.md` files — `tripact-detect`, `tripact-adjudicate`, `tripact-reconcile`, `tripact-repair`, `tripact-sync`, and `tripact-hotlink-decoration`
 - The `tripact-detect` skill teaches a coding agent to classify a repository's files into prescriptive, descriptive, and verificatory layers and scaffold a `tripact.yaml`, since layer detection is a judgement task the kernel does not automate
 - The `tripact-adjudicate` skill instructs an agent to read `.tripact/escalations.json`, answer each question, and apply the answers with `tripact resolve` (§7.2)
+- The `tripact-reconcile` skill instructs an agent to work the propose-only reconcile queue (§10.3): read what each candidate test actually asserts, tag only one that genuinely asserts the claim, and dismiss the rest — the kernel proposes, and never tags on the agent's behalf
 - The `tripact-repair` skill instructs an agent to consume `tripact tasks --json`, apply the edits, and validate before reporting (§10.2)
 - The `tripact-sync` skill instructs a host agent to work the queues stage by stage and honour the accept policy at the final gate
+- The `tripact-hotlink-decoration` skill instructs an agent to write a claim-id tag and a clickable spec back-link into the docstring of the product-code function implementing a claim, and to refresh a declared `hotlink-map` (§20.3) — the kernel reads those tags back but never edits product code
 - Emitted skill content is deterministic — the same CLI name, kernel version, and accept policy produce byte-identical files
 - An existing skill file is left untouched unless `--force` is given; `--dir` overrides the output root
 - The emitted skills' accept authority follows the configured accept policy (§2.1): baselining is forbidden under `human` and permitted after clean validation under `agents`
@@ -283,7 +285,8 @@ requirement.
 ### 18.1 Declaration & generation
 
 - Config accepts a `derived` map of name → an `output` path and a `generator`, either a reserved builtin name or a shell command
-- The kernel reserves the builtin names `cli-reference` and `hotlink-map` but registers no generator of its own; a driving harness injects an implementation, and a config naming a reserved builtin with no registered generator fails generation with a clear error
+- The kernel reserves the builtin generator names `cli-reference` and `hotlink-map`, and a config naming a reserved builtin with no registered implementation fails generation with a clear wiring error
+- The kernel registers `hotlink-map` itself, because it renders from the kernel's own analysis and needs nothing from a harness; `cli-reference` renders a driving harness's own command tree, so the kernel reserves that name and leaves the implementation for the harness to inject
 - A non-reserved generator runs as a shell command whose captured stdout becomes the output file; a non-zero exit fails with exit code 2
 - `tripact generate [name]` writes the declared output file(s); with no name it regenerates all
 - Generation is deterministic: the same code and config produce byte-identical output

@@ -5,11 +5,15 @@ layers:
     role: prescriptive
     paths:
       - UAC.md
+  # Descriptive = documentation of behaviour a test could walk. Deliberately NOT `docs/**/*.md`:
+  # that swept in planning and architecture prose (the feedback roadmap, the contract's
+  # compatibility policy), whose sections are not procedures, so a docs↔tests verdict on them is
+  # meaningless. `docs/manual/` is declared ahead of having content — the on-ramp for a real manual.
   manual:
     role: descriptive
     paths:
       - README.md
-      - docs/**/*.md
+      - docs/manual/**/*.md
   tests:
     role: verificatory
     paths:

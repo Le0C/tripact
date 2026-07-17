@@ -399,8 +399,19 @@ call, so it is your job, not a fixed heuristic. Propose the config, confirm with
 }
 
 /** All portable agent skills the kernel emits: detect (scaffold), adjudicate, repair, and full-loop sync. */
+// Emitted in the order an agent meets them: scaffold the config, answer the identity questions,
+// link claims to tests that already exist, write the ones that don't, drive the whole loop, then
+// decorate the code for navigation. `reconcile` precedes `repair` deliberately — find-or-write
+// (§10.1) wants an existing test tagged before a new one is written.
 export function agentSkills(opts?: SkillOptions): EmittedSkill[] {
-  return [detectSkill(opts), adjudicateSkill(opts), repairSkill(opts), loopSkill(opts)];
+  return [
+    detectSkill(opts),
+    adjudicateSkill(opts),
+    reconcileSkill(opts),
+    repairSkill(opts),
+    loopSkill(opts),
+    hotlinkDecorationSkill(opts),
+  ];
 }
 
 /**

@@ -9,7 +9,7 @@
       "text": "diff --json emits the same document machine-readably with a schemaversion field",
       "hash": "d4361043a974a835",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -31,7 +31,7 @@
       "text": "a re-baselined verified state distinguishes re-verified (test-side-only, §4.1) from re-baselined after a reword, the latter with old and new text excerpts",
       "hash": "c0f8b71a11994d04",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -53,7 +53,7 @@
       "text": "tripact diff shows what acceptance would change — claims created, re-anchored, and retired; verified states newly recorded or re-baselined per edge; backlog items newly acknowledged or covered; and the current and would-be trailer values — without writing anything",
       "hash": "4cfecbd05731a5dd",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -75,7 +75,7 @@
       "text": "emitted skill content is deterministic — the same cli name, kernel version, and accept policy produce byte-identical files",
       "hash": "eff27276726cceea",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -85,7 +85,7 @@
           ],
           "claimHash": "eff27276726cceea",
           "file": "test/skills.test.ts",
-          "targetFileHash": "298991909dbd6f99"
+          "targetFileHash": "d2031279791fe54a"
         }
       ]
     },
@@ -97,7 +97,7 @@
       "text": "the emitted skills' accept authority follows the configured accept policy (§2.1): baselining is forbidden under human and permitted after clean validation under agents",
       "hash": "fe42a8e55bd0215c",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -107,7 +107,7 @@
           ],
           "claimHash": "fe42a8e55bd0215c",
           "file": "test/skills.test.ts",
-          "targetFileHash": "298991909dbd6f99"
+          "targetFileHash": "d2031279791fe54a"
         }
       ]
     },
@@ -119,7 +119,7 @@
       "text": "an existing skill file is left untouched unless --force is given; --dir overrides the output root",
       "hash": "5798b05af3df0a19",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -129,7 +129,7 @@
           ],
           "claimHash": "5798b05af3df0a19",
           "file": "test/skills.test.ts",
-          "targetFileHash": "298991909dbd6f99"
+          "targetFileHash": "d2031279791fe54a"
         }
       ]
     },
@@ -141,7 +141,7 @@
       "text": "the tripact-adjudicate skill instructs an agent to read .tripact/escalations.json, answer each question, and apply the answers with tripact resolve (§7.2)",
       "hash": "0432309bf419927b",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -151,7 +151,7 @@
           ],
           "claimHash": "0432309bf419927b",
           "file": "test/skills.test.ts",
-          "targetFileHash": "298991909dbd6f99"
+          "targetFileHash": "d2031279791fe54a"
         }
       ]
     },
@@ -163,7 +163,7 @@
       "text": "the tripact-detect skill teaches a coding agent to classify a repository's files into prescriptive, descriptive, and verificatory layers and scaffold a tripact.yaml, since layer detection is a judgement task the kernel does not automate",
       "hash": "0ab5922e73051ab3",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -173,7 +173,7 @@
           ],
           "claimHash": "0ab5922e73051ab3",
           "file": "test/skills-content.test.ts",
-          "targetFileHash": "92650984537eaf2a"
+          "targetFileHash": "cb0d10a2dba7b6e1"
         },
         {
           "edge": [
@@ -182,7 +182,87 @@
           ],
           "claimHash": "0ab5922e73051ab3",
           "file": "test/skills-content.test.ts",
-          "targetFileHash": "92650984537eaf2a"
+          "targetFileHash": "cb0d10a2dba7b6e1"
+        }
+      ]
+    },
+    {
+      "id": "agent-skill-emission.tripact-hotlink-decoration-skill-instructs-agent",
+      "layer": "specs",
+      "groupPath": "1. Project Initialisation > 1.2 Agent skill emission",
+      "groupKey": "project initialisation > agent skill emission",
+      "text": "the tripact-hotlink-decoration skill instructs an agent to write a claim-id tag and a clickable spec back-link into the docstring of the product-code function implementing a claim, and to refresh a declared hotlink-map (§20.3) — the kernel reads those tags back but never edits product code",
+      "hash": "25ebe40658e7f89a",
+      "firstSeen": "68f155f",
+      "lastSeen": "68f155f",
+      "alive": true,
+      "verified": [
+        {
+          "edge": [
+            "specs",
+            "tests"
+          ],
+          "claimHash": "25ebe40658e7f89a",
+          "file": "test/skills-content.test.ts",
+          "targetFileHash": "cb0d10a2dba7b6e1"
+        },
+        {
+          "edge": [
+            "specs",
+            "tests"
+          ],
+          "claimHash": "25ebe40658e7f89a",
+          "file": "test/skills-content.test.ts",
+          "targetFileHash": "cb0d10a2dba7b6e1"
+        },
+        {
+          "edge": [
+            "specs",
+            "tests"
+          ],
+          "claimHash": "25ebe40658e7f89a",
+          "file": "test/skills-content.test.ts",
+          "targetFileHash": "cb0d10a2dba7b6e1"
+        }
+      ]
+    },
+    {
+      "id": "agent-skill-emission.tripact-reconcile-skill-instructs-agent",
+      "layer": "specs",
+      "groupPath": "1. Project Initialisation > 1.2 Agent skill emission",
+      "groupKey": "project initialisation > agent skill emission",
+      "text": "the tripact-reconcile skill instructs an agent to work the propose-only reconcile queue (§10.3): read what each candidate test actually asserts, tag only one that genuinely asserts the claim, and dismiss the rest — the kernel proposes, and never tags on the agent's behalf",
+      "hash": "463ae258fb87dc65",
+      "firstSeen": "68f155f",
+      "lastSeen": "68f155f",
+      "alive": true,
+      "verified": [
+        {
+          "edge": [
+            "specs",
+            "tests"
+          ],
+          "claimHash": "463ae258fb87dc65",
+          "file": "test/skills-content.test.ts",
+          "targetFileHash": "cb0d10a2dba7b6e1"
+        },
+        {
+          "edge": [
+            "specs",
+            "tests"
+          ],
+          "claimHash": "463ae258fb87dc65",
+          "file": "test/skills-content.test.ts",
+          "targetFileHash": "cb0d10a2dba7b6e1"
+        },
+        {
+          "edge": [
+            "specs",
+            "tests"
+          ],
+          "claimHash": "463ae258fb87dc65",
+          "file": "test/skills-content.test.ts",
+          "targetFileHash": "cb0d10a2dba7b6e1"
         }
       ]
     },
@@ -194,7 +274,7 @@
       "text": "the tripact-repair skill instructs an agent to consume tripact tasks --json, apply the edits, and validate before reporting (§10.2)",
       "hash": "f00ee781798f5ddf",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -204,7 +284,7 @@
           ],
           "claimHash": "f00ee781798f5ddf",
           "file": "test/skills.test.ts",
-          "targetFileHash": "298991909dbd6f99"
+          "targetFileHash": "d2031279791fe54a"
         }
       ]
     },
@@ -213,10 +293,10 @@
       "layer": "specs",
       "groupPath": "1. Project Initialisation > 1.2 Agent skill emission",
       "groupKey": "project initialisation > agent skill emission",
-      "text": "tripact skills writes four agent skills as .claude/skills/<name>/skill.md files — tripact-detect, tripact-adjudicate, tripact-repair, and tripact-sync",
-      "hash": "af3d138c895c20e3",
+      "text": "tripact skills writes six agent skills as .claude/skills/<name>/skill.md files — tripact-detect, tripact-adjudicate, tripact-reconcile, tripact-repair, tripact-sync, and tripact-hotlink-decoration",
+      "hash": "cffc3c801e3ba972",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -224,9 +304,9 @@
             "specs",
             "tests"
           ],
-          "claimHash": "af3d138c895c20e3",
+          "claimHash": "cffc3c801e3ba972",
           "file": "test/skills.test.ts",
-          "targetFileHash": "298991909dbd6f99"
+          "targetFileHash": "d2031279791fe54a"
         }
       ]
     },
@@ -238,7 +318,7 @@
       "text": "the tripact-sync skill instructs a host agent to work the queues stage by stage and honour the accept policy at the final gate",
       "hash": "0ca6d3fa07d8265e",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -248,7 +328,7 @@
           ],
           "claimHash": "0ca6d3fa07d8265e",
           "file": "test/skills-content.test.ts",
-          "targetFileHash": "92650984537eaf2a"
+          "targetFileHash": "cb0d10a2dba7b6e1"
         },
         {
           "edge": [
@@ -257,7 +337,7 @@
           ],
           "claimHash": "0ca6d3fa07d8265e",
           "file": "test/skills-content.test.ts",
-          "targetFileHash": "92650984537eaf2a"
+          "targetFileHash": "cb0d10a2dba7b6e1"
         },
         {
           "edge": [
@@ -266,7 +346,7 @@
           ],
           "claimHash": "0ca6d3fa07d8265e",
           "file": "test/skills-content.test.ts",
-          "targetFileHash": "92650984537eaf2a"
+          "targetFileHash": "cb0d10a2dba7b6e1"
         }
       ]
     },
@@ -278,7 +358,7 @@
       "text": "claims --json emits the same listing machine-readably with a schemaversion field, including each claim's file and line",
       "hash": "caafa1f78bf548d9",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -300,7 +380,7 @@
       "text": "claims prints its full listing and exits 0 rather than following the drift convention, so a large listing survives being piped",
       "hash": "0ceda2499489d8d6",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -322,7 +402,7 @@
       "text": "dead claims are excluded by default and included with claims --all, each marked dead with its last text",
       "hash": "fa74feb476882a15",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -344,7 +424,7 @@
       "text": "each listed claim carries its declaring file and line, so a claim can be opened directly from the listing and used as a navigation target (§20)",
       "hash": "8434eb19dd744678",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -366,7 +446,7 @@
       "text": "listing order is deterministic: layer order, then document order, with dead entries sorted by id",
       "hash": "b715f1555ac43f52",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -388,7 +468,7 @@
       "text": "tripact claims lists every alive claim — id, layer, group path, normalised text, and its best edge verdict across all edges — the discovery command for writing tags",
       "hash": "f378bda02b557a36",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -410,7 +490,7 @@
       "text": "codelinks is declared outside layers and edges: a code file set is never a layer role and never an edge, so it never produces a coverage verdict",
       "hash": "ff805a46407a910d",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -432,7 +512,7 @@
       "text": "an invalid codelinks block fails validation with exit code 2 under the all-at-once reporting (§2.2)",
       "hash": "93863528063586ae",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -454,7 +534,7 @@
       "text": "tripact.yaml accepts an optional codelinks block with paths (globs over product code) and an optional tagpattern, defaulting to the verificatory layer's pattern, then to the built-in default",
       "hash": "e25d50aabc6c7d85",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -477,7 +557,8 @@
       "hash": "c30186411c776cfe",
       "firstSeen": "ec973d7",
       "lastSeen": "ec973d7",
-      "alive": true,
+      "alive": false,
+      "lastText": "additive change — a new top-level field — is backward-compatible. it does not bump the",
       "verified": []
     },
     {
@@ -489,7 +570,8 @@
       "hash": "8ba2c7576d3da523",
       "firstSeen": "ec973d7",
       "lastSeen": "ec973d7",
-      "alive": true,
+      "alive": false,
+      "lastText": "breaking change — removing or renaming a field, or changing the type or meaning of an existing",
       "verified": []
     },
     {
@@ -501,7 +583,8 @@
       "hash": "3de072bb064c6fe2",
       "firstSeen": "ec973d7",
       "lastSeen": "ec973d7",
-      "alive": true,
+      "alive": false,
+      "lastText": "parse adapters vs path adapters (points 2/3). \"detect more spec/doc patterns\" is ambiguous",
       "verified": []
     },
     {
@@ -513,7 +596,8 @@
       "hash": "8e90a422d922069f",
       "firstSeen": "ec973d7",
       "lastSeen": "ec973d7",
-      "alive": true,
+      "alive": false,
+      "lastText": "ready-to-spec now: phase 0 (both items) and phase 1 need no upstream decision. phase 2 needs",
       "verified": []
     },
     {
@@ -525,7 +609,8 @@
       "hash": "ccbb345f32e2b362",
       "firstSeen": "ec973d7",
       "lastSeen": "ec973d7",
-      "alive": true,
+      "alive": false,
+      "lastText": "version batching. points 1, 2/3-format, 4b, and 5b/5c all can touch versioned surfaces",
       "verified": []
     },
     {
@@ -536,7 +621,7 @@
       "text": "config accepts a derived map of name → an output path and a generator, either a reserved builtin name or a shell command",
       "hash": "7a9d462e9b7cdcba",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -546,7 +631,7 @@
           ],
           "claimHash": "7a9d462e9b7cdcba",
           "file": "test/derived.test.ts",
-          "targetFileHash": "b4176278b67ad4e6"
+          "targetFileHash": "975257236495fad4"
         }
       ]
     },
@@ -558,7 +643,7 @@
       "text": "generation is deterministic: the same code and config produce byte-identical output",
       "hash": "ef32c0ac3e6d4df1",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -568,7 +653,29 @@
           ],
           "claimHash": "ef32c0ac3e6d4df1",
           "file": "test/derived.test.ts",
-          "targetFileHash": "b4176278b67ad4e6"
+          "targetFileHash": "975257236495fad4"
+        }
+      ]
+    },
+    {
+      "id": "declaration-generation.kernel-registers-hotlink-map-itself",
+      "layer": "specs",
+      "groupPath": "18. Derived Outputs > 18.1 Declaration & generation",
+      "groupKey": "derived outputs > declaration & generation",
+      "text": "the kernel registers hotlink-map itself, because it renders from the kernel's own analysis and needs nothing from a harness; cli-reference renders a driving harness's own command tree, so the kernel reserves that name and leaves the implementation for the harness to inject",
+      "hash": "6ec9174d54da76e2",
+      "firstSeen": "68f155f",
+      "lastSeen": "68f155f",
+      "alive": true,
+      "verified": [
+        {
+          "edge": [
+            "specs",
+            "tests"
+          ],
+          "claimHash": "6ec9174d54da76e2",
+          "file": "test/derived.test.ts",
+          "targetFileHash": "975257236495fad4"
         }
       ]
     },
@@ -577,10 +684,10 @@
       "layer": "specs",
       "groupPath": "18. Derived Outputs > 18.1 Declaration & generation",
       "groupKey": "derived outputs > declaration & generation",
-      "text": "the kernel reserves the builtin names cli-reference and hotlink-map but registers no generator of its own; a driving harness injects an implementation, and a config naming a reserved builtin with no registered generator fails generation with a clear error",
-      "hash": "9d1a7c1c848de779",
+      "text": "the kernel reserves the builtin generator names cli-reference and hotlink-map, and a config naming a reserved builtin with no registered implementation fails generation with a clear wiring error",
+      "hash": "8ae0ffe15f36b497",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -588,9 +695,9 @@
             "specs",
             "tests"
           ],
-          "claimHash": "9d1a7c1c848de779",
+          "claimHash": "8ae0ffe15f36b497",
           "file": "test/derived.test.ts",
-          "targetFileHash": "b4176278b67ad4e6"
+          "targetFileHash": "975257236495fad4"
         }
       ]
     },
@@ -602,7 +709,7 @@
       "text": "a non-reserved generator runs as a shell command whose captured stdout becomes the output file; a non-zero exit fails with exit code 2",
       "hash": "4804a7014b1390d9",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -612,7 +719,7 @@
           ],
           "claimHash": "4804a7014b1390d9",
           "file": "test/derived.test.ts",
-          "targetFileHash": "b4176278b67ad4e6"
+          "targetFileHash": "975257236495fad4"
         }
       ]
     },
@@ -624,7 +731,7 @@
       "text": "tripact generate [name] writes the declared output file(s); with no name it regenerates all",
       "hash": "8aed2ee5b92d2973",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -634,7 +741,7 @@
           ],
           "claimHash": "8aed2ee5b92d2973",
           "file": "test/derived.test.ts",
-          "targetFileHash": "b4176278b67ad4e6"
+          "targetFileHash": "975257236495fad4"
         }
       ]
     },
@@ -646,7 +753,7 @@
       "text": "descriptive groups (manual sections) are linked to tests via section tags matching the layer's sectiontagpattern (default @manual:<group-slug>)",
       "hash": "7a89e986fd27da5e",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -668,7 +775,7 @@
       "text": "every descriptive group receives a d↔v verdict — covered, pending, stale (any atom in the section changed since verification), or uncovered — evaluated at group level, so individual descriptive atoms are tracked for identity but not individually required to have tests",
       "hash": "d5ba1cbbb5f2270a",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -690,7 +797,7 @@
       "text": "orphan section tags are reported identically to §4.1",
       "hash": "18b2f52378993768",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -712,7 +819,7 @@
       "text": "identical repository state and config produce byte-identical output for every command, across machines and runs",
       "hash": "9704b3d8e73d52de",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -734,7 +841,7 @@
       "text": "no checking, reporting, or state-mutating command performs network i/o or invokes an llm; mcp-serve speaks only stdio and opens no socket",
       "hash": "a116b443c969735f",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -765,7 +872,7 @@
       "text": "no command writes a timestamp, hostname, or locale-dependent formatting into a committed file; the .tripact/journal.jsonl resolution log (§7.2) is the sole timestamped artefact",
       "hash": "c39e7417bef99090",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -787,7 +894,7 @@
       "text": "emitted tasks and escalation questions carry their resolved effort and model hint when the config binds their class, and carry nothing when it does not — hints are advisory",
       "hash": "8c36c633cdb70704",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -818,7 +925,7 @@
       "text": "routing and models entries are validated with the same all-at-once error reporting as the rest of the config (§2.2)",
       "hash": "fc00aabb0dcbb134",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -849,7 +956,7 @@
       "text": "tripact.yaml accepts a routing map from task class to an effort tier (judgment, planning, implementation, or mechanical) and a models map from effort tier to a model identifier string",
       "hash": "eee592b06ad8dabd",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -871,7 +978,7 @@
       "text": "each question has a stable id (deterministic for the same underlying situation), a kind of reanchor, split-merge, or fork-review, and a self-contained payload carrying the affected group's deleted and created atoms and the candidate pairings",
       "hash": "24608a3d738207db",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -893,7 +1000,7 @@
       "text": "the escalation file is valid json with a schemaversion, consumable without access to kernel internals",
       "hash": "8e38fdff9dc728e5",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -915,7 +1022,7 @@
       "text": "a fork-review question is advisory: it names the dead and created atoms of the forked group and is answered by resolve --match (reuniting the identities) or resolve --dismiss (accepting the fork)",
       "hash": "fc572935bd443124",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -946,7 +1053,7 @@
       "text": "questions the deterministic engine cannot answer are written to .tripact/escalations.json, replacing the previous queue on each check",
       "hash": "134cc1b6954ea7a3",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -968,7 +1075,7 @@
       "text": "the cli runs on node 22 or newer with no native dependencies",
       "hash": "73b87d9f8d5c097a",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -990,7 +1097,7 @@
       "text": ".tripact/ contains only claims.json, escalations.json, and journal.jsonl",
       "hash": "39e866d30c32bda1",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -1012,7 +1119,7 @@
       "text": "check regenerates each declared derived output in memory and byte-compares it with the committed file; a stable mismatch or a missing file is a derived-stale finding that drives exit 1",
       "hash": "58572ecb2537eafd",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -1022,7 +1129,7 @@
           ],
           "claimHash": "58572ecb2537eafd",
           "file": "test/derived.test.ts",
-          "targetFileHash": "b4176278b67ad4e6"
+          "targetFileHash": "975257236495fad4"
         }
       ]
     },
@@ -1034,7 +1141,7 @@
       "text": "a derived-stale finding appears in the task queue as a regenerate-derived task (§10.1)",
       "hash": "f46047e804cff46f",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -1044,7 +1151,7 @@
           ],
           "claimHash": "f46047e804cff46f",
           "file": "test/derived.test.ts",
-          "targetFileHash": "b4176278b67ad4e6"
+          "targetFileHash": "975257236495fad4"
         }
       ]
     },
@@ -1056,7 +1163,7 @@
       "text": "a generator whose two back-to-back regenerations disagree is reported as non-deterministic rather than stale, since regeneration cannot fix it",
       "hash": "53d09f6b70a21c5b",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -1066,7 +1173,7 @@
           ],
           "claimHash": "53d09f6b70a21c5b",
           "file": "test/derived.test.ts",
-          "targetFileHash": "b4176278b67ad4e6"
+          "targetFileHash": "975257236495fad4"
         }
       ]
     },
@@ -1078,7 +1185,7 @@
       "text": "the kernel provides the reserved hotlink-map derived renderer (§18.1) which, per code-linked prescriptive claim, renders its spec file:line, its code tag locations, and its covering test tags, byte-identically for the same tree",
       "hash": "50a780148f9a0f06",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -1100,7 +1207,7 @@
       "text": "writing a hotlink decoration comment into a tagged function is agent work: the kernel never edits product code, and the hotlink-map derivation is its sole write",
       "hash": "bb28db5375feb187",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -1122,7 +1229,7 @@
       "text": "counts precede details in every human report",
       "hash": "b28b9f03303684e1",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -1144,7 +1251,7 @@
       "text": "a human-output change never alters any --json document; machine schemas evolve only through their schemaversion",
       "hash": "22e1a43ef9ab0be2",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -1166,7 +1273,7 @@
       "text": "human reports name verdicts and question kinds with exactly the --json vocabulary — no synonyms",
       "hash": "6804c44cec00139f",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -1188,7 +1295,7 @@
       "text": "a listing longer than a fixed threshold truncates with a closing \"… and n more\" line naming --long; --long prints everything",
       "hash": "82d83b4f771e88cb",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -1210,7 +1317,7 @@
       "text": "every command offering a report offers --json with a versioned schema",
       "hash": "759ee4fea9baea56",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -1232,7 +1339,7 @@
       "text": "exit codes follow one convention everywhere: 0 level, 1 drift, 2 usage or environment error",
       "hash": "4d86cec20be72e0f",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -1254,7 +1361,7 @@
       "text": "atom normalisation lowercases, collapses whitespace, and strips any checkbox marker and trailing punctuation before hashing — reformatting a line without rewording it, including converting checkbox syntax to a plain bullet, does not change its content hash",
       "hash": "237791a85629929f",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -1276,7 +1383,7 @@
       "text": "a heading marked (tbd) parses normally; its atoms are tracked in the sidecar but excluded from edge coverage verdicts (§4.1)",
       "hash": "c6179a03f8a9dd1a",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -1298,7 +1405,7 @@
       "text": "parsing is deterministic: the same file bytes always produce the same groups, atoms, and hashes",
       "hash": "3ca5d5b73ad749a7",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -1320,7 +1427,7 @@
       "text": "prescriptive and descriptive layer files parse into claim groups (one per heading, keyed by the full heading path) and claim atoms (one per - list item under a heading; legacy - [ ] / - [x] checkbox items parse identically, their marker ignored)",
       "hash": "9df43cd850d19d28",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -1342,7 +1449,7 @@
       "text": "prose paragraphs, code blocks, blockquotes, and nested (indented) list items are not atoms and never receive identities",
       "hash": "fd416ddddc2b569d",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -1364,7 +1471,7 @@
       "text": "accept is exposed as a write tool only when the accept policy is agents, and is absent under human",
       "hash": "5deec999130d9e34",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -1386,7 +1493,7 @@
       "text": "each mcp read tool returns the same json document the corresponding cli --json flag produces",
       "hash": "bd0f7700e8a15f08",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -1408,7 +1515,7 @@
       "text": "tripact mcp-serve exposes the task queue, claim listing, check report, status summary, and escalation queue as mcp read tools over stdio, plus resolve as a write tool",
       "hash": "9466d44ae4e82823",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -1430,7 +1537,7 @@
       "text": "check --json emits a single machine-readable report on stdout with nothing else, carrying a schemaversion field",
       "hash": "3daa86ef01eedfdb",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -1452,7 +1559,7 @@
       "text": "check --long prints every listing in full instead of truncating past a fixed threshold",
       "hash": "05824f597db75444",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -1474,7 +1581,7 @@
       "text": "default output is a human-readable report that groups non-covered verdicts under their group heading path within each edge",
       "hash": "b45dd1c737d12bea",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -1496,7 +1603,7 @@
       "text": "each reported verdict line carries the claim id, a text excerpt, and a location: the tag's file:line for tagged verdicts, the claim's own declaring file:line for uncovered ones",
       "hash": "b2d0269dcbde7bce",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -1518,7 +1625,7 @@
       "text": "report counts include a forks metric (§3.3) in both the human report and check --json",
       "hash": "a871d4f067ff4930",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -1541,7 +1648,8 @@
       "hash": "caa73db8961857a7",
       "firstSeen": "ec973d7",
       "lastSeen": "ec973d7",
-      "alive": true,
+      "alive": false,
+      "lastText": "2/3a — extend detectskill conventions. enrich the \"common names\" survey list in",
       "verified": []
     },
     {
@@ -1553,7 +1661,8 @@
       "hash": "6d27cf894b0e088b",
       "firstSeen": "ec973d7",
       "lastSeen": "ec973d7",
-      "alive": true,
+      "alive": false,
+      "lastText": "5a — \"find-or-write\" task reframe. first check on an existing repo floods the queue with",
       "verified": []
     },
     {
@@ -1565,7 +1674,8 @@
       "hash": "477404810136c5c0",
       "firstSeen": "ec973d7",
       "lastSeen": "ec973d7",
-      "alive": true,
+      "alive": false,
+      "lastText": "5b — tripact reconcile. propose claim↔existing-test candidate pairings by text similarity",
       "verified": []
     },
     {
@@ -1577,7 +1687,8 @@
       "hash": "a48ddef182db8aca",
       "firstSeen": "ec973d7",
       "lastSeen": "ec973d7",
-      "alive": true,
+      "alive": false,
+      "lastText": "decisions: the resolve verbs for a proposed pairing (accept→tag / reject); whether reconcile is a",
       "verified": []
     },
     {
@@ -1589,7 +1700,8 @@
       "hash": "b18213584a16d804",
       "firstSeen": "ec973d7",
       "lastSeen": "ec973d7",
-      "alive": true,
+      "alive": false,
+      "lastText": "1 — idstyle: slug | hash (mutually exclusive; primary goal = clash avoidance)",
       "verified": []
     },
     {
@@ -1601,7 +1713,8 @@
       "hash": "6c4ad3e5015fa769",
       "firstSeen": "ec973d7",
       "lastSeen": "ec973d7",
-      "alive": true,
+      "alive": false,
+      "lastText": "4c — first-class tagging module. extract tag handling (the non-trivial tagformatfrompattern",
       "verified": []
     },
     {
@@ -1613,7 +1726,8 @@
       "hash": "61a9c52fd68a8ce0",
       "firstSeen": "ec973d7",
       "lastSeen": "ec973d7",
-      "alive": true,
+      "alive": false,
+      "lastText": "5c back-propagation — separate, latest sub-phase. requires (i) a code surface (this phase) and",
       "verified": []
     },
     {
@@ -1625,7 +1739,8 @@
       "hash": "41a9c715e448e264",
       "firstSeen": "ec973d7",
       "lastSeen": "ec973d7",
-      "alive": true,
+      "alive": false,
+      "lastText": "the gating fork (still open)",
       "verified": []
     },
     {
@@ -1637,7 +1752,8 @@
       "hash": "b216bf2dce407bc3",
       "firstSeen": "ec973d7",
       "lastSeen": "ec973d7",
-      "alive": true,
+      "alive": false,
+      "lastText": "hotlink feasibility spike (do before committing to the ux): ts/vscode {@link} resolves to",
       "verified": []
     },
     {
@@ -1648,7 +1764,7 @@
       "text": "every non-(tbd) prescriptive atom receives exactly one p↔v verdict: covered (a tag references it and its hash matches the recorded verified state), pending (tagged, but no verified state has ever been recorded for it on this edge), stale (a verified state exists and either side's hash no longer matches), or uncovered (no tag references it)",
       "hash": "046c731a2ce872ed",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -1670,7 +1786,7 @@
       "text": "the lifecycle is uncovered → pending when the first tag lands → covered when an accept records the verified state — a claim is never stale before it has been verified once",
       "hash": "c443e045bbeccd28",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -1692,7 +1808,7 @@
       "text": "a stale verdict is test-side-only when the claim's text still matches its verified state and only a tagged file's hash moved — the class an accept re-verifies without judgement; a stale verdict whose claim text moved is a reworded re-baseline",
       "hash": "8402a6ba998bc499",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -1714,7 +1830,7 @@
       "text": "a tag referencing an id that no live claim owns is reported as an orphan tag with its file and line; a tag referencing a dead claim id is reported as an orphan with a hint naming the claim's last text",
       "hash": "af96ea52b4c13646",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -1736,7 +1852,7 @@
       "text": "verificatory layer files are scanned for tags matching the layer's tagpattern; each tag names a claim id",
       "hash": "1d2532407384014b",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -1758,7 +1874,7 @@
       "text": "verified state records the claim hash and the tagged test file's content hash at acceptance time (§8.1), so a change to either side makes the verdict stale",
       "hash": "ee20d83f5a5a56cd",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -1780,7 +1896,7 @@
       "text": "when artefacts change, atoms are re-matched to existing identities by a deterministic cascade: exact normalised match within the aligned group, exact match across groups, group alignment, similarity match within the group, then similarity match across groups at a stricter threshold, then a containment pass",
       "hash": "195382792e67dc51",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -1802,7 +1918,7 @@
       "text": "the containment pass matches an atom whose earlier text is preserved verbatim inside an extended rewrite",
       "hash": "81fa52df665551b5",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -1824,7 +1940,7 @@
       "text": "a group that in one transition loses an unmatched atom and gains an unmatched atom is a fork: it additionally emits an advisory fork-review question (§7.1), so identity never forks silently",
       "hash": "cd115fdae446b547",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -1846,7 +1962,7 @@
       "text": "a match at or above the auto-accept threshold (0.9) is taken silently; a weaker match becomes a reanchor escalation question (§7.1) rather than a silent link",
       "hash": "b29835ba806a3cb5",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -1868,7 +1984,7 @@
       "text": "one atom matching several successors (split) or several atoms collapsing into one (merge) is detected and always escalated as a split-merge question — never auto-resolved",
       "hash": "eddfaf1d03f7eb4c",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -1890,7 +2006,7 @@
       "text": "similarity is computed with autojunk disabled at every string length, so a long atom's same-meaning reword scores on its full text and length alone never causes a fork",
       "hash": "9c091306640b619d",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -1912,7 +2028,7 @@
       "text": "unmatched new atoms receive fresh ids and unmatched old atoms are marked dead — identity is forked rather than guessed",
       "hash": "d8e5789d8824e713",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -1934,7 +2050,7 @@
       "text": "a dismissed candidate, recorded via tripact reconcile --dismiss <claim-id> <file> <line>, is keyed by claim id and test identity and is never re-proposed until either side's text changes; a dismissal survives an accept",
       "hash": "12944662a7b9acb6",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -1956,7 +2072,7 @@
       "text": "reconcile --json emits a machine-readable queue with a schemaversion field; the command exits 0 (advisory), or 2 on a config or usage error, and never exits 1",
       "hash": "bc622604763ba291",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -1978,7 +2094,7 @@
       "text": "reconcile mutates nothing — no artefact, sidecar, escalation, or tag; confirming a candidate and tagging the test is agent or human work",
       "hash": "e2ceb1d5eaae8ba8",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -2000,7 +2116,7 @@
       "text": "reconcile is opt-in and not part of check: it runs its own scan and never affects check's verdicts, counts, or exit code",
       "hash": "30806d5d3571a433",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -2022,7 +2138,7 @@
       "text": "reconcile scoring reuses the deterministic similarity matcher (§3.3) over normalised claim text and normalised test title; an identical tree produces an identical proposal set and ranking, with ties broken by test file and line, then claim id",
       "hash": "d552006bf962550f",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -2044,7 +2160,7 @@
       "text": "tripact reconcile proposes, per uncovered non-(tbd) prescriptive claim, existing tests whose title scores above a fixed similarity threshold against the claim text, ranked by score — a propose-only queue for linking claims to tests that already exist",
       "hash": "6c9a25738abef7df",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -2066,7 +2182,7 @@
       "text": "the emitted tripact-repair skill (§1.2) instructs an agent to consume tripact tasks --json, follow per-layer conventions files where declared, apply artefact edits, and validate with tripact check and the repository's own test command before reporting",
       "hash": "4df4075919df04cc",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -2088,7 +2204,7 @@
       "text": "executing repair tasks is agent work: the kernel never edits prescriptive or descriptive artefact content — the sole exception is derived-output generation (§18), a deterministic derivation",
       "hash": "eaa4d1911f326f97",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -2110,7 +2226,7 @@
       "text": "for a find-or-write task, the repair skill instructs the agent to first search the verificatory layer for an existing untagged test that already asserts the claim and tag it in place, writing a new test only when none is found",
       "hash": "cb642a9e78c8417f",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -2132,7 +2248,7 @@
       "text": "the repair skill's accept rule follows the configured accept policy (§2.1)",
       "hash": "a3899159961bb2c3",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -2193,7 +2309,7 @@
       "text": "an agentic coding loop. tripact links the loop's goal to its verification: the spec claims",
       "hash": "1205a78e9c968d42",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": []
     },
@@ -2205,7 +2321,7 @@
       "text": "archon or another workflow-driven harness. archon owns the loop; every step it needs from",
       "hash": "09a687fdbcb7b4d1",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": []
     },
@@ -2217,7 +2333,7 @@
       "text": "spec-driven development with coding agents. every specification you write becomes a claim with",
       "hash": "19adeade48a9c1e5",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": []
     },
@@ -2229,7 +2345,7 @@
       "text": "a code tag referencing an id that is unknown or dead is reported as a navigational orphan with its file:line and, for a dead id, a hint naming the claim's last text",
       "hash": "b204af4034defd4d",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -2260,7 +2376,7 @@
       "text": "hotlink scanning never affects any edge verdict, coverage count, or exit code — a code tag is navigation, not verification",
       "hash": "4f6d510cb1839a06",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -2282,7 +2398,7 @@
       "text": "hotlinks --json emits a machine-readable map with a schemaversion field; the command exits 0 (advisory), or 2 on a config or usage error, and never exits 1",
       "hash": "23ea5cd4a2ece123",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -2313,7 +2429,7 @@
       "text": "scanning is deterministic: an identical tree yields an identical, stably ordered map",
       "hash": "3ca9f8bb92a3e465",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -2335,7 +2451,7 @@
       "text": "tripact hotlinks scans codelinks.paths for tags matching the code-link pattern, each naming a claim id, and reports navigational links between a claim id and the code file:line that tags it",
       "hash": "d22240da2871796c",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -2357,7 +2473,7 @@
       "text": "check --all forces a full audit regardless of sync-point",
       "hash": "f43f1a3ad4938a17",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -2379,7 +2495,7 @@
       "text": "with a sync-point present (§8.1), check reports which claims the code diff since it may affect, using pathmap globs to narrow candidates",
       "hash": "4c56f8b588c3ba6f",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -2401,7 +2517,7 @@
       "text": "without any sync-point, check audits everything and says so in the report header",
       "hash": "2e74b429e6c05140",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -2423,7 +2539,7 @@
       "text": "claim identities live in .tripact/claims.json, committed to the repository, so deleting the working tree and re-cloning loses nothing",
       "hash": "46bc5fa68a154082",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -2445,7 +2561,7 @@
       "text": "the disambiguating suffix depends only on the atom's own identity, never on minting order — adding, removing, or reordering a colliding sibling never changes an already-distinct atom's id",
       "hash": "9aeb7aa695eca023",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -2467,7 +2583,7 @@
       "text": "each sidecar entry records a stable id, layer, group path, content hash, and per-edge verified state",
       "hash": "60762430bd317582",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -2489,7 +2605,7 @@
       "text": "id assignment is a pure function of the new-atom set: the same set yields the same ids regardless of parse or iteration order",
       "hash": "f467b898c78f971e",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -2511,7 +2627,7 @@
       "text": "an id, once assigned, is never reused — a deleted claim's entry is marked dead, not removed",
       "hash": "00aeb46b20331d82",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -2533,7 +2649,7 @@
       "text": "ids are human-readable slugs derived from the group and atom at creation (e.g. addition.adda-b-returns-sum), unique within the repository",
       "hash": "842f32f8229f45e6",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -2555,7 +2671,7 @@
       "text": "order-independent minting governs only the first assignment of a fresh atom; re-anchoring an existing repository reuses the persisted sidecar id and never rewrites it",
       "hash": "af5672a1ce8d77fb",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -2577,7 +2693,7 @@
       "text": "the sidecar records the acknowledged backlog — the uncovered claim ids and section slugs as of the last accept — so coverage debt only grows deliberately, through an accept (§5.1)",
       "hash": "357dbc3a4e5ac795",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -2599,7 +2715,7 @@
       "text": "sidecar serialisation is stable: entries are sorted by id with fixed formatting, so an unchanged repository state always produces a byte-identical file and minimal git diffs",
       "hash": "e840e339dbe291ac",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -2630,7 +2746,7 @@
       "text": "when two atoms in the same group would mint the same base slug, each colliding atom receives a distinct disambiguating suffix derived from its own identity; a non-colliding atom keeps its bare slug",
       "hash": "84e81b753b754f56",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -2652,7 +2768,7 @@
       "text": "a commit whose message body carries a tripact-sync-id: trailer marks a sync-point; check finds the most recent one via git log",
       "hash": "cbbb8d54132572a6",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -2674,7 +2790,7 @@
       "text": "the trailer value is the sidecar's content hash at commit time, letting check detect a moved or hand-edited sidecar",
       "hash": "da0f446d3f1903f8",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -2696,7 +2812,7 @@
       "text": "a derived-stale output (§18.2) emits a regenerate-derived task naming the exact tripact generate invocation",
       "hash": "00a7cb01106a5768",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -2718,7 +2834,7 @@
       "text": "one task is emitted per reworded stale claim (§4.1), per orphan tag, and per uncovered descriptive section; uncovered claims are grouped into one task per claim group",
       "hash": "b5d7efe78dd662e1",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -2740,7 +2856,7 @@
       "text": "a pending verdict emits no task — its cure is an accept recording the verified state, which belongs to the accept gate (§8.3), not to repair work",
       "hash": "a7fcab02bb537c9f",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -2762,7 +2878,7 @@
       "text": "task ids are deterministic for the same underlying situation",
       "hash": "ce29509d12a59c0b",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -2784,7 +2900,7 @@
       "text": "tasks --json emits a machine-readable queue with a schemaversion field; the human output groups tasks by kind and truncates past a fixed threshold unless --long",
       "hash": "954d2b75d31f146c",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -2806,7 +2922,7 @@
       "text": "test-side-only staleness (§4.1) emits no task; only a reworded stale claim, whose own text moved, emits a reconcile-stale task",
       "hash": "9af1f5410a2b59fa",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -2828,7 +2944,7 @@
       "text": "tripact prompt <id> prints a ready-to-hand-off brief for a single work item — a task id or an escalation question id (§7.2) — with the item's self-contained payload inlined; an unknown id exits 1",
       "hash": "e67b75d7f0a76cd6",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -2838,7 +2954,7 @@
           ],
           "claimHash": "e67b75d7f0a76cd6",
           "file": "test/skills.test.ts",
-          "targetFileHash": "298991909dbd6f99"
+          "targetFileHash": "d2031279791fe54a"
         }
       ]
     },
@@ -2850,7 +2966,7 @@
       "text": "tripact tasks --reconcile <prescriptive>:<descriptive> additionally emits a single layer-reconciliation task carrying both layers' full inventories, so the agent judges what documentation is missing",
       "hash": "b25725044ca079e7",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -2872,7 +2988,7 @@
       "text": "tripact tasks derives a work queue from the current analysis without mutating artefacts, the sidecar, or escalations",
       "hash": "be06e1aeed99ca3a",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -2894,7 +3010,7 @@
       "text": "the uncovered-claim task is a find-or-write task: it instructs tagging an existing untagged test that already asserts the claim, or writing a new tagged test only when none exists, and its payload names both options and the exact tag format",
       "hash": "b954e7e68d53cae9",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -2916,7 +3032,7 @@
       "text": "tripact accept --dry-run prints the trailer a real accept would produce without writing the sidecar or clearing escalations",
       "hash": "e3e731b8dc3c6b36",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -2938,7 +3054,7 @@
       "text": "tripact verify <hash> compares a supplied trailer value against the current sidecar's content hash: exit 0 on match, 1 on mismatch, printing both values",
       "hash": "eb67ced9dcf4eb60",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -2960,7 +3076,7 @@
       "text": "no init, no run-book execution. layer detection is emitted as the detect skill (a",
       "hash": "6bcea8ec37b11999",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": []
     },
@@ -2972,7 +3088,7 @@
       "text": "pre-alpha (0.x). the public contract (--json schemas, exit codes, mcp tools) is versioned",
       "hash": "ebdbef63ad4982db",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": []
     },
@@ -2984,7 +3100,7 @@
       "text": "accept prints an acceptance summary before writing: claims created, re-anchored, and retired, plus verified-state changes per edge and backlog items newly acknowledged or covered",
       "hash": "51912878c9a5c9d7",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -3006,7 +3122,7 @@
       "text": "accept prints the tripact-sync-id: trailer for the user to include in their commit and never commits by itself",
       "hash": "d25e9814ede8ac09",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -3028,7 +3144,7 @@
       "text": "accept refuses to run (exit 1) while any reanchor or split-merge escalation is open, listing them; open fork-review questions never block but are named in the acceptance summary",
       "hash": "b947bb68cf90618d",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -3050,7 +3166,7 @@
       "text": "accept snapshots the currently uncovered claims and sections as the acknowledged backlog (§3.2, §5.1)",
       "hash": "0c1ccbfba82fba0d",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -3072,7 +3188,7 @@
       "text": "accept writes the current in-memory anchoring into .tripact/claims.json and records verified states for every edge verdict currently covered",
       "hash": "32366f8eaf450044",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -3094,7 +3210,7 @@
       "text": "after accept and a commit carrying the trailer, an immediately following check exits 0",
       "hash": "dc595778848b2302",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -3116,7 +3232,7 @@
       "text": "claims that would be re-baselined after a reword (§4.1) are listed in their own summary section with old and new text excerpts; --yes still prints that section before writing",
       "hash": "98cb6ab604242ab0",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -3138,7 +3254,7 @@
       "text": "on an interactive terminal accept asks for confirmation and aborts on anything but yes; --yes skips the prompt; without a terminal it proceeds as scripted",
       "hash": "aece9b73ee6dede9",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -3160,7 +3276,7 @@
       "text": "check --strict treats acknowledged backlog as drift too, restoring coverage gating for release pipelines",
       "hash": "d8ae58ddda13b9ea",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -3182,7 +3298,7 @@
       "text": "check makes no network calls and invokes no llm under any configuration",
       "hash": "8624f1e6a9bd56aa",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -3204,7 +3320,7 @@
       "text": "check parses all declared layers, re-anchors identities in memory, evaluates all declared edges, and reports — it never mutates artefacts or the sidecar, apart from replacing the escalation queue it writes (§7.1)",
       "hash": "17fb04589d2277a0",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -3226,7 +3342,7 @@
       "text": "exit code is 0 when the repository is level — no pending, stale, or new-uncovered verdicts, no orphans, no open escalations, no stale derived outputs — 1 when drift exists, 2 on config or environment error",
       "hash": "5373bd3aec71fd36",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -3248,7 +3364,7 @@
       "text": "a level report ends with ✓ level, naming the acknowledged backlog count when it is non-zero",
       "hash": "f5aec8fd81da0415",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -3270,7 +3386,7 @@
       "text": "running check twice on the same tree produces byte-identical output",
       "hash": "0c91ee398a47b9ac",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -3292,7 +3408,7 @@
       "text": "an uncovered claim or section not acknowledged at the last accept is new-uncovered — drift, driving exit 1",
       "hash": "6d0cb03b392dd0fa",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -3314,7 +3430,7 @@
       "text": "uncovered claims and sections acknowledged at the last accept are backlog: reported as a count pointing at tripact tasks, never driving exit 1",
       "hash": "479706e43da7f520",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -3336,7 +3452,7 @@
       "text": "--dismiss is valid only for a fork-review question; the dismissal is recorded so subsequent checks do not re-emit the question for the same dead/created pair",
       "hash": "c6fa8a53293e5ba8",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -3358,7 +3474,7 @@
       "text": "every resolution is appended to .tripact/journal.jsonl with a timestamp and the question id",
       "hash": "3388c648d87f2cf9",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -3380,7 +3496,7 @@
       "text": "resolve validates that the referenced question exists and the answer shape matches its kind; a mismatch exits 2 without touching the sidecar",
       "hash": "be251e4fa3adf8b5",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -3402,7 +3518,7 @@
       "text": "resolving every question and re-running check yields no reanchor or split-merge escalations for unchanged content",
       "hash": "14f9aa56f718057d",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -3424,7 +3540,7 @@
       "text": "resolving one atom of a multi-atom question shrinks the question in place — the remaining atoms keep the same question id, and the question leaves the queue only when no atoms remain",
       "hash": "268372a7658caf20",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -3446,7 +3562,7 @@
       "text": "tripact resolve <question-id> applies an adjudication answer with exactly one of --match <old-id>=\"new text\", --new <atom>, --dead <old-id>, or --dismiss",
       "hash": "d29f5f639c17787d",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -3468,7 +3584,7 @@
       "text": "status --json emits the same report document the check surface produces",
       "hash": "7e31034ba6ba33fe",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -3490,7 +3606,7 @@
       "text": "status prints a per-layer summary — alive, dead, and tbd atom counts — and a per-edge coverage percentage",
       "hash": "9bcaf4538a3dcef1",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -3512,7 +3628,7 @@
       "text": "status reports the orphan-tag and open-escalation counts",
       "hash": "bfe207709528c288",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -3534,7 +3650,7 @@
       "text": "config accepts an optional accept block whose policy is human (the default) or agents — whether an agent may baseline (§8.3, §16.2)",
       "hash": "c6bf389337b00462",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -3556,7 +3672,7 @@
       "text": "config accepts optional commands, runners, derived, and codelinks blocks; commands and runners are validated for a driving harness but no kernel command executes them",
       "hash": "431a3d30cbc85075",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -3578,7 +3694,7 @@
       "text": "config accepts an optional exclude list of globs subtracted from every layer's file set after collection, so archived, vendored, or generated trees never parse as source atoms",
       "hash": "e02d48f4d23aada7",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -3600,7 +3716,7 @@
       "text": "config accepts an optional pathmap of code globs to layer names, used to narrow which claims a code diff can affect (§5.3)",
       "hash": "f290d043bf1e9c6f",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -3622,7 +3738,7 @@
       "text": "config accepts optional routing (task class to effort tier) and models (effort tier to model identifier) maps, whose entries become advisory dispatch hints (§16.1)",
       "hash": "f029b8eca2e76545",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -3644,7 +3760,7 @@
       "text": "config declares edges explicitly as pairs of layer names — no edge is ever checked that is not declared",
       "hash": "7b4306bd635dbbff",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -3666,7 +3782,7 @@
       "text": "config declares named layers, each with a role (prescriptive, descriptive, or verificatory), a non-empty list of glob paths, and an optional conventions file path",
       "hash": "bbc685000d239582",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -3688,7 +3804,7 @@
       "text": "the kernel reads tripact.yaml from the repository root; schemaversion is the literal 1",
       "hash": "a97d6bf6da8972d4",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -3710,7 +3826,7 @@
       "text": "a layer accepts an optional tagpattern and sectiontagpattern regex; the defaults match @specs:<id> in test titles and annotations for claims and @manual:<slug> for descriptive sections",
       "hash": "f21a5a46fcbbf372",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -3732,7 +3848,7 @@
       "text": "check and every other command refuse to run against an invalid config, reporting all validation errors at once rather than one failure per run",
       "hash": "743a001e663f16ce",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -3763,7 +3879,7 @@
       "text": "a config with fewer than two declared layers fails validation with exit code 2",
       "hash": "c34860adf397d303",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -3785,7 +3901,7 @@
       "text": "an unknown role, an edge referencing an undeclared layer, a malformed glob, an unknown accept.policy, an unknown routing tier, or a malformed derived/runner entry fails validation with exit code 2 and a message naming the offending key path and the accepted values",
       "hash": "7be92fd41f21457d",
       "firstSeen": "ec973d7",
-      "lastSeen": "ec973d7",
+      "lastSeen": "68f155f",
       "alive": true,
       "verified": [
         {
@@ -3801,55 +3917,6 @@
     }
   ],
   "groups": [
-    {
-      "layer": "manual",
-      "slug": "compatibility-policy",
-      "groupPath": "Compatibility policy",
-      "hash": "a860faa3d7b1b6be",
-      "verified": []
-    },
-    {
-      "layer": "manual",
-      "slug": "cross-cutting-open-questions-resolve-as-specs-are-written",
-      "groupPath": "Cross-cutting open questions (resolve as specs are written)",
-      "hash": "24880f398d878fe0",
-      "verified": []
-    },
-    {
-      "layer": "manual",
-      "slug": "phase-0-quick-wins-no-model-change-no",
-      "groupPath": "Phase 0 — Quick wins (no model change, no schema bump) — ready to spec now",
-      "hash": "b3dc63adafda196a",
-      "verified": []
-    },
-    {
-      "layer": "manual",
-      "slug": "phase-1-deterministic-reconcile-reuses-similarityts-escalation-pattern",
-      "groupPath": "Phase 1 — Deterministic reconcile (reuses `similarity.ts` + escalation pattern)",
-      "hash": "567d18bf5572c404",
-      "verified": []
-    },
-    {
-      "layer": "manual",
-      "slug": "phase-2-hash-id-modality-tag-format-schema-affecting",
-      "groupPath": "Phase 2 — Hash id modality (tag-format / schema-affecting)",
-      "hash": "bc4cb825d9ec9238",
-      "verified": []
-    },
-    {
-      "layer": "manual",
-      "slug": "phase-3-tagging-module-extraction-config-groundwork",
-      "groupPath": "Phase 3 — Tagging module extraction + config (groundwork)",
-      "hash": "af711e8c55940c53",
-      "verified": []
-    },
-    {
-      "layer": "manual",
-      "slug": "phase-4-code-linking-function-decoration-gated-harness-side",
-      "groupPath": "Phase 4 — Code linking / function decoration (gated; harness-side)",
-      "hash": "b3d2b77fb060065d",
-      "verified": []
-    },
     {
       "layer": "manual",
       "slug": "transitional-notes",
@@ -3868,13 +3935,6 @@
   "backlog": {
     "claims": [],
     "sections": [
-      "compatibility-policy",
-      "cross-cutting-open-questions-resolve-as-specs-are-written",
-      "phase-0-quick-wins-no-model-change-no",
-      "phase-1-deterministic-reconcile-reuses-similarityts-escalation-pattern",
-      "phase-2-hash-id-modality-tag-format-schema-affecting",
-      "phase-3-tagging-module-extraction-config-groundwork",
-      "phase-4-code-linking-function-decoration-gated-harness-side",
       "transitional-notes",
       "tripact"
     ]

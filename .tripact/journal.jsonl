@@ -8,4 +8,4 @@
   "questionId": "reanchor-7070acfecb",
   "oldId": "root.archon-another-workflow-driven-harness",
   "newText": "**Archon or another workflow-driven harness.** Archon owns the loop; every step it needs from"
-}
+}{"at":"2026-07-17T10:04:04.809Z","action":"resolve-match","questionId":"reanchor-0bc0131f7a","oldId":"declaration-generation.kernel-reserves-builtin-names","newText":"The kernel reserves the builtin generator names `cli-reference` and `hotlink-map`, and a config naming a reserved builtin with no registered implementation fails generation with a clear wiring error"}

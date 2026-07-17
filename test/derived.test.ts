@@ -13,6 +13,7 @@ import { afterAll, describe, expect, it } from "vitest";
 import { CLI_REFERENCE, deriveOutputs, HOTLINK_MAP, RESERVED_BUILTINS } from "../src/derived.js";
 import { loadConfig } from "../src/config.js";
 import { runCli } from "./helpers/cli.js";
+import { specTag } from "./helpers/fixture.js";
 
 const scratch: string[] = [];
 afterAll(() => {
@@ -102,16 +103,18 @@ describe("derived outputs — declaration & generation (§18.1)", () => {
     expect(byName["cli-reference"]).toMatchObject({ output: "CLI.md", generator: "cli-reference" });
   });
 
+  // The id predates the §18.1 split: adjudicating that reword reunited this claim's original
+  // identity with the surviving atom, so the tag stays `…kernel-reserves-builtin-names`.
   // @specs:declaration-generation.kernel-reserves-builtin-names
-  it("reserves the builtin names cli-reference and hotlink-map, registers no generator itself, and fails generation with a clear error when a reserved name has no registered implementation", () => {
-    // The kernel reserves exactly these names (implementations are harness-injected).
+  it("reserves the builtin generator names, and a reserved name with no registered implementation fails generation with a clear wiring error", () => {
+    // The kernel reserves exactly these two names.
     expect(RESERVED_BUILTINS.has(CLI_REFERENCE)).toBe(true);
     expect(RESERVED_BUILTINS.has(HOTLINK_MAP)).toBe(true);
     expect(CLI_REFERENCE).toBe("cli-reference");
     expect(HOTLINK_MAP).toBe("hotlink-map");
 
-    // The tripact CLI registers no builtin generator of its own, so declaring `cli-reference` and
-    // asking to generate it fails with a clear "not registered" error and exit 2.
+    // `cli-reference` is the reserved-but-unregistered case: declaring it and asking to generate
+    // fails with a clear "not registered" wiring error and exit 2 — never a shell-command attempt.
     const repo = derivedRepo({
       exclude: ["CLI.md"],
       derivedBlock: [
@@ -125,6 +128,58 @@ describe("derived outputs — declaration & generation (§18.1)", () => {
     expect(r.status).toBe(2);
     expect(r.stderr).toContain("not registered");
     expect(r.stderr).toContain("cli-reference");
+  });
+
+  // @specs:declaration-generation.kernel-registers-hotlink-map-itself
+  it("registers hotlink-map itself — generate renders it from the kernel's own analysis — while cli-reference is left for a harness", () => {
+    // A repo carrying a claim, a tagged test, a code tag, and BOTH reserved builtins declared.
+    const repo = mkdtempSync(path.join(os.tmpdir(), "tripact-derived-hlmap-"));
+    scratch.push(repo);
+    execFileSync("git", ["init", "-b", "main"], { cwd: repo });
+    writeFileSync(path.join(repo, "SPECS.md"), "# Spec\n\n## A\n\n- [ ] thing one happens\n");
+    mkdirSync(path.join(repo, "tests"), { recursive: true });
+    mkdirSync(path.join(repo, "src"), { recursive: true });
+    mkdirSync(path.join(repo, "docs"), { recursive: true });
+    writeFileSync(path.join(repo, "tests", "t.spec.ts"), `test("${specTag("a.thing-one-happens")} - t", () => {});\n`);
+    writeFileSync(path.join(repo, "src", "x.ts"), `// ${specTag("a.thing-one-happens")}\nexport const f = () => 1;\n`);
+    writeFileSync(
+      path.join(repo, "tripact.yaml"),
+      [
+        ...BASE_LAYERS,
+        "exclude:",
+        "  - docs/**",
+        "codeLinks:",
+        '  paths: ["src/**/*.ts"]',
+        "derived:",
+        "  map:",
+        "    output: docs/hotlink-map.json",
+        "    generator: hotlink-map",
+        "  ref:",
+        "    output: docs/CLI.md",
+        "    generator: cli-reference",
+        "",
+      ].join("\n"),
+    );
+
+    // hotlink-map is implemented by the kernel: generation succeeds and writes the rendered map,
+    // which means the renderer really is wired to the reserved name — not merely exported.
+    const ok = runCli(["generate", "map"], { cwd: repo });
+    expect(ok.status, `generate map\n${ok.stderr}`).toBe(0);
+    const map = JSON.parse(readFileSync(path.join(repo, "docs", "hotlink-map.json"), "utf8"));
+    expect(map.schemaVersion).toBe(1);
+    expect(map.claims[0].claimId).toBe("a.thing-one-happens");
+    expect(map.claims[0].spec).toMatchObject({ file: "SPECS.md" });
+    expect(map.claims[0].code[0]).toMatchObject({ file: "src/x.ts" });
+
+    // …and it renders from the kernel's own analysis alone: byte-identical on a second run.
+    const first = readFileSync(path.join(repo, "docs", "hotlink-map.json"), "utf8");
+    expect(runCli(["generate", "map"], { cwd: repo }).status).toBe(0);
+    expect(readFileSync(path.join(repo, "docs", "hotlink-map.json"), "utf8")).toBe(first);
+
+    // cli-reference needs a harness's own command tree, so the kernel leaves it unregistered.
+    const miss = runCli(["generate", "ref"], { cwd: repo });
+    expect(miss.status).toBe(2);
+    expect(miss.stderr).toContain("not registered");
   });
 
   // @specs:declaration-generation.non-reserved-generator-runs-shell
