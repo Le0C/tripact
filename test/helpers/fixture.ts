@@ -47,7 +47,7 @@ export const CONFIG = [
   "    role: prescriptive",
   "    paths:",
   "      - SPECS.md",
-  "  manual:",
+  "  docs:",
   "    role: descriptive",
   "    paths:",
   "      - docs/manual/**/*.md",
@@ -58,7 +58,7 @@ export const CONFIG = [
   "",
   "edges:",
   "  - [specs, tests]",
-  "  - [manual, tests]",
+  "  - [docs, tests]",
   "",
 ].join("\n");
 
@@ -80,7 +80,7 @@ export function fullRepo(prefix = "tripact-fixture-"): string {
   return repo;
 }
 
-// Tag composers for SCRATCH-REPO fixture files. Always build a fixture's `@specs:`/`@manual:` tag
+// Tag composers for SCRATCH-REPO fixture files. Always build a fixture's `@specs:`/`@docs:` tag
 // through these — never write the literal into this suite's source.
 //
 // This repository dogfoods tripact: its own `tests` layer scans `test/**/*.test.ts` for those very
@@ -90,4 +90,4 @@ export function fullRepo(prefix = "tripact-fixture-"): string {
 // this source while the scratch repo still receives the real tag it needs.
 const AT = "@";
 export const specTag = (id: string): string => `${AT}specs:${id}`;
-export const manualTag = (slug: string): string => `${AT}manual:${slug}`;
+export const docsTag = (slug: string): string => `${AT}docs:${slug}`;

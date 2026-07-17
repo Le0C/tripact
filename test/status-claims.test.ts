@@ -53,7 +53,7 @@ describe("tripact status (§6.1)", () => {
     // Per-layer summary: alive atom count, TBD count, and retained dead-id count for each modelled
     // layer (the verificatory layer reports its file count instead).
     expect(out).toContain("layer specs (prescriptive): 2 atoms (0 TBD) · 0 dead ids retained");
-    expect(out).toContain("layer manual (descriptive): 2 atoms (0 TBD) · 0 dead ids retained");
+    expect(out).toContain("layer docs (descriptive): 2 atoms (0 TBD) · 0 dead ids retained");
     // Per-edge coverage percentage, with the covered/stale/uncovered breakdown.
     expect(out).toContain("edge specs ↔ tests: 0% covered (0 covered, 0 stale, 2 uncovered)");
     // Orphan-tag and open-escalation counts.
@@ -89,7 +89,7 @@ describe("tripact claims (§6.2)", () => {
     const listing = JSON.parse(runCli(["claims", "--json"], { cwd: repo }).stdout);
     const byId = new Map<string, any>(listing.claims.map((c: any) => [c.id, c]));
 
-    // Every alive claim across the two modelled layers is present (2 spec + 2 manual), none from the
+    // Every alive claim across the two modelled layers is present (2 spec + 2 docs), none from the
     // verificatory layer.
     expect(listing.claims.map((c: any) => c.id).sort()).toEqual(
       [
@@ -203,7 +203,7 @@ describe("tripact claims (§6.2)", () => {
 
   // @specs:claim-listing.listing-order-deterministic-layer
   it("orders by layer then document order, with dead entries sorted by id", () => {
-    // Alive ordering: layer order (manual before specs), then document order within a layer.
+    // Alive ordering: layer order (docs before specs), then document order within a layer.
     const alive = initRepo("tripact-claims-order-", {
       "SPECS.md": SPECS,
       "docs/manual/using.md": MANUAL,

@@ -77,7 +77,7 @@ export function buildServer(repoRoot: string, identity: ServerIdentity = {}): Mc
         reconcile: z
           .string()
           .optional()
-          .describe('Optional "<prescriptive-layer>:<descriptive-layer>" pair, e.g. "uac:manual"'),
+          .describe('Optional "<prescriptive-layer>:<descriptive-layer>" pair, e.g. "specs:docs"'),
       },
     },
     ({ reconcile }) =>

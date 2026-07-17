@@ -69,7 +69,7 @@ describe("tripact tasks — emission (UAC §10.1)", () => {
 
     // Deriving the queue (plain and with a reconcile pair) must be side-effect free.
     runCli(["tasks", "--json"], { cwd: repo });
-    runCli(["tasks", "--reconcile", "specs:manual", "--json"], { cwd: repo });
+    runCli(["tasks", "--reconcile", "specs:docs", "--json"], { cwd: repo });
 
     expect(readFileSync(path.join(repo, "SPECS.md"), "utf8"), "prescriptive artefact untouched").toBe(specsBefore);
     expect(readFileSync(path.join(repo, "docs", "manual", "using.md"), "utf8"), "descriptive artefact untouched").toBe(manualBefore);
@@ -181,12 +181,12 @@ describe("tripact tasks — emission (UAC §10.1)", () => {
   // @specs:task-emission.tripact-tasks---reconcile-prescriptivedescriptive
   it("emits one layer-reconciliation task carrying both layers' full inventories under --reconcile", () => {
     const repo = track(fullRepo("tripact-tasks-recon-"));
-    const r = runCli(["tasks", "--reconcile", "specs:manual", "--json"], { cwd: repo });
+    const r = runCli(["tasks", "--reconcile", "specs:docs", "--json"], { cwd: repo });
     const recon = JSON.parse(r.stdout).tasks.filter((t: { kind: string }) => t.kind === "reconcile-layers");
     expect(recon, "exactly one reconcile-layers task").toHaveLength(1);
     const payload = recon[0].payload as { prescriptiveLayer: string; descriptiveLayer: string; claims: unknown[]; sections: unknown[] };
     expect(payload.prescriptiveLayer).toBe("specs");
-    expect(payload.descriptiveLayer).toBe("manual");
+    expect(payload.descriptiveLayer).toBe("docs");
     // Full inventories: every prescriptive claim (both) and every descriptive section (one).
     expect(payload.claims).toHaveLength(2);
     expect(payload.sections).toHaveLength(1);

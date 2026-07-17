@@ -41,6 +41,10 @@ const byFileLine = (a: { file: string; line: number }, b: { file: string; line: 
  * Scan the configured code file set for claim-id tags and report navigational links (claim ↔ code
  * file:line) plus orphan code tags (unknown or dead ids). Deterministic and stably ordered; never a
  * coverage verdict, never gating (UAC §20.2).
+ *
+ * Implements @specs:scanning-code-links.hotlink-scanning-never-affects
+ * - spec:  [UAC.md — §20.2 Scanning code links]({@link ./../UAC.md})
+ * - tests: [hotlinks.test.ts]({@link ./../test/hotlinks.test.ts})
  */
 export function scanHotlinks(analysis: Analysis, repoRoot: string): HotlinksReport {
   const cl = analysis.config.codeLinks;

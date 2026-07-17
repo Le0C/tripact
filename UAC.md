@@ -44,7 +44,7 @@ skill emission below.
 
 - The kernel reads `tripact.yaml` from the repository root; `schemaVersion` is the literal `1`
 - Config declares named layers, each with a `role` (`prescriptive`, `descriptive`, or `verificatory`), a non-empty list of glob `paths`, and an optional `conventions` file path
-- A layer accepts an optional `tagPattern` and `sectionTagPattern` regex; the defaults match `@specs:<id>` in test titles and annotations for claims and `@manual:<slug>` for descriptive sections
+- A layer accepts an optional `tagPattern` and `sectionTagPattern` regex; the defaults match `@specs:<id>` in test titles and annotations for claims and `@docs:<slug>` for descriptive sections
 - Config declares `edges` explicitly as pairs of layer names — no edge is ever checked that is not declared
 - Config accepts an optional `pathMap` of code globs to layer names, used to narrow which claims a code diff can affect (§5.3)
 - Config accepts an optional `exclude` list of globs subtracted from every layer's file set after collection, so archived, vendored, or generated trees never parse as source atoms
@@ -108,7 +108,7 @@ skill emission below.
 
 ### 4.2 Descriptive ↔ Verificatory (`D↔V`)
 
-- Descriptive groups (manual sections) are linked to tests via section tags matching the layer's `sectionTagPattern` (default `@manual:<group-slug>`)
+- Descriptive groups (docs sections) are linked to tests via section tags matching the layer's `sectionTagPattern` (default `@docs:<group-slug>`)
 - Every descriptive group receives a D↔V verdict — **covered**, **pending**, **stale** (any atom in the section changed since verification), or **uncovered** — evaluated at group level, so individual descriptive atoms are tracked for identity but not individually required to have tests
 - Orphan section tags are reported identically to §4.1
 

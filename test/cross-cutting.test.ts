@@ -31,7 +31,7 @@ const REPORT_COMMANDS = ["check", "status", "claims", "tasks", "reconcile", "hot
 // never matches tripact's tag pattern — a fixture's tag names a fixture claim, and a literal here
 // would surface as an orphan tag in tripact's own report.
 const SPEC_TAG = `@${"specs"}:addition.addnumbers-returns-sum-two`;
-const SECTION_TAG = `@${"manual"}:adding-numbers`;
+const SECTION_TAG = `@${"docs"}:adding-numbers`;
 
 /** The fixture's tests, tagged — so a later reword leaves an orphan tag behind. */
 const TAGGED_TESTS = [

@@ -1,13 +1,13 @@
 // End-to-end coverage of the two coverage edges, driven through the prebuilt CLI over scratch git
 // repos: Prescriptive ↔ Verificatory (UAC §4.1 — claim ids ↔ test tags, one verdict per non-(tbd)
-// atom, orphan tags) and Descriptive ↔ Verificatory (UAC §4.2 — manual sections ↔ section tags,
+// atom, orphan tags) and Descriptive ↔ Verificatory (UAC §4.2 — docs sections ↔ section tags,
 // evaluated at group level).
 import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import { git, runCli } from "./helpers/cli.js";
-import { CONFIG, MANUAL, manualTag, specTag, SPECS } from "./helpers/fixture.js";
+import { CONFIG, MANUAL, docsTag, specTag, SPECS } from "./helpers/fixture.js";
 
 const scratch: string[] = [];
 afterAll(() => {
@@ -296,34 +296,38 @@ describe("Prescriptive ↔ Verificatory (§4.1)", () => {
 
 describe("Descriptive ↔ Verificatory (§4.2)", () => {
   // @specs:descriptive-verificatory-dv.descriptive-groups-manual-sections
-  it("links manual sections to tests via section tags matching the layer's sectionTagPattern", () => {
-    // Default pattern: @manual:<group-slug>.
+  it("links docs sections to tests via section tags matching the layer's sectionTagPattern", () => {
+    // Default pattern: @docs:<group-slug>.
     const dflt = initRepo("tripact-dv-default-", {
       "SPECS.md": SPECS,
       "docs/manual/using.md": MANUAL,
-      "tests/e2e/calc.spec.ts": `// ${manualTag("adding-numbers")}\ntest("manual", () => {});\n`,
+      "tests/e2e/calc.spec.ts": `// ${docsTag("adding-numbers")}\ntest("docs", () => {});\n`,
     });
-    const dv = onEdge(check(dflt), ["manual", "tests"]);
+    const dv = onEdge(check(dflt), ["docs", "tests"]);
     expect(dv.get("adding-numbers")?.kind).toBe("pending");
     expect(dv.get("adding-numbers")?.tags).toEqual([{ file: "tests/e2e/calc.spec.ts", line: 1 }]);
 
-    // A configured sectionTagPattern replaces the default: @docs: links the section, and @manual:
-    // is not scanned at all on this layer (so it links nothing and is not an orphan either).
+    // A configured sectionTagPattern REPLACES the default: `@guide:` links the section, while the
+    // default `@docs:` is not scanned at all on this layer — so it links nothing and is not an
+    // orphan either. The custom pattern must differ from the default for this to prove anything.
+    // `@guide:` is written literally on purpose: this repo scans only `@specs:`/`@docs:`, so the
+    // literal is inert here, whereas a literal `@docs:` would be read as a real section tag of this
+    // repo's own docs layer and reported as an orphan.
     const custom = initRepo(
       "tripact-dv-custom-",
       {
         "SPECS.md": SPECS,
         "docs/manual/using.md": MANUAL,
         "tests/e2e/calc.spec.ts":
-          `// @docs:adding-numbers\n// ${manualTag("adding-numbers")}\ntest("manual", () => {});\n`,
+          `// @guide:adding-numbers\n// ${docsTag("adding-numbers")}\ntest("docs", () => {});\n`,
       },
       CONFIG.replace(
         "      - tests/**/*.spec.ts\n",
-        '      - tests/**/*.spec.ts\n    sectionTagPattern: "@docs:([a-z0-9.-]+)"\n',
+        '      - tests/**/*.spec.ts\n    sectionTagPattern: "@guide:([a-z0-9.-]+)"\n',
       ),
     );
     const report = check(custom);
-    const dvCustom = onEdge(report, ["manual", "tests"]);
+    const dvCustom = onEdge(report, ["docs", "tests"]);
     expect(dvCustom.get("adding-numbers")?.kind).toBe("pending");
     expect(dvCustom.get("adding-numbers")?.tags).toEqual([
       { file: "tests/e2e/calc.spec.ts", line: 1 },
@@ -333,11 +337,11 @@ describe("Descriptive ↔ Verificatory (§4.2)", () => {
 
   // @specs:descriptive-verificatory-dv.every-descriptive-group-receives
   it("verdicts descriptive groups — not atoms — through uncovered → pending → covered → stale", () => {
-    const edge: [string, string] = ["manual", "tests"];
+    const edge: [string, string] = ["docs", "tests"];
     const repo = initRepo("tripact-dv-lifecycle-", {
       "SPECS.md": SPECS,
       "docs/manual/using.md": MANUAL,
-      "tests/e2e/calc.spec.ts": 'test("manual", () => {});\n',
+      "tests/e2e/calc.spec.ts": 'test("docs", () => {});\n',
     });
 
     // uncovered — no section tag.
@@ -345,7 +349,7 @@ describe("Descriptive ↔ Verificatory (§4.2)", () => {
 
     // pending — tagged, never verified.
     write(repo, {
-      "tests/e2e/calc.spec.ts": `// ${manualTag("adding-numbers")}\ntest("manual", () => {});\n`,
+      "tests/e2e/calc.spec.ts": `// ${docsTag("adding-numbers")}\ntest("docs", () => {});\n`,
     });
     commit(repo, "tag section");
     expect(onEdge(check(repo), edge).get("adding-numbers")?.kind).toBe("pending");
@@ -370,19 +374,19 @@ describe("Descriptive ↔ Verificatory (§4.2)", () => {
       "uncovered",
     );
 
-    // Evaluated at group level: the only manual↔tests subject is the group slug, never an atom id.
+    // Evaluated at group level: the only docs↔tests subject is the group slug, never an atom id.
     expect([...onEdge(stale, edge).keys()]).toEqual(["adding-numbers"]);
     // Atoms are still tracked for identity — each carries its own id and inherits the group verdict
     // rather than being individually required to have a test.
     const listed = JSON.parse(runCli(["claims", "--json"], { cwd: repo }).stdout) as {
       claims: { id: string; layer: string; verdict?: string }[];
     };
-    const manualAtoms = listed.claims.filter((c) => c.layer === "manual");
-    expect(manualAtoms.map((c) => c.id).sort()).toEqual([
+    const docsAtoms = listed.claims.filter((c) => c.layer === "docs");
+    expect(docsAtoms.map((c) => c.id).sort()).toEqual([
       "adding-numbers.click-add-see-result",
       "adding-numbers.type-number-each-input", // re-anchored onto the reworded atom
     ]);
-    expect(manualAtoms.every((c) => c.verdict === "stale")).toBe(true);
+    expect(docsAtoms.every((c) => c.verdict === "stale")).toBe(true);
   });
 
   // @specs:descriptive-verificatory-dv.orphan-section-tags-reported
@@ -392,7 +396,7 @@ describe("Descriptive ↔ Verificatory (§4.2)", () => {
       "docs/manual/using.md": MANUAL,
       "tests/e2e/calc.spec.ts": [
         `// ${specTag("no.such-claim")}`,
-        `// ${manualTag("no-such-section")}`,
+        `// ${docsTag("no-such-section")}`,
         'test("x", () => {});',
         "",
       ].join("\n"),

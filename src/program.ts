@@ -180,7 +180,7 @@ export function buildProgram(): Command {
     .command("tasks")
     .description("Derive a repair/generation work queue from the current state (UAC §10.1)")
     .option("--json", "machine-readable queue on stdout")
-    .option("--reconcile <pair>", "also emit a layer-reconciliation task, e.g. uac:manual")
+    .option("--reconcile <pair>", "also emit a layer-reconciliation task, e.g. specs:docs")
     .option("--long", "print every task in full instead of truncating past a fixed threshold (Cross-Cutting: Human output)")
     .action((opts: { json?: boolean; reconcile?: string; long?: boolean }) => {
       const root = requireRepoRoot();
@@ -413,7 +413,7 @@ export function buildProgram(): Command {
     .command("prompt")
     .description("Print a ready-to-hand-to-an-agent prompt for one work item — a task id or an escalation question id (UAC §10.1, §7.2)")
     .argument("<id>", "a task id (from `tasks`) or an escalation question id (from `check`/`escalations`)")
-    .option("--reconcile <pair>", "include reconciliation tasks when resolving the id, e.g. uac:manual")
+    .option("--reconcile <pair>", "include reconciliation tasks when resolving the id, e.g. specs:docs")
     .action((id: string, opts: { reconcile?: string }) => {
       const root = requireRepoRoot();
       const analysis = runAnalysis(root);

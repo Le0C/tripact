@@ -21,7 +21,7 @@ describe("tagFormatFromPattern (H1)", () => {
   // @specs:tripactyaml-schema.layer-accepts-optional-tagpattern
   it("renders the default patterns to their familiar literals", () => {
     expect(tagFormatFromPattern("@specs:([a-z0-9.-]+)", "<id>")).toBe("@specs:<id>");
-    expect(tagFormatFromPattern("@manual:([a-z0-9.-]+)", "<slug>")).toBe("@manual:<slug>");
+    expect(tagFormatFromPattern("@docs:([a-z0-9.-]+)", "<slug>")).toBe("@docs:<slug>");
   });
 
   it("honours a custom literal prefix so the emitted tag matches what the scanner recognises", () => {
@@ -66,7 +66,7 @@ describe("matchesGlob (L4)", () => {
 // ---------------------------------------------------------------------------------------------
 describe("disambiguateSlugs (M2)", () => {
   const groupWith = (file: string, groupPath: string, slug: string): Group => ({
-    layer: "manual",
+    layer: "docs",
     groupPath,
     slug,
     file,
@@ -96,8 +96,8 @@ describe("disambiguateSlugs (M2)", () => {
 
   it("cross-file same-heading collisions are the parser's real failure mode", () => {
     const doc = "# Doc\n\n## Adding numbers\n\n- step one\n";
-    const g1 = parseMarkdownLayer("manual", "one.md", doc).groups;
-    const g2 = parseMarkdownLayer("manual", "two.md", doc).groups;
+    const g1 = parseMarkdownLayer("docs", "one.md", doc).groups;
+    const g2 = parseMarkdownLayer("docs", "two.md", doc).groups;
     const all = [...g1, ...g2];
     expect(new Set(all.map((g) => g.slug)).size).toBe(1); // collide before disambiguation
     disambiguateSlugs(all);

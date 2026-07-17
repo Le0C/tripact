@@ -204,7 +204,15 @@ product code — you do; ${r.cli} only reads the tags back with \`${r.cli} hotli
    \`${r.cli} claims --json\` for each claim's declaring \`file\`/\`line\` and covering test tags.
 2. In the docstring of each function that implements a claim, add:
    - the claim-id tag in the repo's \`codeLinks.tagPattern\` form, so \`${r.cli} hotlinks\` links it
-   - a clickable back-link to the claim's spec \`file:line\`, and forward links to its covering tests
+   - a back-link to the claim's spec FILE, and forward links to its covering test files, each written
+     as a markdown link whose target is a \`{@link}\` tag:
+     \`- spec: [SPEC.md — §3.1 Section name]({@link ./../SPEC.md})\`
+     That combined form is the one that both renders as a label and navigates from an editor hover.
+   - Link to the file, never to a line or a heading. A \`#L42\` or \`#some-heading\` fragment renders
+     but refuses to navigate: JSDoc has no file-link support (microsoft/TypeScript#47718 is still
+     open, and line numbers are an unmet ask in that thread). A line number would rot anyway —
+     nothing re-checks the back-link text, so it goes silently wrong the moment the spec shifts.
+     Put the section name in the link label instead: it is greppable and survives edits.
 3. Re-run \`${r.cli} hotlinks\`: the function shows as a link, not an orphan. Fix any orphan code tag
    (unknown or dead id) by correcting it to a live id from \`${r.cli} claims\`.
 4. If a \`hotlink-map\` derived output is declared, refresh it with \`${r.cli} generate\`.
@@ -221,7 +229,7 @@ product code — you do; ${r.cli} only reads the tags back with \`${r.cli} hotli
 
 /**
  * The repair skill: execute the derived repair/generation queue (write tagged tests, reconcile
- * stale claims, fix orphan tags, cover manual sections, reconcile layers). Drives only kernel
+ * stale claims, fix orphan tags, cover docs sections, reconcile layers). Drives only kernel
  * commands (`tasks`, `check`, `status`) plus artefact edits, so it is portable to any harness.
  */
 export function repairSkill(opts?: SkillOptions): EmittedSkill {
@@ -230,9 +238,9 @@ export function repairSkill(opts?: SkillOptions): EmittedSkill {
 name: ${r.namePrefix}-repair
 description: >
   Execute ${r.cli} repair and generation tasks — write missing tagged tests, reconcile
-  stale claims, fix orphan tags, cover undocumented manual sections, and reconcile a
+  stale claims, fix orphan tags, cover undocumented docs sections, and reconcile a
   descriptive layer against its prescriptive layer. Use when the user says "work the
-  ${r.cli} backlog", "repair the drift", "reconcile the manual with the spec", or after
+  ${r.cli} backlog", "repair the drift", "reconcile the docs with the spec", or after
   \`${r.cli} tasks\` reports open work.
 metadata:
   generatedBy: ${r.namePrefix}@${r.version}
@@ -260,8 +268,8 @@ is your job, under human review.
      the user rather than editing the spec silently).
    - **fix-orphan-tag**: the tag references a retired or mistyped id — find the right
      live id with \`${r.cli} status --json\`, or remove the tag if the claim is gone.
-   - **cover-section**: write or tag a test that walks the manual section's steps,
-     tagged \`@manual:<slug>\`.
+   - **cover-section**: write or tag a test that walks the docs section's steps,
+     tagged \`@docs:<slug>\`.
    - **reconcile-layers**: judge which claims lack user-facing documentation and write
      the missing sections in the descriptive layer's existing style. Document
      user-operable behaviour; skip internals.
@@ -371,17 +379,17 @@ call, so it is your job, not a fixed heuristic. Propose the config, confirm with
 2. **Choose layers and globs.** Give each layer a short name and the narrowest glob that captures its
    files. A repo need not have all three — tripact checks only the edges you declare.
 3. **Declare edges.** Supported edges are prescriptive↔verificatory and descriptive↔verificatory —
-   e.g. \`[specs, tests]\`, \`[manual, tests]\`. (Direct spec↔docs is a reconciliation task, not an edge.)
+   e.g. \`[specs, tests]\`, \`[docs, tests]\`. (Direct spec↔docs is a reconciliation task, not an edge.)
 4. **Write \`tripact.yaml\`** at the repository root. Minimal shape:
    \`\`\`yaml
    schemaVersion: 1
    layers:
      specs:  { role: prescriptive, paths: [SPECS.md] }
-     manual: { role: descriptive,  paths: ['docs/**/*.md'] }
+     docs:   { role: descriptive,  paths: ['docs/**/*.md'] }
      tests:  { role: verificatory, paths: ['tests/**/*.spec.ts'] }
    edges:
      - [specs, tests]
-     - [manual, tests]
+     - [docs, tests]
    \`\`\`
 5. **Verify.** Run \`${r.cli} check\` — it should parse without a config error and report the initial
    drift (everything uncovered until tests are tagged). Then emit the working skills with
@@ -390,7 +398,7 @@ call, so it is your job, not a fixed heuristic. Propose the config, confirm with
 ## Rules
 
 - Tag conventions: tests reference spec claims with \`@specs:<id>\` and doc sections with
-  \`@manual:<slug>\` (override per layer with \`tagPattern\` / \`sectionTagPattern\` if your repo differs).
+  \`@docs:<slug>\` (override per layer with \`tagPattern\` / \`sectionTagPattern\` if your repo differs).
 - Propose, then confirm: show the user the layers and edges you inferred before writing the file.
 - Do not invent artefacts. If a role has no files, leave that layer out rather than pointing at
   something that is not really a spec / doc / test.
@@ -450,7 +458,7 @@ export function taskPrompt(task: Task, opts?: SkillOptions): string {
     "fix-orphan-tag":
       `The tag references no live claim. Find the correct live id (\`${r.cli} status --json\`) and fix the tag, or remove it if the claim is gone.`,
     "cover-section":
-      "Write or tag a test that walks the manual section's steps, tagged with the payload's `tagFormat`.",
+      "Write or tag a test that walks the docs section's steps, tagged with the payload's `tagFormat`.",
     "reconcile-layers":
       "Judge which prescriptive claims lack user-facing documentation and write the missing sections in the descriptive layer's existing style. Document user-operable behaviour; skip internals.",
     "regenerate-derived":

@@ -95,7 +95,7 @@ export class ConfigError extends Error {
 }
 
 export const DEFAULT_TAG_PATTERN = "@specs:([a-z0-9.-]+)";
-export const DEFAULT_SECTION_TAG_PATTERN = "@manual:([a-z0-9.-]+)";
+export const DEFAULT_SECTION_TAG_PATTERN = "@docs:([a-z0-9.-]+)";
 
 // --- tag-format derivation (UAC §4.1/§4.2) -------------------------------------------------------
 // A repair task must instruct the SAME literal tag the engine's scanner matches — the configured
@@ -148,7 +148,13 @@ export function tagFormatFromPattern(pattern: string, placeholder: string): stri
   return unescapeRegexLiteral(pattern.slice(0, g.start)) + placeholder + unescapeRegexLiteral(pattern.slice(g.end));
 }
 
-/** Reports ALL validation problems at once (UAC §2.2). */
+/**
+ * Reports ALL validation problems at once (UAC §2.2).
+ *
+ * Implements @specs:validation-behaviour.check-every-other-command
+ * - spec:  [UAC.md — §2.2 Validation behaviour]({@link ./../UAC.md})
+ * - tests: [config.test.ts]({@link ./../test/config.test.ts})
+ */
 export function loadConfig(repoRoot: string): Config {
   const p = path.join(repoRoot, CONFIG_FILENAME);
   if (!existsSync(p)) {

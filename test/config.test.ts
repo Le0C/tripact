@@ -28,7 +28,7 @@ const VALID = [
   "    role: prescriptive",
   "    paths: [UAC.md]",
   "    conventions: conventions/specs.md",
-  "  manual:",
+  "  docs:",
   "    role: descriptive",
   "    paths: [docs/**/*.md]",
   "  tests:",
@@ -37,7 +37,7 @@ const VALID = [
   "    tagPattern: '@specs:([a-z0-9.-]+)'",
   "edges:",
   "  - [specs, tests]",
-  "  - [manual, tests]",
+  "  - [docs, tests]",
 ].join("\n");
 
 describe("config schema (§2.1)", () => {
@@ -47,12 +47,12 @@ describe("config schema (§2.1)", () => {
   it("reads tripact.yaml from the root and accepts declared layers + edges", () => {
     const cfg = loadConfig(repoWith(VALID));
     expect(cfg.schemaVersion).toBe(1);
-    expect(Object.keys(cfg.layers).sort()).toEqual(["manual", "specs", "tests"]);
+    expect(Object.keys(cfg.layers).sort()).toEqual(["docs", "specs", "tests"]);
     expect(cfg.layers.specs!.role).toBe("prescriptive");
     expect(cfg.layers.specs!.conventions).toBe("conventions/specs.md");
     expect(cfg.edges).toEqual([
       ["specs", "tests"],
-      ["manual", "tests"],
+      ["docs", "tests"],
     ]);
   });
 
@@ -122,7 +122,7 @@ describe("config validation (§2.2)", () => {
       "  write-tests: wizardry",
     ]
       .join("\n")
-      .replace("  - [manual, tests]", "  - [specs, ghost]");
+      .replace("  - [docs, tests]", "  - [specs, ghost]");
     let problems: string[] = [];
     try {
       loadConfig(repoWith(yaml));

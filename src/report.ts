@@ -21,7 +21,7 @@ export interface CheckReportJson {
   nonDeterministicGenerators: string[];
   /**
    * The three-way pact: spec claims, doc sections, and tests correlated on their shared test file
-   * (a test tagging both `@specs:` and `@manual:`). Advisory — it feeds no verdict or exit code, and
+   * (a test tagging both `@specs:` and `@docs:`). Advisory — it feeds no verdict or exit code, and
    * is all-empty unless both a spec↔tests and a docs↔tests edge are declared. Additive field.
    */
   pact: PactReport;
@@ -50,6 +50,10 @@ function forkCount(analysis: Analysis): number {
  * no pending, stale, or new-uncovered verdicts, no orphans, no escalations, no stale derived
  * outputs. Acknowledged backlog is reported but never drives exit 1 — unless `--strict`, which
  * restores coverage-gating by treating acknowledged backlog as drift too.
+ *
+ * Implements @specs:tripact-check-core.exit-code-0-repository
+ * - spec:  [UAC.md — §5.1 tripact check core behaviour]({@link ./../UAC.md})
+ * - tests: [cli.test.ts]({@link ./../test/cli.test.ts})
  */
 export function exitCodeFor(analysis: Analysis): 0 | 1 {
   const newUncovered = analysis.verdicts.some((v) => v.kind === "uncovered" && !v.acknowledged);

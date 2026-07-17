@@ -154,8 +154,13 @@ describe("tripact-hotlink-decoration skill content (§1.2)", () => {
     // forward links to its covering tests — placed in the implementing function's docstring.
     expect(content).toContain("docstring of each function that implements a claim");
     expect(content).toContain("`codeLinks.tagPattern` form");
-    expect(content).toContain("a clickable back-link to the claim's spec `file:line`");
-    expect(content).toContain("forward links to its covering tests");
+    expect(content).toContain("a back-link to the claim's spec FILE");
+    expect(content).toContain("forward links to its covering test files");
+    // It teaches the one link form that both renders and navigates from a hover — a markdown link
+    // wrapping a {@link} tag — and warns off the fragment forms that render but refuse to navigate.
+    expect(content).toContain("markdown link whose target is a `{@link}` tag");
+    expect(content).toContain("Link to the file, never to a line or a heading");
+    expect(content).toContain("microsoft/TypeScript#47718");
     // It reads the links back through the kernel rather than inventing them.
     expect(content).toContain("`tripact hotlinks --json`");
     expect(content).toContain("Never invent a claim id");

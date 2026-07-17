@@ -124,7 +124,13 @@ export function loadSidecar(repoRoot: string): Sidecar {
   return raw;
 }
 
-/** Stable serialisation: sorted entries, fixed key order via replacer-free canonical objects. */
+/**
+ * Stable serialisation: sorted entries, fixed key order via replacer-free canonical objects.
+ *
+ * Implements @specs:sidecar.sidecar-serialisation-stable-entries
+ * - spec:  [UAC.md — §3.2 Sidecar]({@link ./../UAC.md})
+ * - tests: [sidecar.test.ts]({@link ./../test/sidecar.test.ts})
+ */
 export function serializeSidecar(sidecar: Sidecar): string {
   const claims = [...sidecar.claims]
     .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))

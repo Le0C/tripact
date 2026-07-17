@@ -46,7 +46,7 @@ export function slugify(text: string, maxWords = 8): string {
  * Make section slugs unique within a descriptive layer (UAC §4.2). `slugify` keeps only the first
  * few lowercased ASCII words, so two distinct sections — different files, or heading paths that
  * happen to share their leading words — can collapse to one slug. That is a silent correctness hole:
- * a single `@manual:<slug>` tag would mark BOTH sections covered, and one section's sidecar group
+ * a single `@docs:<slug>` tag would mark BOTH sections covered, and one section's sidecar group
  * would overwrite the other's. When two or more groups share a base slug we append a short suffix
  * derived from each group's OWN identity (file + heading path), so a group's slug depends only on itself
  * — adding or removing a colliding sibling never reshuffles which suffix belongs to which section.
@@ -72,6 +72,13 @@ export interface ParsedFile {
   atoms: Atom[];
 }
 
+/**
+ * Parse one markdown layer file into its heading groups and list-item atoms.
+ *
+ * Implements @specs:markdown-parsing.parsing-deterministic-same-file
+ * - spec:  [UAC.md — §3.1 Markdown parsing]({@link ./../UAC.md})
+ * - tests: [parser.test.ts]({@link ./../test/parser.test.ts})
+ */
 export function parseMarkdownLayer(layer: string, file: string, content: string): ParsedFile {
   const displayStack: Array<string | null> = [null, null, null, null, null, null];
   const keyStack: Array<string | null> = [null, null, null, null, null, null];

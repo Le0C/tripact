@@ -1,4 +1,4 @@
-// Descriptive ↔ Verificatory edge: manual sections ↔ section tags, group-level. UAC §4.2.
+// Descriptive ↔ Verificatory edge: docs sections ↔ section tags, group-level. UAC §4.2.
 
 import { createHash } from "node:crypto";
 import type { EdgeVerdict, Group, OrphanTag } from "../types.js";

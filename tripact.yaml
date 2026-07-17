@@ -9,7 +9,7 @@ layers:
   # that swept in planning and architecture prose (the feedback roadmap, the contract's
   # compatibility policy), whose sections are not procedures, so a docs↔tests verdict on them is
   # meaningless. `docs/manual/` is declared ahead of having content — the on-ramp for a real manual.
-  manual:
+  docs:
     role: descriptive
     paths:
       - README.md
@@ -19,11 +19,19 @@ layers:
     paths:
       - test/**/*.test.ts
     tagPattern: "@specs:([a-z0-9.-]+)"
-    sectionTagPattern: "@manual:([a-z0-9.-]+)"
+    sectionTagPattern: "@docs:([a-z0-9.-]+)"
 
 edges:
   - [specs, tests]
-  - [manual, tests]
+  - [docs, tests]
 
 accept:
   policy: agents
+
+# Navigational code↔spec links (UAC §20.1). Declared OUTSIDE layers/edges: a code file set is never
+# a layer and never an edge, so a tag here is navigation only — it never makes a claim "covered".
+# `tagPattern` defaults to the verificatory layer's (@specs:<id>), which is what we want: one tag
+# vocabulary for both tests and code.
+codeLinks:
+  paths:
+    - src/**/*.ts

@@ -27,7 +27,7 @@ const LAYERS = [
   "    role: prescriptive",
   "    paths:",
   "      - SPECS.md",
-  "  manual:",
+  "  docs:",
   "    role: descriptive",
   "    paths:",
   "      - docs/manual/**/*.md",
@@ -37,7 +37,7 @@ const LAYERS = [
   "      - tests/**/*.spec.ts",
   "edges:",
   "  - [specs, tests]",
-  "  - [manual, tests]",
+  "  - [docs, tests]",
 ].join("\n");
 
 /** A temp dir carrying just a tripact.yaml (no git) — enough for loadConfig, which is pure. */

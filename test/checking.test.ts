@@ -75,7 +75,7 @@ describe("check core behaviour (§5.1)", () => {
     // All declared layers were parsed and every declared edge evaluated: verdicts span both edges.
     const edges = new Set(report.verdicts.map((v: { edge: [string, string] }) => v.edge.join("->")));
     expect(edges.has("specs->tests"), "specs↔tests edge evaluated").toBe(true);
-    expect(edges.has("manual->tests"), "manual↔tests edge evaluated").toBe(true);
+    expect(edges.has("docs->tests"), "docs↔tests edge evaluated").toBe(true);
 
     // check mutates neither the prescriptive artefact nor the sidecar…
     expect(readFileSync(sidecar, "utf8"), "sidecar unchanged by check").toBe(beforeSidecar);
@@ -115,7 +115,7 @@ describe("check core behaviour (§5.1)", () => {
     const out = runCli(["check"], { cwd: repo }).stdout;
     const last = out.trimEnd().split("\n").pop() ?? "";
     expect(last.startsWith("✓ level"), `last line was: ${last}`).toBe(true);
-    // 3 acknowledged claims (2 specs + 1 manual) — the backlog count is named.
+    // 3 acknowledged claims (2 specs + 1 docs) — the backlog count is named.
     expect(last).toContain("3 acknowledged backlog items");
   });
 
@@ -186,7 +186,7 @@ describe("check output (§5.2)", () => {
     expect(() => JSON.parse(out)).toThrow();
     // Both edges head their own section.
     expect(out).toContain("edge specs ↔ tests:");
-    expect(out).toContain("edge manual ↔ tests:");
+    expect(out).toContain("edge docs ↔ tests:");
     // The group heading path is printed above the verdict lines it groups.
     const headingIdx = out.indexOf("1. Calculator > 1.1 Addition");
     const verdictIdx = out.indexOf("addition.addnumbers-returns-sum-two");

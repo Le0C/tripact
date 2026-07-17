@@ -1,6 +1,6 @@
 // The three-way "pact" join (UAC: read-surface). A pure projection over `analysis.verdicts` that
 // correlates the prescriptive↔verificatory (spec↔tests) and descriptive↔verificatory (docs↔tests)
-// edges on their one shared handle: the test file. A test that tags both `@specs:X` and `@manual:S`
+// edges on their one shared handle: the test file. A test that tags both `@specs:X` and `@docs:S`
 // bridges spec claim X to doc section S, so the triangle is derivable from existing verdicts — no
 // new scanning. Advisory only: it never feeds a verdict or the exit code.
 //

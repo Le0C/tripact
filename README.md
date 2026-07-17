@@ -7,7 +7,7 @@ tests through explicit tags, and reports when any side stops agreeing with the o
 
 It works by parsing every list item in your prescriptive (spec) and descriptive (docs) files into a
 **claim**: a normalised statement with a stable, content-derived id. Tests declare which claims they
-cover with tags - `@specs:<id>` for spec claims, `@manual:<slug>` for doc sections. On every `check`,
+cover with tags - `@specs:<id>` for spec claims, `@docs:<slug>` for doc sections. On every `check`,
 tripact re-derives the claims, **re-anchors** each one to its previous identity so an id survives
 rewording, and reports the state of every spec↔test and docs↔test edge: what is covered, what is
 newly uncovered, and what went **stale** because a claim or its test changed since it was baselined.
@@ -191,14 +191,14 @@ and normalised text. Tag tests with the id (`@specs:<id>`), never with the claim
 
 **The verdict lifecycle.** Every claim sits at one verdict, and `check` reports the set:
 
-| Verdict      | Meaning                                                                                                        |
-| ------------ | -------------------------------------------------------------------------------------------------------------- |
-| `uncovered`  | no test references the claim (a _new-uncovered_ claim is drift, but _acknowledged_ backlog tasks are not)      |
-| `pending`    | a test now references the claim, but the link has not been baselined yet                                       |
-| `covered`    | the link was baselined at the last `accept`                                                                    |
-| `stale`      | the claim text or its test changed since baselining - re-verify                                                |
-| _orphan tag_ | a test tags an id that no live claim owns - fix or remove the tag                                              |
-| _escalation_ | a reworded claim tripact cannot re-anchor with confidence; answer it with `resolve` - tripact never guesses    |
+| Verdict      | Meaning                                                                                                     |
+| ------------ | ----------------------------------------------------------------------------------------------------------- |
+| `uncovered`  | no test references the claim (a _new-uncovered_ claim is drift, but _acknowledged_ backlog tasks are not)   |
+| `pending`    | a test now references the claim, but the link has not been baselined yet                                    |
+| `covered`    | the link was baselined at the last `accept`                                                                 |
+| `stale`      | the claim text or its test changed since baselining - re-verify                                             |
+| _orphan tag_ | a test tags an id that no live claim owns - fix or remove the tag                                           |
+| _escalation_ | a reworded claim tripact cannot re-anchor with confidence; answer it with `resolve` - tripact never guesses |
 
 `accept` baselines the current tree and prints a `tripact-sync-id: <hash>` trailer; `verify <hash>`
 later confirms the sidecar has not changed since.
@@ -214,7 +214,7 @@ layers:
   specs:
     role: prescriptive
     paths: [SPECS.md]
-  manual:
+  docs:
     role: descriptive
     paths: [docs/manual/**/*.md]
   tests:
@@ -222,7 +222,7 @@ layers:
     paths: [tests/**/*.spec.ts]
 edges:
   - [specs, tests]
-  - [manual, tests]
+  - [docs, tests]
 ```
 
 Author a minimal config, run `tripact skills`, and then use the emitted `detect` skill to locate the prescriptive / descriptive / verificatory artefacts and flesh the config out. tripact ships no `init` command - classifying a repo's files is a judgement call, so it ships as agent guidance rather than being baked in as a heuristic.

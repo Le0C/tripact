@@ -1,5 +1,5 @@
 // The three-way pact join (src/triangle.ts, surfaced on the check document). A test tagging both
-// `@specs:` and `@manual:` bridges a spec claim to a doc section; the pact reports the complete
+// `@specs:` and `@docs:` bridges a spec claim to a doc section; the pact reports the complete
 // triangles and the two kinds of hole. Claim ids and section slugs are content-derived, so the test
 // discovers them at runtime from a first `check --json` rather than hard-coding them.
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
@@ -42,7 +42,7 @@ function config(edges: string): string {
     "  specs:",
     "    role: prescriptive",
     "    paths: [SPECS.md]",
-    "  manual:",
+    "  docs:",
     "    role: descriptive",
     "    paths: [docs/manual/**/*.md]",
     "  tests:",
@@ -84,13 +84,13 @@ describe("three-way pact", () => {
   });
 
   it("reports complete triangles, tested-undocumented claims, and untied sections", () => {
-    const repo = makeRepo("  - [specs, tests]\n  - [manual, tests]");
+    const repo = makeRepo("  - [specs, tests]\n  - [docs, tests]");
     repos.push(repo);
 
     // Discover the content-derived ids/slugs from an untagged first pass.
     const initial = checkJson(repo);
     const specIds = subjectsOn(initial, "specs").sort();
-    const slugs = subjectsOn(initial, "manual").sort();
+    const slugs = subjectsOn(initial, "docs").sort();
     const addId = specIds.find((s) => s.startsWith("addition."))!;
     const subId = specIds.find((s) => s.startsWith("subtraction."))!;
     const addingSlug = slugs.find((s) => s.includes("adding"))!;
@@ -100,7 +100,7 @@ describe("three-way pact", () => {
     // Test A bridges the addition claim to the adding-numbers section (complete triangle).
     writeFileSync(
       path.join(repo, "tests", "calc.spec.ts"),
-      `test("@specs:${addId} @manual:${addingSlug} - add", () => {});\n`,
+      `test("@specs:${addId} @docs:${addingSlug} - add", () => {});\n`,
     );
     // Test B covers the subtraction claim only (tested but undocumented).
     writeFileSync(
@@ -110,7 +110,7 @@ describe("three-way pact", () => {
     // Test C covers the troubleshooting section only (untied to any spec claim).
     writeFileSync(
       path.join(repo, "tests", "misc.spec.ts"),
-      `test("@manual:${troubleshootingSlug} - restart", () => {});\n`,
+      `test("@docs:${troubleshootingSlug} - restart", () => {});\n`,
     );
 
     const doc = checkJson(repo);
