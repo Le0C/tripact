@@ -40,6 +40,7 @@ describe("tripact public contract", () => {
   const repo = fullRepo("tripact-contract-");
   scratch.push(repo);
 
+  // @specs:output.check---json-emits-single
   for (const surface of PUBLIC_CONTRACT) {
     it(`${surface.key}: payload matches the declared schema version and fields`, () => {
       const doc = liveDocument(repo, surface) as Record<string, unknown>;

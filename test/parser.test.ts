@@ -1,8 +1,9 @@
 // Markdown parsing → groups/atoms. UAC §3.1.
-// @uac:markdown-parsing.prescriptive-descriptive-layer-files
-// @uac:markdown-parsing.non-checkbox-list-items-prose
-// @uac:markdown-parsing.atom-normalisation-lowercases-collapses
-// @uac:markdown-parsing.parsing-deterministic-same-file
+// @specs:markdown-parsing.prescriptive-descriptive-layer-files
+// @specs:markdown-parsing.prose-paragraphs-code-blocks
+// @specs:markdown-parsing.atom-normalisation-lowercases-collapses
+// @specs:markdown-parsing.heading-marked-tbd-parses
+// @specs:markdown-parsing.parsing-deterministic-same-file
 import { describe, expect, it } from "vitest";
 import { normalizeText, parseMarkdownLayer } from "../src/parser.js";
 

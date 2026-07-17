@@ -17,7 +17,7 @@ contract, not two.
 
 | Surface | CLI | MCP read tool(s) | Schema | Top-level fields |
 |---|---|---|---|---|
-| **check** | `check --json`, `status --json` | `check`, `status` | `CHECK_SCHEMA_VERSION` = 1 | `schemaVersion`, `scope`, `syncPoint`, `changedPaths`, `verdicts`, `orphans`, `escalations`, `affectedLayers`, `unsupportedEdges`, `derivedStale`, `counts`, `exitCode` |
+| **check** | `check --json`, `status --json` | `check`, `status` | `CHECK_SCHEMA_VERSION` = 1 | `schemaVersion`, `scope`, `syncPoint`, `changedPaths`, `verdicts`, `orphans`, `escalations`, `affectedLayers`, `unsupportedEdges`, `derivedStale`, `nonDeterministicGenerators`, `pact`, `counts`, `exitCode` |
 | **tasks** | `tasks --json` | `tasks` | `TASKS_SCHEMA_VERSION` = 1 | `schemaVersion`, `tasks` |
 | **claims** | `claims --json` | `claims` | `CLAIMS_SCHEMA_VERSION` = 1 | `schemaVersion`, `claims` |
 | **escalations** | — (the document `check` writes to `.tripact/escalations.json`) | `escalations` | `ESCALATIONS_SCHEMA_VERSION` = 1 | `schemaVersion`, `questions` |

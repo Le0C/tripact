@@ -18,6 +18,7 @@ import { runCli } from "./helpers/cli.js";
 // H1 — tagFormatFromPattern
 // ---------------------------------------------------------------------------------------------
 describe("tagFormatFromPattern (H1)", () => {
+  // @specs:tripactyaml-schema.layer-accepts-optional-tagpattern
   it("renders the default patterns to their familiar literals", () => {
     expect(tagFormatFromPattern("@specs:([a-z0-9.-]+)", "<id>")).toBe("@specs:<id>");
     expect(tagFormatFromPattern("@manual:([a-z0-9.-]+)", "<slug>")).toBe("@manual:<slug>");
@@ -154,6 +155,8 @@ function twoEdgeRepo(): string {
 }
 
 describe("tasks + accept across two edges (H1, H2)", () => {
+  // @specs:prescriptive-verificatory-pv.verificatory-layer-files-scanned
+  // @specs:prescriptive-verificatory-pv.lifecycle-uncovered-pending-first
   it("emits the per-edge tag format and reaches level with a claim tagged on both edges", () => {
     const repo = twoEdgeRepo();
 

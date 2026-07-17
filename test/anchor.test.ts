@@ -1,9 +1,9 @@
 // Re-anchoring cascade semantics. UAC §3.3.
-// @uac:re-anchoring.artefacts-change-atoms-re-matched
-// @uac:re-anchoring.matches-similarity-09-accepted
-// @uac:re-anchoring.containment-pass-matches-atoms
-// @uac:re-anchoring.one-atom-matching-several
-// @uac:re-anchoring.unmatched-new-atoms-receive
+// @specs:re-anchoring.artefacts-change-atoms-re-matched
+// @specs:re-anchoring.match-above-auto-accept-threshold
+// @specs:re-anchoring.containment-pass-matches-atom
+// @specs:re-anchoring.one-atom-matching-several
+// @specs:re-anchoring.unmatched-new-atoms-receive
 import { describe, expect, it } from "vitest";
 import { anchor, DEFAULT_ANCHOR_CONFIG, type AnchorAtom } from "../src/anchor.js";
 import { normalizeText } from "../src/parser.js";
@@ -87,7 +87,7 @@ describe("anchor cascade", () => {
     expect(r.created).toHaveLength(1);
   });
 
-  it("a group that loses an unmatched atom and gains one forks — advisory fork-review @uac:re-anchoring.group-loses-unmatched-atom", () => {
+  it("a group that loses an unmatched atom and gains one forks — advisory fork-review @specs:re-anchoring.group-one-transition-loses", () => {
     // Sub-0.65 reword in the same group: no candidate, no split/merge → silent identity fork.
     const prev = [prose("one", "the dashboard shows a bar chart of weekly active users")];
     const next = [prose("", "operators can export the full audit log as a signed csv file")];
@@ -120,7 +120,7 @@ describe("anchor cascade", () => {
     expect(r.forks).toHaveLength(0);
   });
 
-  it("a ~250-char atom reworded ~15% escalates or matches — never forks on length @uac:re-anchoring.long-atom-200-characters", () => {
+  it("a ~250-char atom reworded ~15% escalates or matches — never forks on length @specs:re-anchoring.similarity-computed-autojunk-disabled", () => {
     const base =
       "The reconstruction rail lists every scan in the current project together with its processing state, the muon count captured so far, the elapsed acquisition time, and a refresh control that re-fetches the latest status from the control unit without reloading the whole page";
     const reword =

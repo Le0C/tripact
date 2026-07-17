@@ -2,6 +2,7 @@
 
 import { CHECK_SCHEMA_VERSION } from "./contract.js";
 import type { Analysis } from "./engine.js";
+import { derivePact, type PactReport } from "./triangle.js";
 import type { Atom, EdgeVerdict, Group } from "./types.js";
 
 export interface CheckReportJson {
@@ -18,6 +19,12 @@ export interface CheckReportJson {
   derivedStale: string[];
   /** Declared generators whose back-to-back regenerations disagreed — non-deterministic (UAC §18). */
   nonDeterministicGenerators: string[];
+  /**
+   * The three-way pact: spec claims, doc sections, and tests correlated on their shared test file
+   * (a test tagging both `@specs:` and `@manual:`). Advisory — it feeds no verdict or exit code, and
+   * is all-empty unless both a spec↔tests and a docs↔tests edge are declared. Additive field.
+   */
+  pact: PactReport;
   counts: Record<string, number>;
   exitCode: 0 | 1 | 2;
 }
@@ -71,6 +78,11 @@ export function toJsonReport(analysis: Analysis): CheckReportJson {
   counts["nonDeterministicGenerators"] = analysis.nonDeterministicGenerators.length;
   // Fork count (UAC §5.2): re-anchoring recall as a live metric, not run-log archaeology.
   counts["forks"] = forkCount(analysis);
+  const pact = derivePact(analysis);
+  // Pact tallies (advisory — never drive the exit code). Inner count keys are not contract-pinned.
+  counts["pactComplete"] = pact.complete.length;
+  counts["pactTestedUndocumented"] = pact.testedUndocumented.length;
+  counts["pactUntiedSections"] = pact.untiedSections.length;
   return {
     schemaVersion: CHECK_SCHEMA_VERSION,
     scope: analysis.scope,
@@ -83,6 +95,7 @@ export function toJsonReport(analysis: Analysis): CheckReportJson {
     unsupportedEdges: analysis.unsupportedEdges,
     derivedStale: analysis.derivedStale,
     nonDeterministicGenerators: analysis.nonDeterministicGenerators,
+    pact,
     counts,
     exitCode: exitCodeFor(analysis),
   };
@@ -251,6 +264,28 @@ export function renderHuman(analysis: Analysis, opts: { long?: boolean } = {}): 
     lines.push(`forks: ${forks} group(s) with a dead + created atom this transition (re-anchoring recall metric)`);
     lines.push("");
   }
+  // Three-way pact gaps (advisory — never affect the level/drift footer). Show only the holes:
+  // complete triangles are the healthy case and would only pad a drift-focused report. A claim's
+  // text excerpt comes from its declaring atom; the location is the tagging test's file:line.
+  const pact = derivePact(analysis);
+  if (pact.testedUndocumented.length || pact.untiedSections.length) {
+    lines.push("three-way gaps:");
+    if (pact.testedUndocumented.length) {
+      lines.push(`  tested but undocumented (${pact.testedUndocumented.length}):`);
+      const details = pact.testedUndocumented.map((t) => {
+        const info = subjectOf({ subject: t.claim } as EdgeVerdict);
+        const loc = t.tests[0] ?? info.declaredAt?.file ?? "?";
+        return `    ${t.claim} — "${excerpt(info.text)}" (${loc})`;
+      });
+      lines.push(...truncateListing(details, long, "    "));
+    }
+    if (pact.untiedSections.length) {
+      lines.push(`  untied sections (${pact.untiedSections.length}):`);
+      const details = pact.untiedSections.map((s) => `    ${s} — test-covered but tied to no spec claim`);
+      lines.push(...truncateListing(details, long, "    "));
+    }
+    lines.push("");
+  }
   for (const u of analysis.unsupportedEdges) lines.push(`note: edge ${u}`);
   const code = exitCodeFor(analysis);
   if (code === 0) {
@@ -290,6 +325,13 @@ export function renderStatus(analysis: Analysis): string {
     const uncovered = verdicts.filter((v) => v.kind === "uncovered").length;
     const pct = verdicts.length ? Math.round((covered / verdicts.length) * 100) : 100;
     lines.push(`edge ${edge}: ${pct}% covered (${covered} covered, ${stale} stale, ${uncovered} uncovered)`);
+  }
+  const pact = derivePact(analysis);
+  if (pact.complete.length || pact.testedUndocumented.length || pact.untiedSections.length) {
+    lines.push("");
+    lines.push(
+      `three-way: ${pact.complete.length} complete · ${pact.testedUndocumented.length} tested-undocumented · ${pact.untiedSections.length} untied section(s)`,
+    );
   }
   lines.push("");
   lines.push(`orphan tags: ${analysis.orphans.length} · open escalations: ${analysis.escalations.length}`);

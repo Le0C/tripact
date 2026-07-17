@@ -23,6 +23,10 @@ function track(repo: string): string {
 }
 
 describe("tripact CLI end-to-end", () => {
+  // @specs:tripact-check-core.uncovered-claims-sections-acknowledged
+  // @specs:tripact-accept.accept-writes-current-in-memory
+  // @specs:tripact-accept.accept-prints-tripact-sync-id-trailer
+  // @specs:tripact-accept.accept-snapshots-currently-uncovered
   it("runs the check → tasks → accept lifecycle and reaches level", () => {
     const repo = track(fullRepo("tripact-cli-life-"));
 
@@ -46,6 +50,8 @@ describe("tripact CLI end-to-end", () => {
     expect(runCli(["check"], { cwd: repo }).status, "check after accept — backlog is not drift").toBe(0);
   });
 
+  // @specs:trailer-verification.tripact-verify-hash-compares
+  // @specs:sync-point-convention.trailer-value-sidecars-content
   it("verify round-trips the accepted trailer", () => {
     const repo = track(fullRepo("tripact-cli-verify-"));
     const accept = runCli(["accept", "--yes"], { cwd: repo });
@@ -57,6 +63,7 @@ describe("tripact CLI end-to-end", () => {
     expect(runCli(["verify", "deadbeef"], { cwd: repo }).status, "verify stale hash").toBe(1);
   });
 
+  // @specs:tripact-check-core.running-check-twice-same
   it("emits byte-identical --json for an unchanged tree (determinism)", () => {
     const repo = track(fullRepo("tripact-cli-determ-"));
     for (const args of [["check", "--json"], ["tasks", "--json"], ["claims", "--json"], ["status", "--json"]]) {
@@ -66,6 +73,8 @@ describe("tripact CLI end-to-end", () => {
     }
   });
 
+  // @specs:tripact-check-core.exit-code-0-repository
+  // @specs:tripact-resolve.tripact-resolve-question-id-applies
   it("follows the 0/1/2 exit convention", () => {
     const repo = track(fullRepo("tripact-cli-exit-"));
 

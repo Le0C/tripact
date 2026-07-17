@@ -74,6 +74,7 @@ export const PUBLIC_CONTRACT: readonly ContractSurface[] = [
       "exitCode",
       "nonDeterministicGenerators",
       "orphans",
+      "pact",
       "schemaVersion",
       "scope",
       "syncPoint",

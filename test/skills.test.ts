@@ -23,6 +23,7 @@ afterAll(() => {
 });
 
 describe("skill generators (pure)", () => {
+  // @specs:agent-skill-emission.tripact-adjudicate-skill-instructs-agent
   it("default to tripact branding and stamp a version", () => {
     const adj = adjudicateSkill();
     expect(adj.name).toBe("tripact-adjudicate");
@@ -31,6 +32,7 @@ describe("skill generators (pure)", () => {
     expect(adj.content).toContain(".tripact/escalations.json");
   });
 
+  // @specs:agent-skill-emission.tripact-repair-skill-instructs-agent
   it("re-brand every command and name for a driving harness", () => {
     const opts = { cli: "acme", namePrefix: "acme", version: "9.9.9", reEmitCommand: "acme init --force" };
     const rep = repairSkill(opts);
@@ -44,11 +46,14 @@ describe("skill generators (pure)", () => {
     expect(rep.content.replace(/tripact\.yaml/g, "").replace(/\.tripact\b/g, "")).not.toContain("tripact");
   });
 
+  // @specs:agent-skill-emission.emitted-skills-accept-authority
   it("bake the accept policy into the guidance", () => {
     expect(adjudicateSkill({ policy: "human" }).content).toContain("Never run `tripact accept`");
     expect(adjudicateSkill({ policy: "agents" }).content).toContain("Run `tripact accept` only after validation");
   });
 
+  // @specs:agent-skill-emission.tripact-skills-writes-four
+  // @specs:agent-skill-emission.emitted-skill-content-deterministic
   it("emit exactly the portable skills, deterministically", () => {
     const a = agentSkills();
     const b = agentSkills();
@@ -56,6 +61,7 @@ describe("skill generators (pure)", () => {
     expect(a).toEqual(b); // same options → byte-identical
   });
 
+  // @specs:task-emission.tripact-prompt-id-prints
   it("taskPrompt inlines the payload and kind-specific instructions", () => {
     const task: Task = {
       id: "write-tests-abc123",
@@ -90,6 +96,7 @@ describe("skill generators (pure)", () => {
 });
 
 describe("skills + prompt commands (e2e)", () => {
+  // @specs:agent-skill-emission.existing-skill-file-left
   it("`tripact skills` writes the four SKILL.md files", () => {
     const repo = fullRepo("tripact-skills-");
     scratch.push(repo);

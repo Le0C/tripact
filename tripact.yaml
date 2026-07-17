@@ -1,0 +1,25 @@
+schemaVersion: 1
+
+layers:
+  specs:
+    role: prescriptive
+    paths:
+      - UAC.md
+  manual:
+    role: descriptive
+    paths:
+      - README.md
+      - docs/**/*.md
+  tests:
+    role: verificatory
+    paths:
+      - test/**/*.test.ts
+    tagPattern: "@specs:([a-z0-9.-]+)"
+    sectionTagPattern: "@manual:([a-z0-9.-]+)"
+
+edges:
+  - [specs, tests]
+  - [manual, tests]
+
+accept:
+  policy: agents

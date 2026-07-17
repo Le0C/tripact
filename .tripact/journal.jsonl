@@ -1,0 +1,11 @@
+// JSONL Preview — showing 1 of 1 rows
+// Source: /Users/leo/gscan/tripact/.tripact/journal.jsonl
+
+// ─── Row 1 ───
+{
+  "at": "2026-07-16T13:09:38.313Z",
+  "action": "resolve-match",
+  "questionId": "reanchor-7070acfecb",
+  "oldId": "root.archon-another-workflow-driven-harness",
+  "newText": "**Archon or another workflow-driven harness.** Archon owns the loop; every step it needs from"
+}

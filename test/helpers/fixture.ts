@@ -79,3 +79,15 @@ export function fullRepo(prefix = "tripact-fixture-"): string {
   runCli(["check"], { cwd: repo }); // writes .tripact/escalations.json
   return repo;
 }
+
+// Tag composers for SCRATCH-REPO fixture files. Always build a fixture's `@specs:`/`@manual:` tag
+// through these — never write the literal into this suite's source.
+//
+// This repository dogfoods tripact: its own `tests` layer scans `test/**/*.test.ts` for those very
+// patterns. A literal fixture tag here is indistinguishable, to the scanner, from a real coverage
+// tag — so it is read as a tag naming a claim that does not exist in this repo's UAC.md and
+// reported as an orphan tag, i.e. drift. Composing the prefix at runtime keeps the literal out of
+// this source while the scratch repo still receives the real tag it needs.
+const AT = "@";
+export const specTag = (id: string): string => `${AT}specs:${id}`;
+export const manualTag = (slug: string): string => `${AT}manual:${slug}`;
