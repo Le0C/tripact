@@ -4,9 +4,22 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { parse as parseYaml } from "yaml";
 import { z } from "zod";
+import { GENERATOR_PREFIXES, resolveGenerator } from "./derived.js";
 import { applyPreset, SPEC_SYSTEM_NAMES, SPEC_SYSTEM_PRESETS } from "./presets.js";
 
 export const CONFIG_FILENAME = "tripact.yaml";
+
+/**
+ * Whether a repo-relative path escapes the repository root (UAC §18.5). Resolved against a fixed
+ * notional root rather than the real one so validation stays pure and platform-independent: only
+ * the path's own shape decides, and an absolute path is an escape by definition.
+ */
+function escapesRoot(rel: string): boolean {
+  if (path.isAbsolute(rel)) return true;
+  const root = path.resolve("/__tripact_root__");
+  const resolved = path.resolve(root, rel);
+  return resolved !== root && !resolved.startsWith(root + path.sep);
+}
 
 // Effort routing (UAC §16.1). Task classes are the five task kinds (src/tasks.ts),
 // `adjudicate` for escalation questions, plus the derive-* bootstrap kinds (§15)
@@ -286,15 +299,29 @@ export function loadConfig(repoRoot: string): Config {
   // generator (the builtin `cli-reference` or an arbitrary shell command string)
   for (const [name, d] of Object.entries(cfg.derived ?? {})) {
     if (d.output.trim() === "") problems.push(`derived.${name}.output: empty output path`);
+    else if (escapesRoot(d.output)) {
+      // Containment (UAC §18.5): a generated artefact must land inside the tree being checked.
+      problems.push(`derived.${name}.output: "${d.output}" resolves outside the repository root`);
+    }
     if (d.generator.trim() === "") {
-      problems.push(`derived.${name}.generator: empty generator (use "cli-reference" or a shell command)`);
+      problems.push(`derived.${name}.generator: empty generator (use one of ${GENERATOR_PREFIXES.join(", ")})`);
+    } else if (resolveGenerator(d.generator).kind === "unknown") {
+      // No silent shell fallback (UAC §18.4): an unprefixed string is a mistake to report, not a
+      // command to run. Naming the prefixes here is what turns a typo into a fixable error.
+      problems.push(
+        `derived.${name}.generator: "${d.generator}" has no recognised prefix — use one of ${GENERATOR_PREFIXES.join(", ")}`,
+      );
     }
   }
   // blocks map (UAC §18.3): each declared generator needs a non-empty shell command. A marker naming
   // a generator absent from this map is reported later, by the scan that finds the marker.
   for (const [name, command] of Object.entries(cfg.blocks?.generators ?? {})) {
     if (command.trim() === "") {
-      problems.push(`blocks.generators.${name}: empty generator (use a shell command)`);
+      problems.push(`blocks.generators.${name}: empty generator (use one of ${GENERATOR_PREFIXES.join(", ")})`);
+    } else if (resolveGenerator(command).kind === "unknown") {
+      problems.push(
+        `blocks.generators.${name}: "${command}" has no recognised prefix — use one of ${GENERATOR_PREFIXES.join(", ")}`,
+      );
     }
   }
   if (problems.length) throw new ConfigError(problems);

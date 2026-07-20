@@ -5,7 +5,7 @@ description: >
   the accept policy at the final gate. Use when the user says "sync tripact", "run the full
   loop", "bring the spec, docs, and tests back into agreement", or after a feature change.
 metadata:
-  generatedBy: tripact@0.0.1
+  generatedBy: tripact@0.1.0
 ---
 
 # Run a tripact sync

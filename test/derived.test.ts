@@ -1,7 +1,8 @@
 // Derived outputs: declaration & generation (UAC §18.1) and freshness (§18.2). Derived outputs are
 // deterministically regenerable artefacts declared in tripact.yaml under `derived`; a generator is
-// either a reserved builtin NAME (implemented by a harness, not the kernel) or an arbitrary shell
-// command whose stdout becomes the file. `generate` writes them; `check` regenerates each in memory
+// either a reserved builtin NAME (implemented by a harness, not the kernel) or a `shell:`-prefixed
+// command whose stdout becomes the file, the latter run only under `--allow-shell` (§18.5).
+// `generate` writes them; `check` regenerates each in memory
 // and byte-compares with the committed copy. These tests drive the prebuilt CLI in scratch git repos
 // and observe stdout / JSON / exit codes; the two pure claims (config shape, reserved-name set) read
 // the kernel directly.
@@ -86,7 +87,7 @@ describe("derived outputs — declaration & generation (§18.1)", () => {
         "derived:",
         "  greeting:",
         "    output: GENERATED.txt",
-        "    generator: printf 'hello world'",
+        "    generator: shell:printf 'hello world'",
         "  cli-reference:",
         "    output: CLI.md",
         "    generator: cli-reference",
@@ -98,7 +99,7 @@ describe("derived outputs — declaration & generation (§18.1)", () => {
     const outputs = deriveOutputs(cfg);
     expect(outputs.map((o) => o.name)).toEqual(["cli-reference", "greeting"]); // sorted by name
     const byName = Object.fromEntries(outputs.map((o) => [o.name, o]));
-    expect(byName["greeting"]).toMatchObject({ output: "GENERATED.txt", generator: "printf 'hello world'" });
+    expect(byName["greeting"]).toMatchObject({ output: "GENERATED.txt", generator: "shell:printf 'hello world'" });
     // A generator that is a reserved builtin NAME is accepted just the same as a shell command.
     expect(byName["cli-reference"]).toMatchObject({ output: "CLI.md", generator: "cli-reference" });
   });
@@ -191,10 +192,10 @@ describe("derived outputs — declaration & generation (§18.1)", () => {
         "derived:",
         "  greeting:",
         "    output: GENERATED.txt",
-        "    generator: printf 'hello world'",
+        "    generator: shell:printf 'hello world'",
       ],
     });
-    const good = runCli(["generate", "greeting"], { cwd: ok });
+    const good = runCli(["--allow-shell", "generate", "greeting"], { cwd: ok });
     expect(good.status).toBe(0);
     expect(readFileSync(path.join(ok, "GENERATED.txt"), "utf8")).toBe("hello world");
 
@@ -205,10 +206,10 @@ describe("derived outputs — declaration & generation (§18.1)", () => {
         "derived:",
         "  boom:",
         "    output: OUT.txt",
-        "    generator: \"echo oops >&2; exit 3\"",
+        "    generator: \"shell:echo oops >&2; exit 3\"",
       ],
     });
-    const failed = runCli(["generate", "boom"], { cwd: bad });
+    const failed = runCli(["--allow-shell", "generate", "boom"], { cwd: bad });
     expect(failed.status).toBe(2);
     expect(failed.stderr).toContain("boom");
   });
@@ -221,21 +222,21 @@ describe("derived outputs — declaration & generation (§18.1)", () => {
         "derived:",
         "  alpha:",
         "    output: out/a.txt",
-        "    generator: printf 'AAA'",
+        "    generator: shell:printf 'AAA'",
         "  beta:",
         "    output: out/b.txt",
-        "    generator: printf 'BBB'",
+        "    generator: shell:printf 'BBB'",
       ],
     });
     // Named: writes alpha only.
-    const one = runCli(["generate", "alpha"], { cwd: repo });
+    const one = runCli(["--allow-shell", "generate", "alpha"], { cwd: repo });
     expect(one.status).toBe(0);
     expect(one.stdout).toContain("wrote out/a.txt (alpha)");
     expect(readFileSync(path.join(repo, "out", "a.txt"), "utf8")).toBe("AAA");
     expect(() => readFileSync(path.join(repo, "out", "b.txt"), "utf8")).toThrow();
 
     // No name: regenerates all.
-    const all = runCli(["generate"], { cwd: repo });
+    const all = runCli(["--allow-shell", "generate"], { cwd: repo });
     expect(all.status).toBe(0);
     expect(readFileSync(path.join(repo, "out", "a.txt"), "utf8")).toBe("AAA");
     expect(readFileSync(path.join(repo, "out", "b.txt"), "utf8")).toBe("BBB");
@@ -249,13 +250,13 @@ describe("derived outputs — declaration & generation (§18.1)", () => {
         "derived:",
         "  greeting:",
         "    output: GENERATED.txt",
-        "    generator: \"printf 'line1\\\\nline2\\\\n'\"",
+        "    generator: \"shell:printf 'line1\\\\nline2\\\\n'\"",
       ],
     });
-    const first = runCli(["generate", "greeting"], { cwd: repo });
+    const first = runCli(["--allow-shell", "generate", "greeting"], { cwd: repo });
     expect(first.status).toBe(0);
     const a = readFileSync(path.join(repo, "GENERATED.txt"));
-    const second = runCli(["generate", "greeting"], { cwd: repo });
+    const second = runCli(["--allow-shell", "generate", "greeting"], { cwd: repo });
     expect(second.status).toBe(0);
     const b = readFileSync(path.join(repo, "GENERATED.txt"));
     expect(a.equals(b)).toBe(true);
@@ -273,12 +274,12 @@ describe("derived outputs — freshness (§18.2)", () => {
         "derived:",
         "  greeting:",
         "    output: GENERATED.txt",
-        "    generator: printf 'hello world'",
+        "    generator: shell:printf 'hello world'",
       ],
       files: { "GENERATED.txt": "STALE CONTENT" },
     });
     baseline(stale);
-    const s = runCli(["check", "--json"], { cwd: stale });
+    const s = runCli(["--allow-shell", "check", "--json"], { cwd: stale });
     expect(s.status).toBe(1);
     const sr = JSON.parse(s.stdout);
     expect(sr.exitCode).toBe(1);
@@ -291,11 +292,11 @@ describe("derived outputs — freshness (§18.2)", () => {
         "derived:",
         "  greeting:",
         "    output: GENERATED.txt",
-        "    generator: printf 'hello world'",
+        "    generator: shell:printf 'hello world'",
       ],
     });
     baseline(missing);
-    const m = runCli(["check", "--json"], { cwd: missing });
+    const m = runCli(["--allow-shell", "check", "--json"], { cwd: missing });
     expect(m.status).toBe(1);
     const mr = JSON.parse(m.stdout);
     expect(mr.derivedStale).toEqual(["greeting"]);
@@ -311,12 +312,12 @@ describe("derived outputs — freshness (§18.2)", () => {
         "derived:",
         "  counter:",
         "    output: COUNTER.txt",
-        "    generator: \"n=$(cat .ctr 2>/dev/null || echo 0); n=$((n+1)); printf %s $n > .ctr; printf %s $n\"",
+        "    generator: \"shell:n=$(cat .ctr 2>/dev/null || echo 0); n=$((n+1)); printf %s $n > .ctr; printf %s $n\"",
       ],
       files: { "COUNTER.txt": "committed" },
     });
     baseline(repo);
-    const r = runCli(["check", "--json"], { cwd: repo });
+    const r = runCli(["--allow-shell", "check", "--json"], { cwd: repo });
     expect(r.status).toBe(1);
     const report = JSON.parse(r.stdout);
     expect(report.nonDeterministicGenerators).toEqual(["counter"]);
@@ -331,12 +332,12 @@ describe("derived outputs — freshness (§18.2)", () => {
         "derived:",
         "  greeting:",
         "    output: GENERATED.txt",
-        "    generator: printf 'hello world'",
+        "    generator: shell:printf 'hello world'",
       ],
       files: { "GENERATED.txt": "STALE CONTENT" },
     });
     baseline(repo);
-    const t = runCli(["tasks", "--json"], { cwd: repo });
+    const t = runCli(["--allow-shell", "tasks", "--json"], { cwd: repo });
     expect(t.status).toBe(1);
     const tasks = JSON.parse(t.stdout).tasks as Array<{
       kind: string;

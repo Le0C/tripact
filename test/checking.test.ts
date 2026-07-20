@@ -159,7 +159,7 @@ describe("check core behaviour (§5.1)", () => {
     writeFileSync(path.join(repo, "src", "app.ts"), "export const x = 1;\n");
     writeFileSync(
       path.join(repo, "tripact.yaml"),
-      `${CONFIG}accept:\n  policy: agents\nrouting:\n  write-tests: implementation\nmodels:\n  implementation: some-model\nderived:\n  traceability:\n    output: docs/traceability.md\n    generator: 'node scripts/gen.js'\ncodeLinks:\n  paths:\n    - 'src/**/*.ts'\n`,
+      `${CONFIG}accept:\n  policy: agents\nrouting:\n  write-tests: implementation\nmodels:\n  implementation: some-model\nderived:\n  traceability:\n    output: docs/traceability.md\n    generator: 'shell:node scripts/gen.js'\ncodeLinks:\n  paths:\n    - 'src/**/*.ts'\n`,
     );
 
     const env = { ...process.env, TRIPACT_NET_LOG: netLog, NODE_OPTIONS: `--require ${trap}` };

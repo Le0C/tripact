@@ -17,6 +17,32 @@ files and git history, writes a `.tripact/` sidecar, and — via `mcp-serve` —
 Model Context Protocol server for a local harness. It does not listen on a public network, hold
 credentials, or process untrusted remote input by default.
 
+### `tripact.yaml` is trusted input
+
+One part of the threat model is worth stating plainly, because it decides how you should wire
+tripact into CI.
+
+**`tripact.yaml` is code, not data.** A `shell:` generator declared in it runs as a shell command,
+so a repository's config can execute anything the invoking user can. This is deliberate — derived
+outputs would be far less useful if they could only be produced by built-ins — but it means a
+`tripact.yaml` is exactly as trusted as a `Makefile` or an npm `postinstall` script.
+
+Because of that, shell generators do not run unless you opt in:
+
+- Nothing spawns without `--allow-shell` or `TRIPACT_ALLOW_SHELL=1`. Without the opt-in, `check`
+  reports the generators it withheld and says their outputs went unverified; `generate` refuses
+  outright rather than writing an output it did not regenerate.
+- Built-in and harness generators are unaffected: a config whose generators are all `builtin:` or
+  `harness:` never needs the opt-in and never spawns a process.
+- A generator string with no recognised prefix is a config error, not a shell command, so a
+  mistyped `builtin:` cannot silently become an execution.
+- Derived output paths that resolve outside the repository root are rejected at config validation.
+
+**In CI, do not pass `--allow-shell` when checking out a branch you do not control.** Pull requests
+from forks can modify `tripact.yaml`, and granting the opt-in there hands the fork author a shell on
+your runner. Run untrusted branches without the flag — the check still works; it just reports the
+shell-derived outputs as unverified.
+
 The kinds of issues we consider security-relevant:
 
 - Path traversal or writes outside the project / `.tripact/` directory.

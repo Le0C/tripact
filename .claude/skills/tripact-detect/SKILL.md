@@ -6,7 +6,7 @@ description: >
   Use when the user says "set up tripact", "detect the layers", "scaffold the tripact config",
   or when `tripact check` reports that tripact.yaml is missing.
 metadata:
-  generatedBy: tripact@0.0.1
+  generatedBy: tripact@0.1.0
 ---
 
 # Scaffold a tripact.yaml
@@ -17,6 +17,26 @@ call, so it is your job, not a fixed heuristic. Propose the config, confirm with
 
 ## Steps
 
+0. **Detect a known spec system first — run `tripact detect`.** It reports, read-only, which spec
+   system(s) the repo matches. Prefer a one-line `kind:` config over hand-declaring globs - the kernel
+   expands it into the right layers, edges, and excludes (and you can still override any of them):
+   - **exactly one match** → the whole config can be just `schemaVersion: 1` + `kind: <system>`; add a
+     tests layer / edges only if the preset's defaults do not fit. Then skip to step 5.
+   - **several match** (ambiguous) → do NOT guess: show the user the candidates `tripact detect` printed
+     and let them pick the `kind`.
+   - **none** → hand-declare layers via steps 1-4 below.
+   The recognised systems and their signatures (what `detect` matches on):
+   - **spec-kit** - a `.specify/` directory and product specs at `specs/<feature>/spec.md` → `kind: spec-kit`
+     (the `.specify/` scaffolding is auto-excluded, never read as the spec).
+   - **openspec** - `openspec/specs/**/spec.md` (with `openspec/changes/` deltas auto-excluded) → `kind: openspec`.
+   - **strictdoc** - StrictDoc `.sdoc` requirement files (parsed natively, not as markdown) → `kind: strictdoc`.
+   - **kiro** - a flat `specs/requirements.md` (+ `design.md`, `tasks.md`) with numbered EARS
+     acceptance criteria → `kind: kiro`.
+   - **cursor** - feature specs under `.cursor/specs/*.md` (template + tasks auto-excluded) → `kind: cursor`.
+   When exactly one matches, the whole config can be just `schemaVersion: 1` + `kind: <system>`; add a
+   tests layer / edges only if the preset's defaults do not fit. If **several** match (an ambiguous
+   layout), do not guess — present the candidates to the user and let them pick the `kind`. If none
+   matches, hand-declare layers below.
 1. **Survey the repository.** Look for each role - do not assume conventional paths:
    - **prescriptive** (the source of truth): a product spec, acceptance criteria, PRD, or
      requirements checklist. Common names: `SPECS.md`, `UAC.md`, `REQUIREMENTS.md`, `docs/spec/**`.

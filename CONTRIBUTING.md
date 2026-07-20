@@ -18,7 +18,7 @@ git clone https://github.com/Le0C/tripact.git
 cd tripact
 pnpm install        # see the lockfile note below
 pnpm run build      # tsc → dist/
-pnpm test           # vitest — currently 208 tests across 24 files
+pnpm test           # vitest
 pnpm run typecheck  # tsc --noEmit
 ```
 
@@ -35,7 +35,7 @@ The core scripts:
 ### A note on the lockfile
 
 The repo ships a **`pnpm-lock.yaml`**, so we recommend **pnpm** for a reproducible install that
-matches CI. The `package.json` `scripts` and `bin` are plain and run under either package
+matches CI (`.github/workflows/ci.yml` installs with `--frozen-lockfile`). The `package.json` `scripts` and `bin` are plain and run under either package
 manager — `npm install` / `npm test` work too — but only the pnpm lockfile is committed, so npm
 will resolve its own tree. Use pnpm unless you have a reason not to, and don't commit an
 `npm`/`yarn` lockfile alongside it.

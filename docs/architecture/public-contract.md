@@ -17,10 +17,12 @@ contract, not two.
 
 | Surface | CLI | MCP read tool(s) | Schema | Top-level fields |
 |---|---|---|---|---|
-| **check** | `check --json`, `status --json` | `check`, `status` | `CHECK_SCHEMA_VERSION` = 1 | `schemaVersion`, `scope`, `syncPoint`, `changedPaths`, `verdicts`, `orphans`, `escalations`, `affectedLayers`, `unsupportedEdges`, `derivedStale`, `nonDeterministicGenerators`, `pact`, `counts`, `exitCode` |
+| **check** | `check --json`, `status --json` | `check`, `status` | `CHECK_SCHEMA_VERSION` = 1 | `schemaVersion`, `scope`, `syncPoint`, `changedPaths`, `verdicts`, `orphans`, `escalations`, `affectedLayers`, `unsupportedEdges`, `derivedStale`, `blockStale`, `nonDeterministicGenerators`, `shellGeneratorsWithheld`, `zeroFileLayers`, `zeroAtomLayers`, `vacuous`, `suspiciousAtoms`, `pact`, `counts`, `exitCode` |
 | **tasks** | `tasks --json` | `tasks` | `TASKS_SCHEMA_VERSION` = 1 | `schemaVersion`, `tasks` |
 | **claims** | `claims --json` | `claims` | `CLAIMS_SCHEMA_VERSION` = 1 | `schemaVersion`, `claims` |
 | **escalations** | — (the document `check` writes to `.tripact/escalations.json`) | `escalations` | `ESCALATIONS_SCHEMA_VERSION` = 1 | `schemaVersion`, `questions` |
+| **reconcile** | `reconcile --json` | — | `RECONCILE_SCHEMA_VERSION` = 1 | `schemaVersion`, `candidates` |
+| **hotlinks** | `hotlinks --json` | — | `HOTLINKS_SCHEMA_VERSION` = 1 | `schemaVersion`, `links`, `orphans` |
 
 The write tools — `resolve` (always) and `accept` (only under the `agents` accept policy) — are part
 of the MCP surface but are not read documents.

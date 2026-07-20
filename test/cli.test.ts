@@ -4,12 +4,15 @@
 // convention, and byte-identical output for an unchanged tree (the determinism property the kernel
 // guarantees, checked here in miniature since determinism.test.ts's full form lives in a harness).
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { afterAll, describe, expect, it } from "vitest";
 import { runCli } from "./helpers/cli.js";
 import { fullRepo, SPECS } from "./helpers/fixture.js";
+
+const repoRootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 const scratch: string[] = [];
 afterAll(() => {
@@ -101,6 +104,10 @@ describe("tripact CLI end-to-end", () => {
     expect(help.stdout).toContain("The deterministic traceability kernel");
     const version = runCli(["--version"], { cwd: repo });
     expect(version.status, "--version exit").toBe(0);
-    expect(version.stdout.trim()).toBe("0.0.1");
+    // Read the expected version rather than hard-coding it: a literal here is a third copy of the
+    // number (after package.json and src/version.ts) and would fail on every release bump for no
+    // reason. That the first two agree is asserted in cross-cutting's release-integrity block.
+    const pkgVersion = JSON.parse(readFileSync(path.join(repoRootDir, "package.json"), "utf8")).version;
+    expect(version.stdout.trim()).toBe(pkgVersion);
   });
 });

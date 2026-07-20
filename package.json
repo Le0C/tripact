@@ -1,6 +1,6 @@
 {
   "name": "tripact",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "A deterministic traceability kernel that keeps spec, docs, and tests describing the same behaviour. A three-way pact any harness can drive.",
   "type": "module",
   "license": "Apache-2.0",
@@ -22,6 +22,7 @@
     "deterministic",
     "drift"
   ],
+  "packageManager": "pnpm@10.17.0",
   "engines": {
     "node": ">=22"
   },
@@ -34,28 +35,32 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
-    }
+    },
+    "./package.json": "./package.json"
   },
   "files": [
     "dist",
+    "src",
+    "CHANGELOG.md",
     "NOTICE"
   ],
   "publishConfig": {
     "access": "public"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "rm -rf dist && tsc",
     "dev": "tsx src/cli.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
+    "prepare": "npm run build",
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
     "commander": "^13.0.0",
     "yaml": "^2.6.0",
-    "zod": "^3.24.0"
+    "zod": "^3.25.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

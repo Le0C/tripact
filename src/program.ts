@@ -14,7 +14,7 @@ import { AuditError, renderAuditHuman, runAudit } from "./audit.js";
 import { replaceBlockRegions } from "./blocks.js";
 import { listClaims, renderClaimsHuman } from "./claims.js";
 import { acceptPolicy, ConfigError, loadConfig } from "./config.js";
-import { deriveOutputs, generateContent, GenerateError } from "./derived.js";
+import { deriveOutputs, generateContent, GenerateError, isShellAllowed, resolveGenerator, setShellAllowed } from "./derived.js";
 import { computeAcceptanceDelta, renderDeltaHuman } from "./diff.js";
 import { analyze, buildAcceptedSidecar, collectBlockRegions, type CollectedBlock } from "./engine.js";
 import { resolve as applyResolution, ResolveError, writeEscalations } from "./escalation.js";
@@ -123,6 +123,14 @@ export function buildProgram(): Command {
   const program = new Command("tripact")
     .description("The deterministic traceability kernel — keep spec, docs, and tests describing the same behaviour.")
     .version(TRIPACT_VERSION)
+    // The shell-generator opt-in (UAC §18.5) is global rather than per-command because every
+    // command that analyses (check, status, diff, accept) regenerates derived outputs to judge
+    // their freshness, so all of them reach the spawn. A hook rather than per-action wiring, so a
+    // command added later is covered by default instead of opting in by remembering to.
+    .option("--allow-shell", "permit `shell:` generators declared in tripact.yaml to run (UAC §18.5)")
+    .hook("preAction", (thisCommand) => {
+      if (thisCommand.opts()["allowShell"] === true) setShellAllowed(true);
+    })
     // Bare `tripact` prints help rather than erroring; discovery over a cryptic exit.
     .action(() => {
       program.help();
@@ -133,7 +141,7 @@ export function buildProgram(): Command {
     .description("Deterministic drift check across declared edges (UAC §5)")
     .option("--json", "machine-readable report on stdout")
     .option("--all", "full audit regardless of sync-point")
-    .option("--strict", "treat acknowledged backlog as drift too — coverage gate for release pipelines (UAC §5.1)")
+    .option("--strict", "treat acknowledged backlog and layer-diagnostic warnings as drift too — coverage gate for release pipelines (UAC §5.1, §5.4)")
     .option("--long", "print every listing in full instead of truncating past a fixed threshold (Cross-Cutting: Human output)")
     .action((opts: { json?: boolean; all?: boolean; strict?: boolean; long?: boolean }) => {
       const root = requireRepoRoot();
@@ -396,6 +404,22 @@ export function buildProgram(): Command {
       if (targets.length === 0 && targetBlocks.length === 0) {
         console.log("no derived outputs declared in tripact.yaml — nothing to generate");
         process.exit(0);
+      }
+      // Refuse up front rather than part-way (UAC §18.5): generate writes files, so discovering the
+      // gate at the third of five outputs would leave the tree half-regenerated. Named together so
+      // one --allow-shell decision covers everything this invocation would run.
+      if (!isShellAllowed()) {
+        const shellTargets = [
+          ...targets.filter((t) => resolveGenerator(t.generator).kind === "shell").map((t) => t.name),
+          ...targetBlocks.filter((b) => resolveGenerator(b.generator).kind === "shell").map((b) => b.name),
+        ];
+        if (shellTargets.length > 0) {
+          fail(
+            `${[...new Set(shellTargets)].sort().join(", ")}: shell generator(s) declared in tripact.yaml.\n` +
+              `  tripact.yaml is repository-controlled, so a shell generator is code this repository supplies.\n` +
+              `  Re-run with --allow-shell (or TRIPACT_ALLOW_SHELL=1) only if you trust this repository's config.`,
+          );
+        }
       }
       try {
         for (const d of targets) {

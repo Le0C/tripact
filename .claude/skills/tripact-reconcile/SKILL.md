@@ -6,7 +6,7 @@ description: >
   existing tests", or after `tripact check` shows a large uncovered backlog on a repo that
   already has tests.
 metadata:
-  generatedBy: tripact@0.0.1
+  generatedBy: tripact@0.1.0
 ---
 
 # Reconcile untagged tests

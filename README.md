@@ -21,17 +21,17 @@ No LLM is used in this process, so the output is deterministic. Any ambiguous cl
 
 - **Spec-driven development with coding agents.** Every specification you write becomes a claim with
   a stable id; tag the test that proves it and tripact confirms the link, so you always know which
-  requirements are covered. (Full [walkthrough](#how-it-works) below.)
+  requirements are covered. (Full [walkthrough](#quickstart) below.)
 
   ```console
   $ tripact check                 # a spec claim exists, but no test references it
-  edge spec ↔ tests: 0/1 covered
+  edge specs ↔ tests: 0/1 covered
     NEW-UNCOVERED addition.adda-b-returns-sum — "add(a, b) returns the sum of two integers"
   ✗ drift detected                # exit 1
 
   # …tag the test with @specs:addition.adda-b-returns-sum, baseline once…
   $ tripact check
-  edge spec ↔ tests: 1/1 covered
+  edge specs ↔ tests: 1/1 covered
   ✓ level                         # exit 0 - the requirement is provably tested
   ```
 
@@ -46,15 +46,136 @@ No LLM is used in this process, so the output is deterministic. Any ambiguous cl
   plus `tripact prompt <id>` (or the emitted `tripact skills`) hand the agent the repair work with
   its context already inlined.
 
-## Install
+## Contents
 
-Requires Git and Node.js ≥ 22.
+- [Quickstart](#quickstart) - install, a config, a first green check
+- [Concepts](#concepts) - layers, claims, verdicts, edges
+- [How it works](#how-it-works) - the repair loop, rewording, escalations
+- [Supported specification styles](#supported-specification-styles) - what parses as a claim, spec-system presets, `(TBD)`
+- [Configuration](#configuration) - every `tripact.yaml` key
+- [Derived outputs and generators](#derived-outputs-and-generators) - `derived`, `blocks`, generator prefixes, `--allow-shell`
+- [CLI reference](#cli-reference) - every command, flag and exit code
+- [Usage](#usage) - agent instructions, loops, harnesses, CI, the library API
+- [Transitional notes](#transitional-notes) - what is still moving in 0.x
+- [Project](#project) - contributing, security, licence
+
+## Quickstart
+
+Five minutes from nothing to a green check on a one-requirement repository.
+
+### 1. Install
+
+Requires Git and Node.js ≥ 22. The current release is **0.1.0**.
 
 ```bash
-npm install tripact
+npm install -D tripact       # or: pnpm add -D tripact · yarn add -D tripact
 ```
 
+That puts the CLI in your project rather than on your `PATH`, so invoke it through `npx`:
+
+```bash
+npx tripact --version
+```
+
+Every example below writes bare `tripact` for readability. Either prefix each one with `npx`, or
+install globally (`npm install -g tripact`) and drop the prefix. A one-off run without installing
+anything works too: `npx tripact@0.1.0 check`.
+
 > Pre-alpha (0.x): the `--json` contract and CLI are still moving. Pin an exact version.
+
+### 2. Write a spec
+
+Any markdown file whose list items say what the software should do. `SPEC.md`:
+
+```markdown
+# Calculator
+
+## Addition
+
+- [ ] add(a, b) returns the sum of two integers
+```
+
+### 3. Declare the config
+
+Everything tripact reads comes from one file at the repository root. `tripact.yaml`:
+
+```yaml
+schemaVersion: 1
+layers:
+  specs:
+    role: prescriptive
+    paths: [SPEC.md]
+  tests:
+    role: verificatory
+    paths: [test/**/*.test.ts]
+edges:
+  - [specs, tests]
+```
+
+Two layers is the floor. Add a `docs` layer with `role: descriptive` and a `[docs, tests]` edge when
+you want your user documentation checked too - see [Configuration](#configuration) for every key.
+
+### 4. Run the check
+
+```console
+$ tripact check
+edge specs ↔ tests: 0/1 covered
+  Addition
+    NEW-UNCOVERED addition.adda-b-returns-sum — "add(a, b) returns the sum of two integers" (SPEC.md:5)
+✗ drift detected                          # exit 1
+```
+
+The requirement has an id now: `addition.adda-b-returns-sum`. It is derived from the claim's
+content, and it is what you tag tests with - never the prose, because prose drifts.
+
+### 5. Tag a test
+
+Put the id in the test's title:
+
+```ts
+test("@specs:addition.adda-b-returns-sum - adds two integers", () => {
+  expect(add(2, 3)).toBe(5);
+});
+```
+
+### 6. Baseline it
+
+```console
+$ tripact check
+    PENDING       addition.adda-b-returns-sum          # linked, awaiting a baseline
+
+$ tripact accept --yes
+  tripact-sync-id: 277110193e543841        # baseline written to .tripact/claims.json
+
+$ tripact check
+edge specs ↔ tests: 1/1 covered
+✓ level                                   # exit 0
+```
+
+That is the whole cycle: write a requirement, tag the test that proves it, baseline the link. From
+here `tripact check` is a gate you can put in CI, and everything else in this README is about what
+happens when one of the three sides changes.
+
+### Adopting it on an existing repository
+
+Two commands help when the repo already has specs and tests:
+
+```console
+$ tripact detect              # which spec system does this repo look like?
+detected: spec-kit — use `kind: spec-kit`
+
+$ tripact skills              # writes .claude/skills/tripact-*/SKILL.md
+```
+
+`detect` is read-only signature matching against the
+[recognised spec systems](#recognised-spec-systems) - it writes nothing and never guesses when two
+match. `skills` emits agent guidance, including a `tripact-detect` skill that classifies the files
+`detect` cannot fingerprint and fleshes out `tripact.yaml`. Deciding whether a given markdown file
+is a spec or a design note is a judgement call, so it ships as agent guidance rather than as a
+built-in heuristic; there is no `init` command for the same reason.
+
+Once the layers are declared, `tripact reconcile` proposes existing untagged tests that may already
+assert an uncovered claim, so adoption does not start from zero coverage.
 
 ## Concepts
 
@@ -129,50 +250,12 @@ intelligent evaluator, be that a human or an agent. You tag tests with the claim
 
 ## How it works
 
-First, you declare your configuration in `tripact.yaml`. The minimal config looks like this:
+The [Quickstart](#quickstart) walked one claim from uncovered to baselined by hand. This section is
+what the engine does around that path.
 
-```yaml
-schemaVersion: 1
-layers:
-  specs:
-    role: prescriptive
-    paths: [SPECS.md]
-  docs:
-    role: descriptive
-    paths: [docs/manual/**/*.md]
-  tests:
-    role: verificatory
-    paths: [tests/**/*.spec.ts]
-edges:
-  - [specs, tests]
-  - [docs, tests]
-```
-
-After authoring a minimal config, run `tripact skills` to emit specialised skills for agents to use.
-The `detect` skill will locate the prescriptive / descriptive / verificatory artefacts in your
-repository and flesh the config out. (tripact ships no `init` command: classifying a repo's files is
-a judgement call, so it ships as agent guidance rather than being baked in as a heuristic.)
-
-Every requirement in your spec files becomes a claim with a content-derived id: each bullet,
-numbered item, or requirement paragraph. Given this `SPEC.md`:
-
-```markdown
-# Calculator
-
-## Addition
-
-- [ ] add(a, b) returns the sum of two integers
-```
-
-running `tripact check` sees the claim but no test covering it:
+### Ids are what you tag, and they are machine-readable
 
 ```console
-$ tripact check
-edge spec ↔ tests: 0/1 covered
-  Addition
-    NEW-UNCOVERED addition.adda-b-returns-sum — "add(a, b) returns the sum of two integers" (SPEC.md:5)
-✗ drift detected                          # exit 1
-
 $ tripact claims --json                   # list the claim's stable ID - tag tests with this, never the prose
 {
   "schemaVersion": 1,
@@ -182,15 +265,10 @@ $ tripact claims --json                   # list the claim's stable ID - tag tes
 }
 ```
 
-Tag a test with that id:
+### The work is emitted as briefs, not left to you to infer
 
-```ts
-test("@specs:addition.adda-b-returns-sum - adds two integers", () => {
-  expect(add(2, 3)).toBe(5);
-});
-```
-
-You can use `tripact tasks` and `tripact prompt` to generate the instructions for exactly this:
+You do not have to read the check output and decide what to do. `tripact tasks` derives the queue
+and `tripact prompt` prints one ready-to-hand-off brief with its payload inlined:
 
 ```console
 $ tripact tasks
@@ -226,24 +304,15 @@ Validate with `tripact check` and the repo's own test command; the check must no
 Do not edit `.tripact/*` by hand.
 ```
 
-Once the test is tagged, rerun `tripact check`, then `tripact accept` to baseline the claim:
-
-```console
-$ tripact check
-    PENDING       addition.adda-b-returns-sum          # linked, awaiting a baseline
-
-$ tripact accept --yes
-  tripact-sync-id: 277110193e543841        # baseline written to .tripact/claims.json
-
-$ tripact check
-edge spec ↔ tests: 1/1 covered
-✓ level                                   # exit 0
-```
+### Identity survives rewording
 
 Reword the claim later and its **identity survives**: the id stays `addition.adda-b-returns-sum`, and
 the linked test is flagged **STALE** for re-verification instead of being dropped. A reword too large
 to re-anchor with confidence becomes an **escalation**: a question for you or your agent, answered
-with `tripact resolve`.
+with `tripact resolve`. `accept` refuses to baseline while any escalation is open, so an unanswered
+identity question can never be silently baselined away.
+
+### What tripact deliberately does not check
 
 tripact is naive by design: you could write a test that never calls `add()` and it would be
 marked `covered` once accepted. tripact defers the responsibility of checking _that_ to the caller;
@@ -275,8 +344,8 @@ extension goes through the markdown parser.
 
 Setting a top-level `kind:` in `tripact.yaml` fills in the layers, edges, and excludes for a system
 tripact already knows, so the whole config can be `schemaVersion` plus one line. The same registry
-powers detection, so the `tripact-detect` skill can fingerprint these on disk from their signature
-files.
+powers detection, so `tripact detect` and the `tripact-detect` skill can fingerprint these on disk
+from their signature files.
 
 <!-- tripact:presets-table -->
 | `kind:`     | Spec system        | What the preset declares                                                                            |
@@ -295,13 +364,35 @@ A preset is a floor to build on. Anything you declare explicitly wins over it, a
 not use any of these systems you declare the layers by hand and lose nothing: tripact's own config
 is hand-authored. See [Spec-system presets](#spec-system-presets) for how expansion resolves.
 
+### Marking unbuilt specs with `(TBD)`
+
+Not every requirement you write is meant to be tested yet. Put `(TBD)` in a heading and every claim
+beneath it is still parsed, still gets a stable id, and still appears in `tripact claims` - but it
+is excluded from every edge coverage verdict, so it never makes `check` exit 1 and never turns up in
+the `write-tests` queue:
+
+```markdown
+## Multiplication (TBD)
+
+- [ ] multiply(a, b) returns the product of two integers
+```
+
+`tripact status` counts them separately (`N atoms (M TBD)`), and `tripact claims` gives them the
+verdict `tbd`. The marker is case-insensitive and applies to the whole subtree under the heading;
+in a StrictDoc `.sdoc` layer, `(TBD)` in a node's `STATEMENT` marks that node.
+
+This is the escape hatch for specifying ahead of building. Write the requirement now, mark the
+heading `(TBD)`, and the moment you delete the marker the claims join the coverage verdict and the
+queue tells you which tests are owed. It is a better tool than commenting the spec out, because the
+id is minted while the text is `(TBD)` and therefore survives the transition.
+
 ## Configuration
 
 Everything tripact reads comes from one file, `tripact.yaml`, at the repository root. Validation is
 all-at-once: every problem in the file is reported in a single pass, so fixing a broken config takes
 one round trip. A config with fewer than two declared layers, an unknown role, an edge
-referencing an undeclared layer, a malformed glob, or an unknown `accept.policy` fails validation
-with exit code `2` and a message naming the offending key path.
+referencing an undeclared layer, a malformed glob, an unprefixed generator, or an unknown
+`accept.policy` fails validation with exit code `2` and a message naming the offending key path.
 
 Here is a config using every option:
 
@@ -352,10 +443,16 @@ runners: # per-tier agent invocations, for whatever drives the loop
   default: 'claude -p "$(cat {promptFile})"'
   mechanical: 'claude -p "$(cat {promptFile})" --model {model}'
 
-derived: # generated outputs whose freshness `check` verifies
+derived: # whole generated files whose freshness `check` verifies
   hotlink-map:
     output: docs/reference/hotlinks.md
-    generator: hotlink-map # a builtin, or any shell command that prints the file
+    generator: builtin:hotlink-map # builtin: | harness: | shell: — the prefix is required
+
+blocks: # generated *regions* inside hand-written files
+  paths: [README.md, docs/manual/**/*.md] # files scanned for <!-- tripact:<name> --> fences
+  generators:
+    presets-table: builtin:presets-table
+    task-classes: builtin:task-classes
 
 codeLinks: # navigational code↔spec links; never a layer, never an edge
   paths: [src/**/*.ts]
@@ -368,13 +465,14 @@ codeLinks: # navigational code↔spec links; never a layer, never an edge
 | `layers`                           | The named file sets and their roles. At least two are required; a layer only participates through the edges that name it. `paths` are repo-relative globs. `conventions` optionally points at a house-style file agents read first.   |
 | `tagPattern` / `sectionTagPattern` | Per-layer regexes (one capture group each) scanned in verificatory files: `tagPattern` captures claim ids, `sectionTagPattern` doc-section slugs. Defaults `@specs:(…)` / `@docs:(…)`. Repair briefs inherit the configured format.   |
 | `edges`                            | The layer pairs to cross-check; both names must be declared layers. prescriptive↔verificatory checks claim coverage; descriptive↔verificatory checks per-section coverage; prescriptive↔descriptive is not computed.                  |
-| `exclude`                          | Globs subtracted from every layer's file set after collection: archived copies, vendored trees, and generated outputs that would otherwise parse as source claims. Always add `derived` outputs here.                                 |
+| `exclude`                          | Globs subtracted from every layer's file set after collection: archived copies, vendored trees, and generated outputs that would otherwise parse as source claims. Always add whole-file `derived` outputs here.                      |
 | `pathMap`                          | Code globs → the layers whose claims describe that code. When a path changed since the last sync point matches a glob, `check` warns those layers' claims may be stale and lists them under `affectedLayers`. This is how code drift enters.   |
 | `accept.policy`                    | Who may baseline: `human` (the default; `accept` confirms interactively and `mcp-serve` exposes no accept tool) or `agents` (the sync skill may run `accept` after validation, and MCP exposes it).                                      |
-| `routing` / `models`               | Advisory dispatch hints: `routing` maps a task class to an effort tier (`judgment`, `planning`, `implementation`, `mechanical`); `models` maps a tier to a model id. They surface as `effort`/`model` on tasks. tripact never calls a model. |
+| `routing` / `models`               | Advisory dispatch hints: `routing` maps a task class to an effort tier (`judgment`, `planning`, `implementation`, `mechanical`); `models` maps a tier to a model id. They surface as `effort`/`model` on tasks. tripact never calls a model. The routable classes are listed in [docs/manual/routing.md](./docs/manual/routing.md). |
 | `commands.test`                    | The repo's own validation command. Task briefs and emitted skills point agents at it: the check must not regress, and this must pass.                                                                                                 |
-| `runners`                          | Command templates keyed by effort tier or `default`, interpolating `{promptFile}`, `{model}`, `{cwd}`. tripact validates and passes them through; executing them is the driver's job.                                                 |
-| `derived`                          | Generated files: each entry names an `output` path and a `generator` (the `hotlink-map` builtin, or any shell command that prints the file). `check` flags outputs that drift or are non-deterministic; `tripact generate` rewrites them. |
+| `runners`                          | Command templates keyed by effort tier or `default`, interpolating `{promptFile}`, `{model}`, `{cwd}`. tripact validates them and passes them through; executing them is the driver's job.                                            |
+| `derived`                          | Whole generated files: each entry names an `output` path and a prefixed `generator`. `check` flags outputs that drift or are non-deterministic; `tripact generate` rewrites them. See [Derived outputs and generators](#derived-outputs-and-generators). |
+| `blocks`                           | Generated *regions* inside otherwise hand-written files: `paths` names the files scanned for `<!-- tripact:<name> -->` fences and `generators` maps a block name to a prefixed generator. Declared outside `layers`/`edges`, so a region never produces a coverage verdict. |
 | `codeLinks`                        | A product-code file set scanned for claim-id tags, giving the code↔spec navigation surfaced by `tripact hotlinks` and the `hotlink-map` generator. Outside `layers`/`edges`: a tag here never makes a claim covered. `tagPattern` defaults to the verificatory layer's. |
 
 ### Spec-system presets
@@ -393,6 +491,79 @@ layers, edges, and excludes you leave out. Preset excludes are unioned ahead of 
 edges apply only when you declared none. An unknown `kind` fails validation with exit code `2`,
 naming the accepted systems.
 
+## Derived outputs and generators
+
+Some files in a repository are generated from something else, and go stale silently. tripact treats
+that as a fourth kind of drift: it regenerates each declared output in memory on every `check` and
+byte-compares it with what is committed.
+
+There are two granularities:
+
+- **`derived`** - a whole file. The output must be added to `exclude`, or it will parse as source
+  claims on the next check and demand coverage of itself.
+- **`blocks`** - a region inside a hand-written file, fenced by a pair of HTML comments:
+
+  ```markdown
+  <!-- tripact:presets-table -->
+  ...generated content...
+  <!-- /tripact:presets-table -->
+  ```
+
+  `tripact generate` replaces what is between the fences and leaves the rest of the file
+  byte-identical. The markdown parser skips these regions entirely, so a generated region inside a
+  layer file never becomes a claim and never opens a group. Fences shown inside a fenced code block
+  (like the one above) are content, not markers. See
+  [block-derived-artefacts.md](./docs/architecture/block-derived-artefacts.md) for the design.
+
+A stale or missing output is a **derived-stale** finding: it drives exit 1 and appears in the queue
+as a `regenerate-derived` task. A generator whose two back-to-back runs disagree is reported as
+non-deterministic instead, since regenerating cannot fix it.
+
+### Generator prefixes
+
+**A generator string must carry one of three prefixes.** An unprefixed string is a config error
+naming the three, rather than being run as a shell command, so a mistyped `builtin:` cannot silently
+become an execution.
+
+| Prefix     | Meaning                                                                                                                            |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `builtin:` | A generator the kernel implements. Renders in-process; spawns nothing. The builtin namespace is closed.                            |
+| `harness:` | A generator the driving harness registered at boot via `registerHarnessGenerator`. Renders in-process; spawns nothing. A harness may claim any name no builtin holds - registering a builtin's name is refused, so no harness can change what `presets-table` means in someone else's config. |
+| `shell:`   | The rest of the string is a shell command whose captured stdout becomes the output. A non-zero exit fails with exit code `2`.       |
+
+The kernel ships these builtins:
+
+| Builtin                | Renders                                                                                         |
+| ---------------------- | ----------------------------------------------------------------------------------------------- |
+| `builtin:hotlink-map`  | the navigational code↔spec link map from the `codeLinks` file set                                |
+| `builtin:presets-table`| the spec-system preset registry as a markdown table (this README's preset table is that builtin) |
+| `builtin:task-classes` | the routable task classes as a bullet list                                                       |
+| `cli-reference`        | *reserved, not implemented.* It renders a driving harness's own command tree, which the kernel cannot know, so the name is reserved and a harness injects the implementation with `registerGenerator`. A tripact config naming it fails with a wiring error, by design. |
+
+The bare names `cli-reference` and `hotlink-map` predate the prefixes and still resolve to their
+builtins, so a config written before this rule keeps working. Every other name needs its prefix.
+
+### `shell:` generators require an explicit opt-in
+
+`tripact.yaml` is repository-controlled input, so a `shell:` generator in it is code the repository
+supplies - exactly as trusted as a `Makefile` or an npm `postinstall` script. **No shell generator
+runs unless you opt in** with the global `--allow-shell` flag or `TRIPACT_ALLOW_SHELL=1`:
+
+- Without the opt-in, `check` still renders every `builtin:` and `harness:` generator, withholds
+  only the `shell:` ones, and reports them by name as `shellGeneratorsWithheld` in both the human
+  report and `check --json`, stating that their outputs were **not verified** rather than reporting
+  them level or stale. A withheld generator never drives exit 1 on its own: not verifying an output
+  is a capability limit, not drift.
+- Without the opt-in, `generate` refuses outright - exit `2`, naming the flag - rather than writing
+  an output it did not regenerate. It refuses up front, so a partial regeneration is impossible.
+- A config whose generators are all `builtin:` or `harness:` never needs the opt-in and never spawns
+  a process.
+- A derived `output` path or a block-region file resolving outside the repository root is a config
+  error, so a generated artefact can never be written outside the tree being checked.
+
+**In CI, do not pass `--allow-shell` when checking out a branch you do not control.** See
+[SECURITY.md](./SECURITY.md) for the full threat model.
+
 ## CLI reference
 
 Every command follows the same conventions:
@@ -402,22 +573,24 @@ Every command follows the same conventions:
 | Exit codes   | `0` = level (nothing to do), `1` = drift / work exists, `2` = usage or environment error. Scripts and harnesses branch on these.                                                  |
 | `--json`     | A machine-readable document on stdout with a top-level `schemaVersion`. The shapes are a versioned public contract (see [public-contract.md](./docs/architecture/public-contract.md)). |
 | Human output | Long listings truncate past a fixed threshold; `--long` prints everything. Truncation never touches `--json`, which always carries the full list.                                 |
+| `--allow-shell` | A global flag, valid on every command, permitting `shell:` generators declared in `tripact.yaml` to run. Equivalent to `TRIPACT_ALLOW_SHELL=1`. Off by default.                |
 
 | Command                                                     | What it does                                                                                                                                                        | Exit          |
 | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
-| `check [--json] [--all] [--strict] [--long]`                | The drift check across every declared edge, scoped to what changed since the last sync point (`--all` audits the full tree). `--strict` counts acknowledged backlog as drift, the release gate. Writes open escalations to `.tripact/escalations.json`. | 0 level / 1 drift |
-| `status [--json]`                                           | One-screen summary: counts per layer and coverage per edge.                                                                                                          | 0 / 1         |
-| `claims [--json] [--all]`                                   | Every alive claim with its id, layer, group path, text and best verdict, the ids you tag tests with. `--all` includes dead claims.                                  | 0             |
+| `check [--json] [--all] [--strict] [--long]`                | The drift check across every declared edge, scoped to what changed since the last sync point (`--all` audits the full tree). `--strict` counts acknowledged backlog *and* the zero-file / zero-atom layer warnings as drift, the release gate. Writes open escalations to `.tripact/escalations.json`. Exits 1 on a **vacuous** check - zero claims parsed across every authoring layer - because a run that verified nothing must not report green. | 0 level / 1 drift |
+| `status [--json]`                                           | One-screen summary: counts per layer (including how many are `(TBD)`) and coverage per edge.                                                                        | 0 / 1         |
+| `claims [--json] [--all]`                                   | Every alive claim with its id, layer, group path, text and best verdict, the ids you tag tests with. `(TBD)` claims carry the verdict `tbd`. `--all` includes dead claims, marked with their last text. | 0             |
+| `detect [--json]`                                           | Reports which [recognised spec system(s)](#recognised-spec-systems) the repository matches by signature - read-only, writes nothing, never reads file contents. Names one `kind:`, or reports the ambiguity when several match rather than guessing. | 0             |
 | `audit <claim-id> [--json] [--long]`                        | The recorded history of one claim: creation, re-anchorings, adjudications, verifying-test history. Answers "why is this covered?" from the sidecar.                   | 0             |
 | `tasks [--json] [--reconcile <pair>] [--long]`              | Derives the repair/generation work queue. Each task carries a self-contained `payload`, plus `effort`/`model` hints when `routing`/`models` are set.                 | 1 while tasks / 0 empty |
 | `prompt <id> [--reconcile <pair>]`                          | Prints the ready-to-hand-off brief for one work item (a `tasks` id or an escalation question id) with its payload inlined.                                         | 0             |
-| `reconcile [--json]` · `reconcile --dismiss <id> <f> <ln>`  | Proposes existing untagged tests that may already assert an uncovered claim (for adopting tripact on a repo that already has tests). `--dismiss` records a rejected pairing. | 0        |
+| `reconcile [--json]` · `reconcile --dismiss <id> <f> <ln>`  | Proposes existing untagged tests that may already assert an uncovered claim (for adopting tripact on a repo that already has tests). `--dismiss` records a rejected pairing so it is never proposed again. | 0        |
 | `hotlinks [--json]`                                         | The navigational code↔spec link map from the configured `codeLinks` file set. Advisory, never gates.                                                                 | 0             |
-| `resolve <question-id> --match \| --new \| --dead \| --dismiss` | Applies an adjudication answer to an escalation: reworded atom is the same claim (`--match`), a new one (`--new`), the old claim is dead (`--dead`), or dismiss an advisory fork. The only way escalations get answered. | 0 |
+| `resolve <question-id> --match <mapping> \| --new <atom> \| --dead <old-id> \| --dismiss` | Applies an adjudication answer to an escalation. `--match 'old-id="new atom text"'` reunites an old identity with a created atom; `--new "<atom text>"` treats it as genuinely new; `--dead <old-id>` marks the old claim dead; `--dismiss` (the only boolean of the four) dismisses an advisory fork. Exactly one is required. The only way escalations get answered. | 0 |
 | `diff [--json]`                                             | A preview of what acceptance would change: created, re-anchored and retired claims, state deltas, and the would-be trailer. Writes nothing.                          | 0             |
-| `accept [--dry-run] [--yes]`                                | Writes anchoring and verified states to `.tripact/claims.json` and prints the `tripact-sync-id: <hash>` trailer. Confirms interactively unless `--yes`. Refuses while escalation questions are open. | 1 if questions open |
+| `accept [--dry-run] [--yes]`                                | Writes anchoring and verified states to `.tripact/claims.json` and prints the `tripact-sync-id: <hash>` trailer. `--dry-run` prints the would-be trailer without writing. Confirms interactively unless `--yes`. Refuses while escalation questions are open. | 1 if questions open |
 | `verify <hash>`                                             | Compares a `tripact-sync-id` trailer value against the current sidecar's content hash. How CI proves a build sits at a known sync point.                             | 0 match / 1 mismatch |
-| `generate [name]`                                           | Regenerates declared derived outputs and writes them to disk, deterministic and byte-identical across runs. No name regenerates every declared output.                 | 0             |
+| `generate [name]`                                           | Regenerates declared derived outputs and block regions, writing them to disk, deterministic and byte-identical across runs. No name regenerates everything declared. Refuses with exit 2 if any target is a `shell:` generator and `--allow-shell` was not given. | 0 / 2 |
 | `skills [--dir <path>] [--force]`                           | Emits the six agent skills as `.claude/skills/tripact-<name>/SKILL.md`. Existing files are left untouched unless `--force`; `--dir` overrides the output root.       | 0             |
 | `mcp-serve`                                                 | Serves the engine over MCP stdio: read tools `check`, `status`, `claims`, `tasks`, `escalations`, plus `resolve`. `accept` is exposed only under `accept.policy: agents`. | (server)   |
 
@@ -586,6 +759,36 @@ scale because:
   commit, and `tripact verify <hash>` in CI proves which sync point a build sits at, no matter how
   many agents produced it.
 
+A dispatcher round looks like this:
+
+1. Run `tripact check --json`. Escalations go to the judgment lane and come back as `tripact resolve`
+   calls; re-check.
+2. Shard `tripact tasks --json` across workers by task id, each invocation chosen from `runners` by
+   the task's `effort` hint.
+3. Workers validate their own patch: the configured `commands.test` plus `tripact check` must not
+   regress.
+4. The dispatcher merges the worktrees and re-runs `check`. It is deterministic and LLM-free, so
+   re-checking after every merge costs nothing.
+5. Level → `accept` (per the accept policy), commit with the trailer.
+
+### In CI
+
+Two gates, in increasing strictness:
+
+```yaml
+- run: npx tripact check          # exit 1 on drift: uncovered, stale, orphaned, or derived-stale
+- run: npx tripact check --strict # exit 1 on any of the above *plus* acknowledged backlog and
+                                  # empty-layer warnings — the release gate, once the backlog is zero
+```
+
+Do not add `--allow-shell` to a workflow that checks out a branch you do not control: a fork's
+`tripact.yaml` can declare a `shell:` generator, and the opt-in would hand its author a shell on your
+runner. Without the flag the check still runs; it just reports the shell-derived outputs as
+unverified. See [SECURITY.md](./SECURITY.md).
+
+To prove a build sits at a known sync point, put the `tripact-sync-id` trailer from `accept` into the
+commit and check it with `tripact verify <hash>`.
+
 ### As a library
 
 The engine is also importable, giving you the same documents the CLI prints, as data:
@@ -600,14 +803,32 @@ const queue = deriveTasks(analysis); // the same document `tasks --json` prints
 
 `buildServer` / `serveMcp` are exported too, so a harness can embed the MCP server under its own
 identity. So are the prompt/skill generators: `agentSkills`, `adjudicateSkill`, `repairSkill`,
-`taskPrompt`, `escalationPrompt`.
+`taskPrompt`, `escalationPrompt`. `registerHarnessGenerator` lets a harness contribute its own
+`harness:` generators, and `registerGenerator` lets it supply the reserved `cli-reference` builtin.
 
 ## Transitional notes
 
 Pre-alpha, and still moving:
 
-- **No `init`, no run-book execution.** Layer detection is emitted as the `detect` skill (a
-  judgement call rather than a built-in heuristic); run-book _execution_ stays a harness concern.
-  Skill and prompt _emission_ live in the engine.
+- **No `init`, no run-book execution.** `tripact detect` fingerprints the spec systems it knows;
+  everything beyond that signature match is emitted as the `detect` skill, because classifying an
+  arbitrary repo's files is a judgement call. Run-book _execution_ stays a harness concern; skill and
+  prompt _emission_ live in the engine.
 - **Pre-alpha (0.x).** The public contract (`--json` schemas, exit codes, MCP tools) is versioned
   but still evolving; breaking changes may land in minor 0.x bumps. Pin an exact version.
+
+## Project
+
+- [CONTRIBUTING.md](./CONTRIBUTING.md) - development setup, and how a change to behaviour flows
+  through the spec and the tests
+- [SECURITY.md](./SECURITY.md) - threat model, the `tripact.yaml` trust boundary, and how to report
+  a vulnerability privately
+- [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md)
+- [CHANGELOG.md](./CHANGELOG.md)
+- [UAC.md](./UAC.md) - tripact's own acceptance criteria; the prescriptive layer it checks itself
+  against
+- [docs/architecture/public-contract.md](./docs/architecture/public-contract.md) - the versioned
+  `--json` and MCP shapes
+- [docs/architecture/block-derived-artefacts.md](./docs/architecture/block-derived-artefacts.md) -
+  the design behind `blocks`
+- Licensed under [Apache-2.0](./LICENSE); see [NOTICE](./NOTICE)

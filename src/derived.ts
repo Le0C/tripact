@@ -54,9 +54,13 @@ const builtinRegistry = new Map<string, GeneratorRender>();
 /** Implementations a driving harness contributes. Open, except that it may not shadow a builtin. */
 const harnessRegistry = new Map<string, GeneratorRender>();
 
-/** The `builtin:` / `harness:` prefixes that select a registry instead of the shell (UAC §18.4). */
+/** The prefixes that select how a generator string resolves (UAC §18.4). */
 const BUILTIN_PREFIX = "builtin:";
 const HARNESS_PREFIX = "harness:";
+const SHELL_PREFIX = "shell:";
+
+/** The three recognised generator prefixes, for error messages that have to name them. */
+export const GENERATOR_PREFIXES = [BUILTIN_PREFIX, HARNESS_PREFIX, SHELL_PREFIX] as const;
 
 /**
  * Register a builtin generator implementation, called at startup by whoever owns the name
@@ -84,18 +88,55 @@ export function registerHarnessGenerator(name: string, render: GeneratorRender):
 }
 
 /**
- * How a generator string resolves (UAC §18.4). An explicit prefix selects a registry; anything else
- * is a shell command. The prefixes exist so that a harness registering a name can never capture a
- * config whose generator was a same-named shell command: `make` stays the build tool.
+ * How a generator string resolves (UAC §18.4). Every generator carries an explicit prefix selecting
+ * a registry or the shell. The prefixes exist so that a harness registering a name can never capture
+ * a config whose generator was a same-named shell command: `make` stays the build tool.
+ *
+ * An unprefixed string resolves to `unknown` rather than falling back to the shell. That fallback
+ * used to be the default branch, which meant a typo (`builtins:presets-table`) silently became a
+ * command execution, and reading a config gave no way to tell which entries spawn a process. Shell
+ * execution is now something a config has to ask for by name, and running it needs an opt-in on top
+ * (UAC §18.5). The caller turns `unknown` into a config error.
  *
  * The two bare reserved names predate the prefixes and still resolve, so a config written against
  * the earlier shape keeps working.
  */
-export function resolveGenerator(generator: string): { kind: "builtin" | "harness" | "shell"; name: string } {
+export function resolveGenerator(generator: string): { kind: "builtin" | "harness" | "shell" | "unknown"; name: string } {
   if (generator.startsWith(BUILTIN_PREFIX)) return { kind: "builtin", name: generator.slice(BUILTIN_PREFIX.length) };
   if (generator.startsWith(HARNESS_PREFIX)) return { kind: "harness", name: generator.slice(HARNESS_PREFIX.length) };
+  if (generator.startsWith(SHELL_PREFIX)) return { kind: "shell", name: generator.slice(SHELL_PREFIX.length) };
   if (RESERVED_BUILTINS.has(generator)) return { kind: "builtin", name: generator };
-  return { kind: "shell", name: generator };
+  return { kind: "unknown", name: generator };
+}
+
+/**
+ * Whether this invocation may spawn `shell:` generators (UAC §18.5). Off unless the caller opts in,
+ * because `tripact.yaml` is repository-controlled: checking out an untrusted branch and running
+ * `tripact check` must not hand that branch a shell. Set from `--allow-shell` at CLI boot, or from
+ * the environment so CI can grant it once for a repo it does trust.
+ */
+let shellAllowed = process.env["TRIPACT_ALLOW_SHELL"] === "1";
+
+/** Grant or revoke shell-generator execution for this process (UAC §18.5). */
+export function setShellAllowed(allowed: boolean): void {
+  shellAllowed = allowed;
+}
+
+/** Whether `shell:` generators may run in this process (UAC §18.5). */
+export function isShellAllowed(): boolean {
+  return shellAllowed;
+}
+
+/** Raised when a `shell:` generator is reached without the opt-in (UAC §18.5). */
+export class ShellNotAllowedError extends Error {
+  constructor(readonly generatorName: string) {
+    super(
+      `derived generator "${generatorName}" is a shell command, and shell generators are not enabled.\n` +
+        `  tripact.yaml is repository-controlled, so a shell generator is code this repository supplies.\n` +
+        `  Re-run with --allow-shell (or TRIPACT_ALLOW_SHELL=1) only if you trust this repository's config.`,
+    );
+    this.name = "ShellNotAllowedError";
+  }
 }
 
 export interface DerivedOutput {
@@ -128,6 +169,12 @@ export function deriveOutputs(config: Config): DerivedOutput[] {
  */
 export function generateContent(root: string, d: DerivedOutput, where?: { file: string; line: number }): string {
   const resolved = resolveGenerator(d.generator);
+  if (resolved.kind === "unknown") {
+    throw new GenerateError(
+      `derived generator "${d.generator}" for "${d.name}" has no recognised prefix; ` +
+        `use one of ${GENERATOR_PREFIXES.join(", ")}`,
+    );
+  }
   if (resolved.kind !== "shell") {
     const registry = resolved.kind === "builtin" ? builtinRegistry : harnessRegistry;
     const render = registry.get(resolved.name);
@@ -139,6 +186,9 @@ export function generateContent(root: string, d: DerivedOutput, where?: { file: 
     }
     return render({ root, name: d.name, ...(where ? { file: where.file, line: where.line } : {}) });
   }
+  // The trust gate (UAC §18.5), placed at the spawn rather than only at the callers so that no
+  // future code path can reach execution by skipping a caller-side check.
+  if (!shellAllowed) throw new ShellNotAllowedError(d.name);
   const r = spawnSync(resolved.name, {
     cwd: root,
     shell: true,

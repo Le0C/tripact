@@ -7,7 +7,7 @@
 // generators emit `tripact resolve …` for the tripact CLI, or `<yourcli> resolve …` when another
 // harness drives the kernel under its own name.
 
-import { mkdirSync, existsSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, existsSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import type { AcceptPolicy } from "./config.js";
 import type { Task } from "./tasks.js";
@@ -286,7 +286,10 @@ is your job, under human review.
      the missing sections in the descriptive layer's existing style. Document
      user-operable behaviour; skip internals.
    - **regenerate-derived**: run the payload's \`invocation\` to regenerate the stale
-     derived output deterministically; never hand-edit a generated file.
+     derived output deterministically; never hand-edit a generated file. If it exits 2
+     saying the generator is a shell command, STOP and report that: the opt-in
+     (\`--allow-shell\`) is a trust decision about running this repository's config, and
+     it is the operator's to make, never yours. Do not add the flag yourself.
 4. Validate before reporting: run \`${r.cli} check\` AND the repo's own test command.
    New tests must pass; the check must not regress (no new orphans or escalations).
 5. Report per task: what you changed, why, and anything you chose not to do.

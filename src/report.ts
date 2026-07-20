@@ -22,10 +22,17 @@ export interface CheckReportJson {
   blockStale: Analysis["blockStale"];
   /** Declared generators whose back-to-back regenerations disagreed (non-deterministic, UAC §18). */
   nonDeterministicGenerators: string[];
+  /** `shell:` generators withheld for want of `--allow-shell`; their outputs went unverified
+   *  (UAC §18.5). Advisory: never drives the exit code. Additive field. */
+  shellGeneratorsWithheld: string[];
   /** Declared layers whose paths matched no files (advisory warning, UAC §5.4). */
   zeroFileLayers: string[];
   /** Prescriptive/descriptive layers that matched files but parsed to zero atoms (advisory, UAC §5.4). */
   zeroAtomLayers: string[];
+  /** True when no authoring layer yielded a single atom, so the check verified nothing (UAC §5.4).
+   *  Unlike the two warnings above this drives exit 1: a green light over an empty claim set is the
+   *  one report a traceability tool must never emit. Additive field. */
+  vacuous: boolean;
   /** Atoms whose text carries a prompt-injection signature (advisory content-lint, UAC §5.5). */
   suspiciousAtoms: Analysis["suspiciousAtoms"];
   /**
@@ -60,6 +67,11 @@ function forkCount(analysis: Analysis): number {
  * outputs. Acknowledged backlog is reported but never drives exit 1, unless `--strict`, which
  * gates on coverage by treating acknowledged backlog as drift too.
  *
+ * A **vacuous** check — zero atoms across every authoring layer (UAC §5.4) — is always drift. It
+ * verified nothing, so reporting level would hand a wrong glob or an unparsable spec format a
+ * green light, which is the one failure mode a traceability tool must not have. Under `--strict`
+ * the weaker per-layer diagnostics gate too, for release pipelines that require every layer full.
+ *
  * Implements @specs:tripact-check-core.exit-code-0-repository
  * - spec:  [UAC.md — §5.1 tripact check core behaviour]({@link ./../UAC.md})
  * - tests: [cli.test.ts]({@link ./../test/cli.test.ts})
@@ -69,7 +81,9 @@ export function exitCodeFor(analysis: Analysis): 0 | 1 {
   const drift =
     analysis.verdicts.some((v) => v.kind === "stale" || v.kind === "pending") ||
     newUncovered ||
+    analysis.vacuous ||
     (analysis.strict && acknowledgedBacklogCount(analysis) > 0) ||
+    (analysis.strict && (analysis.zeroFileLayers.length > 0 || analysis.zeroAtomLayers.length > 0)) ||
     analysis.orphans.length > 0 ||
     analysis.escalations.length > 0 ||
     analysis.derivedStale.length > 0 ||
@@ -98,6 +112,7 @@ export function toJsonReport(analysis: Analysis): CheckReportJson {
   counts["pactComplete"] = pact.complete.length;
   counts["pactTestedUndocumented"] = pact.testedUndocumented.length;
   counts["pactUntiedSections"] = pact.untiedSections.length;
+  counts["shellGeneratorsWithheld"] = analysis.shellGeneratorsWithheld.length;
   counts["zeroFileLayers"] = analysis.zeroFileLayers.length;
   counts["zeroAtomLayers"] = analysis.zeroAtomLayers.length;
   counts["suspiciousAtoms"] = analysis.suspiciousAtoms.length;
@@ -114,8 +129,10 @@ export function toJsonReport(analysis: Analysis): CheckReportJson {
     derivedStale: analysis.derivedStale,
     blockStale: analysis.blockStale,
     nonDeterministicGenerators: analysis.nonDeterministicGenerators,
+    shellGeneratorsWithheld: analysis.shellGeneratorsWithheld,
     zeroFileLayers: analysis.zeroFileLayers,
     zeroAtomLayers: analysis.zeroAtomLayers,
+    vacuous: analysis.vacuous,
     suspiciousAtoms: analysis.suspiciousAtoms,
     pact,
     counts,
@@ -323,14 +340,32 @@ export function renderHuman(analysis: Analysis, opts: { long?: boolean } = {}): 
     }
     lines.push("");
   }
-  // Layer diagnostics (UAC §5.4): advisory warnings about a mis-declared layer. They never change
-  // the exit code: a spec that resolves to no files or no atoms is a config smell.
+  // Layer diagnostics (UAC §5.4). The per-layer warnings below stay advisory so a layer can be
+  // declared before it is populated; vacuity — nothing parsed anywhere — is drift, and leads,
+  // since it explains why the run below reports no edges rather than a clean tree.
+  if (analysis.vacuous) {
+    const authoring = [...analysis.layers.values()].filter((l) => l.role !== "verificatory").map((l) => l.name).sort();
+    lines.push(`vacuous check — 0 atoms parsed across every authoring layer: ${authoring.join(", ")}`);
+    lines.push("  nothing was verified, so this is drift rather than a level tree. Likely causes:");
+    lines.push("    · the layer's paths glob matches the wrong files (see tripact status)");
+    lines.push("    · the spec format is not recognised — requirements must be list items, numbered");
+    lines.push("      items, or paragraphs carrying an UPPERCASE RFC-2119 keyword (SHALL/MUST/SHOULD)");
+    lines.push("");
+  }
   if (analysis.zeroFileLayers.length) {
     lines.push(`warning: ${analysis.zeroFileLayers.length} layer(s) matched no files — check the glob: ${analysis.zeroFileLayers.join(", ")}`);
     lines.push("");
   }
   if (analysis.zeroAtomLayers.length) {
     lines.push(`warning: ${analysis.zeroAtomLayers.length} layer(s) matched files but parsed to 0 atoms — wrong glob or unparsable format: ${analysis.zeroAtomLayers.join(", ")}`);
+    lines.push("");
+  }
+  if (analysis.shellGeneratorsWithheld.length) {
+    lines.push(
+      `warning: ${analysis.shellGeneratorsWithheld.length} shell generator(s) not run — their outputs were NOT verified: ${analysis.shellGeneratorsWithheld.join(", ")}`,
+    );
+    lines.push("  tripact.yaml is repository-controlled, so shell generators need an explicit opt-in.");
+    lines.push("  Re-run with --allow-shell if you trust this repository's config.");
     lines.push("");
   }
   if (analysis.suspiciousAtoms.length) {

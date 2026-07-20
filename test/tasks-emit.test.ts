@@ -49,9 +49,10 @@ function committedRepo(prefix: string, opts: { specs?: string; config?: string; 
   return repo;
 }
 
-/** Parse a `tasks --json` queue, asserting a clean exit path first. */
-function tasksJson(repo: string): { schemaVersion: number; tasks: Array<{ id: string; kind: string; title: string; payload: Record<string, unknown> }> } {
-  const r = runCli(["tasks", "--json"], { cwd: repo });
+/** Parse a `tasks --json` queue, asserting a clean exit path first. `globals` carries any global
+ *  flags the fixture needs ahead of the command, e.g. `--allow-shell` for a shell generator. */
+function tasksJson(repo: string, globals: string[] = []): { schemaVersion: number; tasks: Array<{ id: string; kind: string; title: string; payload: Record<string, unknown> }> } {
+  const r = runCli([...globals, "tasks", "--json"], { cwd: repo });
   expect([0, 1]).toContain(r.status);
   return JSON.parse(r.stdout);
 }
@@ -166,13 +167,13 @@ describe("tripact tasks — emission (UAC §10.1)", () => {
 
   // @specs:task-emission.derived-stale-output-182-emits
   it("emits a regenerate-derived task naming the exact generate invocation for a stale derived output", () => {
-    const config = `${CONFIG}\nderived:\n  cli-docs:\n    output: docs/CLI.md\n    generator: "echo fresh"\n`;
+    const config = `${CONFIG}\nderived:\n  cli-docs:\n    output: docs/CLI.md\n    generator: "shell:echo fresh"\n`;
     const repo = committedRepo("tripact-tasks-derived-", { config });
     writeFileSync(path.join(repo, "docs", "CLI.md"), "stale\n"); // ≠ generator output → stale
     git(repo, ["add", "-A"]);
     git(repo, ["commit", "-m", "derived"]);
 
-    const regen = tasksJson(repo).tasks.filter((t) => t.kind === "regenerate-derived");
+    const regen = tasksJson(repo, ["--allow-shell"]).tasks.filter((t) => t.kind === "regenerate-derived");
     expect(regen, "the stale derived output earns one task").toHaveLength(1);
     expect(regen[0].payload.name).toBe("cli-docs");
     expect(regen[0].payload.invocation).toBe("tripact generate cli-docs");
@@ -288,7 +289,7 @@ describe("tripact repair handoff — the emitted repair skill (UAC §10.2)", () 
 
   // @specs:repair-handoff.executing-repair-tasks-agent
   it("never edits prescriptive or descriptive artefact content — derived-output generation is the sole exception", () => {
-    const config = `${CONFIG}\nderived:\n  cli-docs:\n    output: docs/CLI.md\n    generator: "printf 'fresh\\n'"\n`;
+    const config = `${CONFIG}\nderived:\n  cli-docs:\n    output: docs/CLI.md\n    generator: "shell:printf 'fresh\\n'"\n`;
     const repo = committedRepo("tripact-kernel-readonly-", { config });
     const specsPath = path.join(repo, "SPECS.md");
     const manualPath = path.join(repo, "docs", "manual", "using.md");
@@ -299,14 +300,14 @@ describe("tripact repair handoff — the emitted repair skill (UAC §10.2)", () 
 
     // Every read/report/accept command in the kernel's surface: none may touch artefact content.
     for (const argv of [["check"], ["status"], ["claims"], ["tasks"], ["diff"], ["accept", "--yes"]]) {
-      runCli(argv, { cwd: repo });
+      runCli(["--allow-shell", ...argv], { cwd: repo });
       expect(readFileSync(specsPath, "utf8"), `${argv[0]} left the prescriptive artefact untouched`).toBe(specsBefore);
       expect(readFileSync(manualPath, "utf8"), `${argv[0]} left the descriptive artefact untouched`).toBe(manualBefore);
       expect(readFileSync(derivedPath, "utf8"), `${argv[0]} did not generate`).toBe("stale\n");
     }
 
     // The one exception is derived-output generation, a deterministic derivation the kernel owns.
-    expect(runCli(["generate", "cli-docs"], { cwd: repo }).status).toBe(0);
+    expect(runCli(["--allow-shell", "generate", "cli-docs"], { cwd: repo }).status).toBe(0);
     expect(readFileSync(derivedPath, "utf8"), "generate wrote the derived output").toBe("fresh\n");
     // …and even that writes only the derived output, never the hand-authored layers.
     expect(readFileSync(specsPath, "utf8")).toBe(specsBefore);

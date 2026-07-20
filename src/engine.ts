@@ -7,7 +7,7 @@ import path from "node:path";
 import { anchor, DEFAULT_ANCHOR_CONFIG, type AnchorResult } from "./anchor.js";
 import { findBlockRegions, normalizeBlockBody, type BlockRegion } from "./blocks.js";
 import { ConfigError, DEFAULT_SECTION_TAG_PATTERN, DEFAULT_TAG_PATTERN, hintsFor, loadConfig, type Config } from "./config.js";
-import { deriveOutputs, generateContent } from "./derived.js";
+import { deriveOutputs, generateContent, ShellNotAllowedError } from "./derived.js";
 import { checkDV, groupHash, scanSectionTags } from "./edges/dv.js";
 import { checkPV, scanTags, type TagHit } from "./edges/pv.js";
 import { escalationId } from "./escalation.js";
@@ -75,11 +75,18 @@ export interface Analysis {
   /** Declared generators whose two back-to-back regenerations disagreed. Being non-deterministic they
    * are never reported as stale (regeneration can't fix them); a config fault to surface (UAC §18). */
   nonDeterministicGenerators: string[];
+  /** `shell:` generators not run for want of `--allow-shell` (UAC §18.5). Their outputs were left
+   * unverified rather than judged: advisory, never drift, since not looking is not evidence. */
+  shellGeneratorsWithheld: string[];
   /** Declared layers whose paths matched no files, from a mis-declared or unmatched glob (UAC §5.4). */
   zeroFileLayers: string[];
   /** Prescriptive/descriptive layers that matched files but parsed to zero atoms, from an unparsable
    * format or a wrong glob (UAC §5.4). Verificatory layers are excluded (they carry no atoms). */
   zeroAtomLayers: string[];
+  /** True when no prescriptive or descriptive layer yielded a single atom (UAC §5.4). The check had
+   * nothing to verify, so `✓ level` would assert coverage over an empty set — a green light on a
+   * wrong glob or an unparsable format. Vacuity is drift, unlike the per-layer warnings above. */
+  vacuous: boolean;
   /** Spec/doc atoms whose text carries a prompt-injection signature (UAC §5.5). Advisory: their text
    * flows verbatim into task payloads and agent prompts, so a planted directive is flagged for review. */
   suspiciousAtoms: Array<{ file: string; line: number; signal: string; excerpt: string }>;
@@ -326,6 +333,10 @@ export function analyze(repoRoot: string, opts: { skipDerived?: boolean } = {}):
   //    (committed matches) pays only the single regeneration.
   const derivedStale: string[] = [];
   const nonDeterministicGenerators: string[] = [];
+  // Shell generators withheld for want of the opt-in (UAC §18.5). Kept apart from derivedStale:
+  // "I was not allowed to verify this" is a different claim from "this is out of date", and
+  // reporting the former as the latter would send someone chasing drift that may not exist.
+  const shellGeneratorsWithheld: string[] = [];
   // A derived generator (e.g. hotlink-map, §20.3) may itself call analyze(); `skipDerived` breaks
   // that recursion by leaving derived-output freshness uncomputed for the inner analysis.
   for (const d of opts.skipDerived ? [] : deriveOutputs(config)) {
@@ -334,7 +345,12 @@ export function analyze(repoRoot: string, opts: { skipDerived?: boolean } = {}):
     let expected: string;
     try {
       expected = generateContent(repoRoot, d);
-    } catch {
+    } catch (e) {
+      // Withheld by the trust gate: unverified, not stale (UAC §18.5).
+      if (e instanceof ShellNotAllowedError) {
+        shellGeneratorsWithheld.push(d.name);
+        continue;
+      }
       // a generator that cannot run leaves the committed file unverifiable → treat as stale
       derivedStale.push(d.name);
       continue;
@@ -366,7 +382,11 @@ export function analyze(repoRoot: string, opts: { skipDerived?: boolean } = {}):
     let expected: string;
     try {
       expected = normalizeBlockBody(generateContent(repoRoot, d, { file: b.file, line: b.openLine }));
-    } catch {
+    } catch (e) {
+      if (e instanceof ShellNotAllowedError) {
+        if (!shellGeneratorsWithheld.includes(b.name)) shellGeneratorsWithheld.push(b.name);
+        continue;
+      }
       blockStale.push({ name: b.name, file: b.file, line: b.openLine });
       continue;
     }
@@ -403,6 +423,7 @@ export function analyze(repoRoot: string, opts: { skipDerived?: boolean } = {}):
     derivedStale,
     blockStale,
     nonDeterministicGenerators,
+    shellGeneratorsWithheld: shellGeneratorsWithheld.sort(),
     // Layer diagnostics (UAC §5.4): a declared layer that matched no files, or a
     // prescriptive/descriptive layer that matched files but yielded no atoms. Both advisory.
     zeroFileLayers: [...layers.values()].filter((l) => l.files.size === 0).map((l) => l.name).sort(),
@@ -410,6 +431,14 @@ export function analyze(repoRoot: string, opts: { skipDerived?: boolean } = {}):
       .filter((l) => l.role !== "verificatory" && l.files.size > 0 && l.atoms.length === 0)
       .map((l) => l.name)
       .sort(),
+    // Vacuity (UAC §5.4): a check that parsed no atoms at all verified nothing, so it must not
+    // report level. Distinct from the per-layer warnings, which stay advisory so a layer can be
+    // declared before it is populated. Requires at least one declared non-verificatory layer:
+    // a config with none is a config error caught at validation, not a vacuous check.
+    vacuous: (() => {
+      const authoring = [...layers.values()].filter((l) => l.role !== "verificatory");
+      return authoring.length > 0 && authoring.every((l) => l.atoms.length === 0);
+    })(),
     // Content-lint (UAC §5.5): flag prescriptive/descriptive atoms whose text reads as an injected
     // directive. Deterministic order: by file, then line.
     suspiciousAtoms: [...layers.values()]

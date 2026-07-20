@@ -5,7 +5,7 @@ description: >
   Use when the user says "add hotlinks", "decorate the code with spec links", or after a
   `codeLinks` block is configured so a developer can jump from a function to its requirement.
 metadata:
-  generatedBy: tripact@0.0.1
+  generatedBy: tripact@0.1.0
 ---
 
 # Decorate code with spec hotlinks

@@ -1,8 +1,13 @@
 # Block-level derived artefacts
 
-**Status: proposal.** Nothing here is implemented. The UAC claims in the last section are drafted
-ready to promote into `UAC.md` when the work starts, and are deliberately not there yet: adding them
-early would register as new-uncovered drift against a repo that is otherwise at full coverage.
+**Status: shipped.** Implemented in `src/blocks.ts` and specified as `UAC.md` §18.3. This repo uses
+it: the spec-system preset table in `README.md` is a `<!-- tripact:presets-table -->` region, and
+`tripact generate` fills it from the registry.
+
+This document is kept as the design record — why block regions exist and what was rejected on the
+way. Read `UAC.md` §18.3 and §18.4 for the behaviour that is actually pinned by tests; where the two
+disagree, the UAC wins. The claims listed at the end were promoted into `UAC.md` when the work
+landed, and remain here only to show what was proposed.
 
 ## Why
 
@@ -97,13 +102,13 @@ blocks:
     - README.md
     - docs/**/*.md
   generators:
-    presets-table: presets-table # a reserved builtin
-    changelog: node scripts/changelog.js # or any shell command
+    presets-table: builtin:presets-table # a reserved builtin
+    changelog: shell:node scripts/changelog.js # or any shell command
 ```
 
-`generators` mirrors the `derived` map's generator semantics exactly: a reserved builtin name renders
-in-process through the harness-injected registry, and anything else runs as a shell command whose
-stdout becomes the region content. Reusing those semantics means block generators inherit the
+`generators` mirrors the `derived` map's generator semantics exactly: a `builtin:` name renders
+in-process through the harness-injected registry, and a `shell:` command's stdout becomes the region
+content (subject to the §18.5 trust gate — shell generators need `--allow-shell`). Reusing those semantics means block generators inherit the
 determinism contract, the wiring-error behaviour for an unregistered builtin, and the exit-2 shell
 failure path without restating any of it.
 
@@ -305,7 +310,7 @@ Drafted as §18.3, extending Derived Outputs. Not yet in `UAC.md`.
 
 ### 18.4 Generator resolution and extension
 
-- A generator string prefixed `builtin:` resolves to a kernel builtin, one prefixed `harness:` resolves to a generator the driving harness registered at boot, and any other string runs as a shell command
+- A generator string prefixed `builtin:` resolves to a kernel builtin, one prefixed `harness:` resolves to a generator the driving harness registered at boot, and one prefixed `shell:` runs as a shell command (see `UAC.md` §18.4-18.5 for the shipped rules, including the trust gate on shell execution)
 - The kernel builtin namespace is closed; a harness may register a generator under any name it does not already hold, and registering a name held by a kernel builtin is refused so no harness can redefine a builtin's meaning
 - The kernel provides a `table` builtin rendering a markdown table from a JSON, YAML, or CSV source file with declared columns and an optional sort field, and it evaluates no expressions
 - A builtin or harness generator renders in-process and spawns no subprocess, so a config using only these executes no external code during `check`

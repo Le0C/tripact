@@ -59,8 +59,8 @@ const fence = (name: string, body: string) =>
 describe("block-level derived regions (UAC §18.3)", () => {
   it("config accepts a blocks block and a region never produces a coverage verdict", () => {
     // Implements @specs:block-level-derived-regions.config-accepts-optional-blocks
-    const repo = blocksRepo(`# Doc\n\n${fence("t", "generated")}\n`, { t: "printf 'generated'" });
-    const res = runCli(["check", "--json"], { cwd: repo });
+    const repo = blocksRepo(`# Doc\n\n${fence("t", "generated")}\n`, { t: "shell:printf 'generated'" });
+    const res = runCli(["--allow-shell", "check", "--json"], { cwd: repo });
     const json = JSON.parse(res.stdout);
     // The config loads (no exit 2) and the block contributes no verdict of its own: the only
     // subjects are the spec layer's claims, none of which come from DOC.md.
@@ -72,8 +72,8 @@ describe("block-level derived regions (UAC §18.3)", () => {
   it("generate replaces the region and leaves the fences and surrounding file byte-identical", () => {
     // Implements @specs:block-level-derived-regions.block-region-fenced-opening
     const before = `# Doc\n\nintro paragraph\n\n${fence("t", "OLD")}\n\ntrailing paragraph\n`;
-    const repo = blocksRepo(before, { t: "printf 'NEW BODY'" });
-    expect(runCli(["generate"], { cwd: repo }).status).toBe(0);
+    const repo = blocksRepo(before, { t: "shell:printf 'NEW BODY'" });
+    expect(runCli(["--allow-shell", "generate"], { cwd: repo }).status).toBe(0);
     const after = readFileSync(path.join(repo, "DOC.md"), "utf8");
     expect(after).toBe(`# Doc\n\nintro paragraph\n\n${fence("t", "NEW BODY")}\n\ntrailing paragraph\n`);
     // Everything outside the region survived unchanged, fences included.
@@ -86,10 +86,10 @@ describe("block-level derived regions (UAC §18.3)", () => {
     // Implements @specs:block-level-derived-regions.regenerating-block-region-twice
     // The generator ends its output with a newline, which is where an off-by-one would land: a naive
     // implementation grows the region by a blank line on every run.
-    const repo = blocksRepo(`# Doc\n\n${fence("t", "x")}\n`, { t: "printf 'line one\\nline two\\n'" });
-    expect(runCli(["generate"], { cwd: repo }).status).toBe(0);
+    const repo = blocksRepo(`# Doc\n\n${fence("t", "x")}\n`, { t: "shell:printf 'line one\\nline two\\n'" });
+    expect(runCli(["--allow-shell", "generate"], { cwd: repo }).status).toBe(0);
     const once = readFileSync(path.join(repo, "DOC.md"), "utf8");
-    expect(runCli(["generate"], { cwd: repo }).status).toBe(0);
+    expect(runCli(["--allow-shell", "generate"], { cwd: repo }).status).toBe(0);
     expect(readFileSync(path.join(repo, "DOC.md"), "utf8")).toBe(once);
   });
 
@@ -131,24 +131,24 @@ describe("block-level derived regions (UAC §18.3)", () => {
 
   it("check reports a stale region and queues a regenerate-derived task", () => {
     // Implements @specs:block-level-derived-regions.check-regenerates-each-declared
-    const repo = blocksRepo(`# Doc\n\n${fence("t", "STALE")}\n`, { t: "printf 'FRESH'" });
-    const res = runCli(["check", "--json"], { cwd: repo });
+    const repo = blocksRepo(`# Doc\n\n${fence("t", "STALE")}\n`, { t: "shell:printf 'FRESH'" });
+    const res = runCli(["--allow-shell", "check", "--json"], { cwd: repo });
     expect(res.status).toBe(1);
     const json = JSON.parse(res.stdout);
     expect(json.blockStale).toHaveLength(1);
     expect(json.counts.blockStale).toBe(1);
-    const queue = JSON.parse(runCli(["tasks", "--json"], { cwd: repo }).stdout);
+    const queue = JSON.parse(runCli(["--allow-shell", "tasks", "--json"], { cwd: repo }).stdout);
     expect(queue.tasks.some((t: { kind: string }) => t.kind === "regenerate-derived")).toBe(true);
     // Regenerating clears it.
-    expect(runCli(["generate"], { cwd: repo }).status).toBe(0);
-    expect(JSON.parse(runCli(["check", "--json"], { cwd: repo }).stdout).blockStale).toEqual([]);
+    expect(runCli(["--allow-shell", "generate"], { cwd: repo }).status).toBe(0);
+    expect(JSON.parse(runCli(["--allow-shell", "check", "--json"], { cwd: repo }).stdout).blockStale).toEqual([]);
   });
 
   it("a stale finding is identified by name, file and line, so two regions do not collapse", () => {
     // Implements @specs:block-level-derived-regions.block-level-derived-stale-finding-identified
     const doc = `# Doc\n\n${fence("t", "STALE")}\n\nmiddle\n\n${fence("t", "ALSO STALE")}\n`;
-    const repo = blocksRepo(doc, { t: "printf 'FRESH'" });
-    const json = JSON.parse(runCli(["check", "--json"], { cwd: repo }).stdout);
+    const repo = blocksRepo(doc, { t: "shell:printf 'FRESH'" });
+    const json = JSON.parse(runCli(["--allow-shell", "check", "--json"], { cwd: repo }).stdout);
     expect(json.blockStale).toHaveLength(2);
     expect(json.blockStale.map((b: { name: string }) => b.name)).toEqual(["t", "t"]);
     expect(json.blockStale.every((b: { file: string }) => b.file === "DOC.md")).toBe(true);
@@ -156,7 +156,7 @@ describe("block-level derived regions (UAC §18.3)", () => {
     const lines = json.blockStale.map((b: { line: number }) => b.line);
     expect(new Set(lines).size).toBe(2);
     // And two distinct tasks, rather than one id colliding with the other.
-    const queue = JSON.parse(runCli(["tasks", "--json"], { cwd: repo }).stdout);
+    const queue = JSON.parse(runCli(["--allow-shell", "tasks", "--json"], { cwd: repo }).stdout);
     const ids = queue.tasks.filter((t: { kind: string }) => t.kind === "regenerate-derived").map((t: { id: string }) => t.id);
     expect(new Set(ids).size).toBe(2);
   });
@@ -165,33 +165,33 @@ describe("block-level derived regions (UAC §18.3)", () => {
     // Implements @specs:block-level-derived-regions.block-generator-whose-two
     // Each run returns a different number, so regeneration could never make check pass. Reporting it
     // stale would be a permanent misdiagnosis of a fixable config fault.
-    const counter = "n=$(cat .ctr 2>/dev/null || echo 0); n=$((n+1)); echo $n > .ctr; printf \"%s\" $n";
+    const counter = "shell:n=$(cat .ctr 2>/dev/null || echo 0); n=$((n+1)); echo $n > .ctr; printf \"%s\" $n";
     const repo = blocksRepo(`# Doc\n\n${fence("t", "0")}\n`, { t: counter });
-    const json = JSON.parse(runCli(["check", "--json"], { cwd: repo }).stdout);
+    const json = JSON.parse(runCli(["--allow-shell", "check", "--json"], { cwd: repo }).stdout);
     expect(json.nonDeterministicGenerators).toContain("t");
     expect(json.blockStale).toEqual([]);
   });
 
   it("an undeclared generator, an unclosed fence and a nested fence each exit 2", () => {
     // Implements @specs:block-level-derived-regions.marker-naming-generator-absent
-    const undeclared = blocksRepo(`# Doc\n\n${fence("nope", "x")}\n`, { t: "printf 'x'" });
+    const undeclared = blocksRepo(`# Doc\n\n${fence("nope", "x")}\n`, { t: "shell:printf 'x'" });
     const undeclaredRes = runCli(["check"], { cwd: undeclared });
     expect(undeclaredRes.status).toBe(2);
     expect(undeclaredRes.stderr).toContain("nope");
 
-    const unclosed = blocksRepo(`# Doc\n\n<!-- tripact:t -->\nbody\n`, { t: "printf 'x'" });
+    const unclosed = blocksRepo(`# Doc\n\n<!-- tripact:t -->\nbody\n`, { t: "shell:printf 'x'" });
     expect(runCli(["check"], { cwd: unclosed }).status).toBe(2);
 
     const nested = blocksRepo(
       `# Doc\n\n<!-- tripact:t -->\n<!-- tripact:t -->\nbody\n<!-- /tripact:t -->\n<!-- /tripact:t -->\n`,
-      { t: "printf 'x'" },
+      { t: "shell:printf 'x'" },
     );
     expect(runCli(["check"], { cwd: nested }).status).toBe(2);
   });
 
   it("malformed fences report all-at-once rather than one per run", () => {
     // §2.2 reporting: fixing a repo with several bad markers should not be an iterative guess.
-    const repo = blocksRepo(`# Doc\n\n${fence("nope", "x")}\n\n${fence("alsonope", "y")}\n`, { t: "printf 'x'" });
+    const repo = blocksRepo(`# Doc\n\n${fence("nope", "x")}\n\n${fence("alsonope", "y")}\n`, { t: "shell:printf 'x'" });
     const res = runCli(["check"], { cwd: repo });
     expect(res.status).toBe(2);
     expect(res.stderr).toContain("nope");

@@ -146,10 +146,10 @@ judgement task offered as a reconciliation task (§10.3), not a checked edge.
 
 - `check` parses all declared layers, re-anchors identities in memory, evaluates all declared edges, and reports - it never mutates artefacts or the sidecar, apart from replacing the escalation queue it writes (§7.1)
 - `check` makes no network calls and invokes no LLM under any configuration
-- Exit code is 0 when the repository is **level** - no pending, stale, or new-uncovered verdicts, no orphans, no open escalations, no stale derived outputs - 1 when drift exists, 2 on config or environment error
+- Exit code is 0 when the repository is **level** - no pending, stale, or new-uncovered verdicts, no orphans, no open escalations, no stale derived outputs, and the check was not vacuous (§5.4) - 1 when drift exists, 2 on config or environment error
 - Uncovered claims and sections acknowledged at the last accept are **backlog**: reported as a count pointing at `tripact tasks`, never driving exit 1
 - An uncovered claim or section not acknowledged at the last accept is **new-uncovered** - drift, driving exit 1
-- `check --strict` treats acknowledged backlog as drift too, restoring coverage gating for release pipelines
+- `check --strict` treats acknowledged backlog and layer-diagnostic warnings (§5.4) as drift too, restoring coverage gating for release pipelines
 - A level report ends with `✓ level`, naming the acknowledged backlog count when it is non-zero
 - Running `check` twice on the same tree produces byte-identical output
 
@@ -171,7 +171,10 @@ judgement task offered as a reconciliation task (§10.3), not a checked edge.
 
 - A declared layer whose paths match no files is reported as a `zeroFileLayers` warning in both the human report and `check --json`, distinguishing a mis-declared or unmatched glob from a populated layer
 - A prescriptive or descriptive layer that matches files but parses to zero atoms is reported as a `zeroAtomLayers` warning, surfacing an unparsable format or a wrong glob
-- Layer-diagnostic warnings are advisory: they surface a mis-declared layer without, on their own, changing the exit code
+- Layer-diagnostic warnings are advisory: an individual mis-declared layer is surfaced without, on its own, changing the exit code, so a layer may be declared before it is populated
+- A check that parsed **zero atoms across every prescriptive and descriptive layer** is **vacuous** - there is nothing to check, so it never reports level: it is drift, driving exit 1, and reports `vacuous: true` in `check --json`
+- A vacuous check names the empty layers and points at the glob and format as the likely cause, rather than reporting `✓ level` over a configuration that verifies nothing
+- `check --strict` additionally treats any `zeroFileLayers` or `zeroAtomLayers` warning as drift, so a release pipeline gates on every layer being populated
 
 ### 5.5 Content lint
 
@@ -349,13 +352,23 @@ section carries no claims - it records the setup, not a requirement.
 
 ### 18.4 Generator resolution and extension
 
-- A generator string prefixed `builtin:` resolves to a kernel builtin and one prefixed `harness:` resolves to a generator the driving harness registered at boot; any other string runs as a shell command
+- A generator string prefixed `builtin:` resolves to a kernel builtin, one prefixed `harness:` resolves to a generator the driving harness registered at boot, and one prefixed `shell:` runs as a shell command
+- A generator string carrying no recognised prefix is a config error naming the three prefixes, rather than being run as a shell command, so a mistyped `builtin:` never silently becomes an execution
 - The bare reserved names `cli-reference` and `hotlink-map` still resolve to their builtins, so a config written before the prefixes keeps working
 - The kernel builtin namespace is closed, while a harness may register a generator under any name no kernel builtin already holds; registering a name a builtin holds is refused, so no harness can redefine what a builtin means
 - A builtin or harness generator renders in-process and spawns no subprocess, so a config whose generators are all builtin or harness executes no external command
 - Builtin and harness generators receive a context carrying the repository root and the generator name, plus the file and line of the region when the generator is filling a block
 - The kernel provides a `presets-table` builtin rendering the spec-system preset registry (§2.3) as a markdown table of `kind:`, spec system, and what each preset declares, so a documented preset list is derived from the registry rather than transcribed beside it
 - The kernel provides a `task-classes` builtin rendering the routable task classes (§16.1) as a bullet list, so documentation of what may be routed is derived from the same constant the config validates against
+
+### 18.5 Shell generator trust boundary
+
+- `tripact.yaml` is repository-controlled input, so a `shell:` generator in it is code the repository supplies; no command from it runs unless the invocation opts in with `--allow-shell` or the `TRIPACT_ALLOW_SHELL=1` environment variable
+- Without the opt-in, every builtin and harness generator still renders, and only `shell:` generators are withheld, so a config whose generators are all builtin or harness needs no opt-in at all
+- `check` reports each withheld generator by name in a `shellGeneratorsWithheld` warning in both the human report and `check --json`, stating that their derived outputs were not verified rather than reporting them level or stale
+- Withheld shell generators never drive exit 1 on their own: not verifying an output is a capability limit, not drift
+- `generate` refuses to run when a named or declared generator is `shell:` without the opt-in, exiting 2 and naming the flag, rather than silently writing an output it did not regenerate
+- A derived `output` path or block-region file resolving outside the repository root is a config error, so a generated artefact can never be written outside the tree being checked
 
 ---
 

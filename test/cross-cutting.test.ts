@@ -390,6 +390,35 @@ describe("cross-cutting: human output", () => {
   });
 });
 
+describe("cross-cutting: release integrity", () => {
+  // The version is deliberately a hand-maintained constant rather than read from package.json, so
+  // the kernel library does no I/O at import time (src/version.ts). That choice costs a second copy
+  // of the number, and a one-sided bump ships a package that misreports itself: TRIPACT_VERSION is
+  // what `--version` prints, what stamps the MCP server identity, and what every emitted skill
+  // records as `generatedBy:`. Nothing but this test keeps the two in step.
+  it("src/version.ts and package.json declare the same version", async () => {
+    const pkg = JSON.parse(readFileSync(path.join(repoRoot, "package.json"), "utf8"));
+    const { TRIPACT_VERSION } = await import("../src/version.js");
+    expect(TRIPACT_VERSION, "TRIPACT_VERSION matches package.json version").toBe(pkg.version);
+  });
+
+  // `files` decides the published tarball. dist/ carries the compiled kernel and the bin target;
+  // NOTICE is required alongside the Apache-2.0 LICENSE (npm includes LICENSE and README itself).
+  it("declares the files the published package cannot work without", () => {
+    const pkg = JSON.parse(readFileSync(path.join(repoRoot, "package.json"), "utf8"));
+    expect(pkg.files).toContain("dist");
+    expect(pkg.files).toContain("NOTICE");
+    expect(pkg.bin.tripact, "bin points into dist, which is shipped").toMatch(/^\.\/dist\//);
+  });
+
+  // tsc never cleans outDir, so a source file deleted from src/ leaves its build artefact behind in
+  // dist/ forever, and `prepublishOnly: build` would publish it. The build script clears dist first.
+  it("builds from a clean dist, so a deleted source cannot linger in the tarball", () => {
+    const pkg = JSON.parse(readFileSync(path.join(repoRoot, "package.json"), "utf8"));
+    expect(pkg.scripts.build, "build clears dist before compiling").toContain("rm -rf dist");
+  });
+});
+
 describe("cross-cutting: footprint", () => {
   // @specs:footprint.cli-runs-node-22
   it("runs on Node 22 or newer with no native dependencies", () => {

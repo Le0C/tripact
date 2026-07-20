@@ -32,15 +32,18 @@ afterAll(() => {
 });
 
 describe("generator resolution (UAC §18.4)", () => {
-  it("a builtin: prefix, a harness: prefix, and anything else pick different tiers", () => {
+  it("a builtin:, harness: and shell: prefix pick different tiers, and an unprefixed string picks none", () => {
     // Implements @specs:generator-resolution-and.generator-string-prefixed-builtin
     expect(resolveGenerator("builtin:presets-table")).toEqual({ kind: "builtin", name: "presets-table" });
     expect(resolveGenerator("harness:changelog")).toEqual({ kind: "harness", name: "changelog" });
-    expect(resolveGenerator("node scripts/x.js")).toEqual({ kind: "shell", name: "node scripts/x.js" });
-    // The capture this design exists to prevent: `make` stays the build tool even once a harness
-    // has registered a generator by that name.
+    expect(resolveGenerator("shell:node scripts/x.js")).toEqual({ kind: "shell", name: "node scripts/x.js" });
+    // An unprefixed string resolves to no tier at all, which is what makes it a config error rather
+    // than a silent trip into the shell.
+    expect(resolveGenerator("node scripts/x.js")).toEqual({ kind: "unknown", name: "node scripts/x.js" });
+    // The capture this design exists to prevent: `shell:make` stays the build tool even once a
+    // harness has registered a generator by that name.
     registerHarnessGenerator("make", () => "not the build tool");
-    expect(resolveGenerator("make")).toEqual({ kind: "shell", name: "make" });
+    expect(resolveGenerator("shell:make")).toEqual({ kind: "shell", name: "make" });
   });
 
   it("the bare reserved names still resolve to their builtins", () => {
