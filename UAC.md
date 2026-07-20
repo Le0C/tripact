@@ -60,7 +60,7 @@ skill emission below.
 
 ### 2.3 Spec-system presets
 
-- Config accepts an optional top-level `kind` naming a known spec system, one of `spec-kit`, `openspec`, `strictdoc`, or `kiro`, expanded by the kernel into layers, edges, and excludes so a minimal config can declare only `schemaVersion` and `kind`
+- Config accepts an optional top-level `kind` naming a known spec system, one of `spec-kit`, `openspec`, `strictdoc`, `kiro`, or `cursor`, expanded by the kernel into layers, edges, and excludes so a minimal config can declare only `schemaVersion` and `kind`
 - Preset expansion is user-first: a layer, an edge list, or an exclude the config declares explicitly is kept unchanged, and the preset supplies only the layers, edges, and excludes the config omits
 - Preset expansion runs before structural validation, so a `kind`-only config clears the two-layer floor through the preset's own layers
 - An unknown `kind` fails validation with exit code 2 in a message naming the accepted spec systems
