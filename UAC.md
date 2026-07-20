@@ -74,7 +74,8 @@ skill emission below.
 
 - Prescriptive and descriptive layer files parse into claim **groups** (one per heading, keyed by the full heading path) and claim **atoms** (one per `- ` list item under a heading; legacy `- [ ]` / `- [x]` checkbox items parse identically, their marker ignored)
 - A column-0 ordered list item (`1.` or `1)`) is an atom on the same terms as a `- ` bullet, so EARS/Kiro-style numbered acceptance criteria atomise; the ordered marker is not part of the atom text, so renumbering an item leaves its content hash unchanged
-- Prose paragraphs, code blocks, blockquotes, and nested (indented) list items are not atoms and never receive identities
+- A prose paragraph is an atom when it reads as a requirement: it leads with a bold label (`**User Story:** …`) or it contains an uppercase RFC-2119 keyword (`SHALL`, `MUST`, `SHOULD`); the whole wrapped paragraph is a single atom, and the keyword match is case-sensitive so lowercase prose is left alone
+- Prose paragraphs that carry no requirement signal, along with code blocks, blockquotes, and nested (indented) list items, are not atoms and never receive identities
 - Atom normalisation lowercases, collapses whitespace, and strips any checkbox marker and trailing punctuation before hashing - reformatting a line without rewording it, including converting checkbox syntax to a plain bullet, does not change its content hash
 - A heading marked `(TBD)` parses normally; its atoms are tracked in the sidecar but excluded from edge coverage verdicts (§4.1)
 - Parsing is deterministic: the same file bytes always produce the same groups, atoms, and hashes
