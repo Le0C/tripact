@@ -163,6 +163,12 @@ judgement task offered as a reconciliation task (§10.3), not a checked edge.
 - Without any sync-point, `check` audits everything and says so in the report header
 - `check --all` forces a full audit regardless of sync-point
 
+### 5.4 Layer diagnostics
+
+- A declared layer whose paths match no files is reported as a `zeroFileLayers` warning in both the human report and `check --json`, distinguishing a mis-declared or unmatched glob from a populated layer
+- A prescriptive or descriptive layer that matches files but parses to zero atoms is reported as a `zeroAtomLayers` warning, surfacing an unparsable format or a wrong glob
+- Layer-diagnostic warnings are advisory: they surface a mis-declared layer without, on their own, changing the exit code
+
 ---
 
 ## 6. Status & Reporting
@@ -171,6 +177,7 @@ judgement task offered as a reconciliation task (§10.3), not a checked edge.
 
 - `status` prints a per-layer summary - alive, dead, and TBD atom counts - and a per-edge coverage percentage
 - `status` reports the orphan-tag and open-escalation counts
+- `status` marks any zero-file layer, and any prescriptive or descriptive layer with zero atoms, as a warning alongside its per-layer counts
 - `status --json` emits the same report document the check surface produces
 
 ### 6.2 Claim listing

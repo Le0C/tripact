@@ -53,6 +53,11 @@ export interface Analysis {
   /** Declared generators whose two back-to-back regenerations disagreed — non-deterministic, so
    * never reported as stale (regeneration can't fix them); a config fault to surface (UAC §18). */
   nonDeterministicGenerators: string[];
+  /** Declared layers whose paths matched no files — a mis-declared or unmatched glob (UAC §5.4). */
+  zeroFileLayers: string[];
+  /** Prescriptive/descriptive layers that matched files but parsed to zero atoms — an unparsable
+   * format or wrong glob (UAC §5.4). Verificatory layers are excluded (they carry no atoms). */
+  zeroAtomLayers: string[];
 }
 
 export function collectFiles(repoRoot: string, globs: string[], exclude: string[] = []): Map<string, string> {
@@ -295,6 +300,13 @@ export function analyze(repoRoot: string, opts: { skipDerived?: boolean } = {}):
     unsupportedEdges,
     derivedStale,
     nonDeterministicGenerators,
+    // Layer diagnostics (UAC §5.4): a declared layer that matched no files, or a
+    // prescriptive/descriptive layer that matched files but yielded no atoms — both advisory.
+    zeroFileLayers: [...layers.values()].filter((l) => l.files.size === 0).map((l) => l.name).sort(),
+    zeroAtomLayers: [...layers.values()]
+      .filter((l) => l.role !== "verificatory" && l.files.size > 0 && l.atoms.length === 0)
+      .map((l) => l.name)
+      .sort(),
   };
 }
 

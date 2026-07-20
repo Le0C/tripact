@@ -86,6 +86,8 @@ export const PUBLIC_CONTRACT: readonly ContractSurface[] = [
       "syncPoint",
       "unsupportedEdges",
       "verdicts",
+      "zeroAtomLayers",
+      "zeroFileLayers",
     ],
   },
   {
