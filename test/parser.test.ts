@@ -4,6 +4,7 @@
 // @specs:markdown-parsing.atom-normalisation-lowercases-collapses
 // @specs:markdown-parsing.heading-marked-tbd-parses
 // @specs:markdown-parsing.parsing-deterministic-same-file
+// @specs:markdown-parsing.column-0-ordered-list-item
 // SDOC parsing → nodes/atoms. UAC §3.4.
 // @specs:sdoc-parsing.layer-file-dispatched-parser
 // @specs:sdoc-parsing.strictdoc-sdoc-files-parse
@@ -74,6 +75,34 @@ describe("parseMarkdownLayer", () => {
     expect(checked.raw).toBe("done thing");
     expect(unchecked.hash).toBe(plain.hash);
     expect(checked.hash).toBe(plain.hash);
+  });
+
+  it("atomises column-0 ordered list items (1. / 1)) like bullets — EARS/Kiro criteria", () => {
+    const doc = `## Requirement 1
+
+### Acceptance Criteria
+
+1. THE system SHALL display a list of drivers
+2. WHEN the app loads, THE system SHALL retrieve driver data
+3) THE system SHALL present each driver with a name
+`;
+    const { atoms } = parseMarkdownLayer("spec", "requirements.md", doc);
+    expect(atoms).toHaveLength(3);
+    expect(atoms[0]?.raw).toBe("THE system SHALL display a list of drivers"); // marker not in text
+    expect(atoms[2]?.raw).toBe("THE system SHALL present each driver with a name"); // `1)` marker too
+    expect(atoms.every((a) => a.groupPath === "Requirement 1 > Acceptance Criteria")).toBe(true);
+  });
+
+  it("renumbering an ordered item does not change its content hash", () => {
+    const a = parseMarkdownLayer("s", "f.md", "## G\n\n1. the system shall do the thing\n");
+    const b = parseMarkdownLayer("s", "f.md", "## G\n\n7. the system shall do the thing\n");
+    expect(a.atoms[0]?.hash).toBe(b.atoms[0]?.hash);
+  });
+
+  it("nested (indented) ordered items are not atoms", () => {
+    const { atoms } = parseMarkdownLayer("s", "f.md", "## G\n\n1. top level item\n  2. nested item is not an atom\n");
+    expect(atoms).toHaveLength(1);
+    expect(atoms[0]?.raw).toBe("top level item");
   });
 
   it("marks (TBD) atoms via their heading", () => {

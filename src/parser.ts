@@ -3,10 +3,14 @@
 import { createHash } from "node:crypto";
 import type { Atom, Group } from "./types.js";
 
-// Atoms are top-level `- ` list items (column-0 only; indented/nested bullets are
-// NOT atoms — UAC §3.1). A leading legacy checkbox marker `[ ]` / `[x]` / `[X]` is
-// stripped so `- text` and `- [ ] text` parse identically to the same hash.
+// Atoms are top-level list items (column-0 only; indented/nested items are NOT atoms — UAC §3.1):
+// an unordered `- ` bullet, or an ordered `1. ` / `1) ` item. Ordered items let EARS/Kiro-style
+// requirements (`1. THE system SHALL …`) atomise like bulleted acceptance criteria. The ordered
+// marker itself is not part of the atom text, so renumbering an item never changes its content hash.
+// A leading legacy checkbox marker `[ ]` / `[x]` / `[X]` is stripped so `- text` and `- [ ] text`
+// (or `1. [ ] text`) parse identically to the same hash.
 const BULLET_RE = /^- (.*)$/;
+const ORDERED_RE = /^\d+[.)] (.*)$/;
 const CHECKBOX_MARKER_RE = /^\[( |x|X)\] /;
 const HEADING_RE = /^(#{1,6}) (.*)$/;
 const NUMBERING_RE = /^\d+(\.\d+)*\.?\s+/;
@@ -111,10 +115,11 @@ export function parseMarkdownLayer(layer: string, file: string, content: string)
       continue;
     }
 
-    const bm = BULLET_RE.exec(line);
-    if (bm) {
+    // A column-0 list item — unordered (`- `) or ordered (`1. ` / `1) `) — is an atom.
+    const lm = BULLET_RE.exec(line) ?? ORDERED_RE.exec(line);
+    if (lm) {
       // strip a legacy checkbox marker so plain and checkbox syntaxes hash identically
-      const body = (bm[1] as string).replace(CHECKBOX_MARKER_RE, "").trim();
+      const body = (lm[1] as string).replace(CHECKBOX_MARKER_RE, "").trim();
       if (body === "") continue;
       // skip the H1 document title (level 0) in paths, like the reference parser
       const groupPath = displayStack.slice(1).filter(Boolean).join(" > ");
