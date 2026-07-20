@@ -336,6 +336,17 @@ section carries no claims - it records the setup, not a requirement.
 - A generator whose two back-to-back regenerations disagree is reported as non-deterministic rather than stale, since regeneration cannot fix it
 - A derived-stale finding appears in the task queue as a `regenerate-derived` task (§10.1)
 
+### 18.3 Block-level derived regions
+
+- Config accepts an optional `blocks` block with `paths` globs naming the files scanned for markers and a `generators` map of name to shell command, declared outside `layers` and `edges` so a block region never produces a coverage verdict
+- A block region is fenced by an opening `<!-- tripact:<name> -->` and a closing `<!-- /tripact:<name> -->` marker, and `tripact generate` replaces the content between the fences with the named generator's output, leaving the fences and the rest of the file byte-identical
+- Regenerating a block region twice produces a byte-identical file, so block generation is idempotent
+- The markdown parser produces no atom from any line inside a block region and opens no group from a heading inside one, while line numbering continues through the region so claims after it keep their true file and line
+- `check` regenerates each declared block region in memory and byte-compares it with the committed region; a stable mismatch is a **derived-stale** finding that drives exit 1 and appears as a `regenerate-derived` task
+- A block-level derived-stale finding is identified by generator name, file, and line, since one block name may occur in several files and more than once in a file
+- A block generator whose two back-to-back regenerations of a region disagree is reported as non-deterministic rather than stale
+- A marker naming a generator absent from `blocks.generators`, an opening fence with no matching close, and a nested fence each fail validation with exit code 2 under the all-at-once reporting of §2.2
+
 ---
 
 ## 20. Navigational Code↔Spec Hotlinks
@@ -402,6 +413,11 @@ sync-run items and passing them in; the kernel emits none itself.
 - A listing longer than a fixed threshold truncates with a closing "… and N more" line naming `--long`; `--long` prints everything
 - Human reports name verdicts and question kinds with exactly the `--json` vocabulary - no synonyms
 - A human-output change never alters any `--json` document; machine schemas evolve only through their `schemaVersion`
+
+### Kernel/harness boundary
+
+- No module reachable from the importable library entry point imports the binary surface (the command program, the CLI entry, or builtin-generator registration), so a harness embedding the kernel never pulls the reference CLI in with it
+- Importing the library registers no builtin generator and mutates no global state: registration is a startup side effect of the binary surface, so under a bare library import a reserved builtin name resolves to a wiring error rather than to a renderer
 
 ### Footprint
 

@@ -17,6 +17,9 @@ export interface CheckReportJson {
   unsupportedEdges: string[];
   /** Declared derived outputs whose committed file is stale versus a fresh regeneration (UAC §18.2). */
   derivedStale: string[];
+  /** Block regions whose committed content is stale versus a fresh regeneration (UAC §18.3). Carries
+   *  file and line as well as the name, since one block name may occur in several places. */
+  blockStale: Analysis["blockStale"];
   /** Declared generators whose back-to-back regenerations disagreed (non-deterministic, UAC §18). */
   nonDeterministicGenerators: string[];
   /** Declared layers whose paths matched no files (advisory warning, UAC §5.4). */
@@ -70,6 +73,7 @@ export function exitCodeFor(analysis: Analysis): 0 | 1 {
     analysis.orphans.length > 0 ||
     analysis.escalations.length > 0 ||
     analysis.derivedStale.length > 0 ||
+    analysis.blockStale.length > 0 ||
     analysis.nonDeterministicGenerators.length > 0;
   return drift ? 1 : 0;
 }
@@ -85,6 +89,7 @@ export function toJsonReport(analysis: Analysis): CheckReportJson {
   counts["orphans"] = analysis.orphans.length;
   counts["escalations"] = analysis.escalations.length;
   counts["derivedStale"] = analysis.derivedStale.length;
+  counts["blockStale"] = analysis.blockStale.length;
   counts["nonDeterministicGenerators"] = analysis.nonDeterministicGenerators.length;
   // Fork count (UAC §5.2): re-anchoring recall as a live metric counted from the anchor results.
   counts["forks"] = forkCount(analysis);
@@ -107,6 +112,7 @@ export function toJsonReport(analysis: Analysis): CheckReportJson {
     affectedLayers: analysis.affectedLayers,
     unsupportedEdges: analysis.unsupportedEdges,
     derivedStale: analysis.derivedStale,
+    blockStale: analysis.blockStale,
     nonDeterministicGenerators: analysis.nonDeterministicGenerators,
     zeroFileLayers: analysis.zeroFileLayers,
     zeroAtomLayers: analysis.zeroAtomLayers,
@@ -264,6 +270,21 @@ export function renderHuman(analysis: Analysis, opts: { long?: boolean } = {}): 
       `derived outputs stale (${analysis.derivedStale.length}) — regenerate with \`tripact generate\`:`,
     );
     lines.push(...truncateListing(analysis.derivedStale.map((name) => `  ${name}`), long, "  "));
+    lines.push("");
+  }
+  if (analysis.blockStale.length) {
+    // Each line names the region's file and line, not just the generator: one block name may fill
+    // several regions, and the name alone would not say which one went stale (UAC §18.3).
+    lines.push(
+      `block regions stale (${analysis.blockStale.length}) - regenerate with \`tripact generate\`:`,
+    );
+    lines.push(
+      ...truncateListing(
+        analysis.blockStale.map((b) => `  ${b.name} (${b.file}:${b.line})`),
+        long,
+        "  ",
+      ),
+    );
     lines.push("");
   }
   if (analysis.nonDeterministicGenerators.length) {

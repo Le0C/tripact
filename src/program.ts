@@ -6,16 +6,17 @@
 // buildProgram() must stay free of I/O at construction time; all work happens inside command
 // actions. Exit convention (Cross-Cutting): 0 clean, 1 findings/drift, 2 usage or environment error.
 
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import readline from "node:readline";
 import { Command } from "commander";
 import { AuditError, renderAuditHuman, runAudit } from "./audit.js";
+import { replaceBlockRegions } from "./blocks.js";
 import { listClaims, renderClaimsHuman } from "./claims.js";
 import { acceptPolicy, ConfigError, loadConfig } from "./config.js";
 import { deriveOutputs, generateContent, GenerateError } from "./derived.js";
 import { computeAcceptanceDelta, renderDeltaHuman } from "./diff.js";
-import { analyze, buildAcceptedSidecar } from "./engine.js";
+import { analyze, buildAcceptedSidecar, collectBlockRegions, type CollectedBlock } from "./engine.js";
 import { resolve as applyResolution, ResolveError, writeEscalations } from "./escalation.js";
 import { isGitRepo, repoRootOf, SYNC_POINT_TRAILER } from "./git.js";
 import { matchesGlob } from "./glob.js";
@@ -372,14 +373,27 @@ export function buildProgram(): Command {
         throw e;
       }
       const outputs = deriveOutputs(config);
-      const declared = outputs.map((o) => o.name).join(", ") || "(none declared)";
+      // Block regions (UAC §18.3) are located by scanning, so a malformed fence or a marker naming an
+      // undeclared generator surfaces here as a config fault, all-at-once, before anything is written.
+      let blocks: CollectedBlock[];
+      try {
+        blocks = collectBlockRegions(root, config);
+      } catch (e) {
+        if (e instanceof ConfigError) fail(e.message);
+        throw e;
+      }
+      const blockNames = [...new Set(blocks.map((b) => b.name))].sort();
+      const declared = [...outputs.map((o) => o.name), ...blockNames].join(", ") || "(none declared)";
       let targets = outputs;
+      let targetBlocks = blocks;
       if (name !== undefined) {
         const found = outputs.find((o) => o.name === name);
-        if (!found) fail(`unknown derived output "${name}" (declared: ${declared})`);
-        targets = [found];
+        const named = blocks.filter((b) => b.name === name);
+        if (!found && named.length === 0) fail(`unknown derived output "${name}" (declared: ${declared})`);
+        targets = found ? [found] : [];
+        targetBlocks = named;
       }
-      if (targets.length === 0) {
+      if (targets.length === 0 && targetBlocks.length === 0) {
         console.log("no derived outputs declared in tripact.yaml — nothing to generate");
         process.exit(0);
       }
@@ -402,6 +416,26 @@ export function buildProgram(): Command {
           mkdirSync(path.dirname(abs), { recursive: true });
           writeFileSync(abs, content, "utf8");
           console.log(`wrote ${d.output} (${d.name})`);
+        }
+        // Block regions are rewritten a file at a time, so a file carrying several regions is read
+        // and written once. No self-ingest guard is needed here, unlike a whole-file output: the
+        // parser skips block regions (§18.3), so generated content inside a layer file never becomes
+        // a source atom and an `exclude:` entry would be the wrong fix.
+        const byFile = new Map<string, CollectedBlock[]>();
+        for (const b of targetBlocks) byFile.set(b.file, [...(byFile.get(b.file) ?? []), b]);
+        for (const [file, regions] of [...byFile.entries()].sort()) {
+          const abs = path.join(root, file);
+          const before = readFileSync(abs, "utf8");
+          const after = replaceBlockRegions(before, regions, (r) =>
+            generateContent(root, { name: r.name, output: r.file, generator: r.generator }),
+          );
+          const names = [...new Set(regions.map((r) => r.name))].sort().join(", ");
+          if (after === before) {
+            console.log(`unchanged ${file} (${names})`);
+            continue;
+          }
+          writeFileSync(abs, after, "utf8");
+          console.log(`updated ${file} (${names})`);
         }
       } catch (e) {
         if (e instanceof GenerateError) fail(e.message); // generator failure → exit 2

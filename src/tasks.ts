@@ -146,6 +146,17 @@ export function deriveTasks(analysis: Analysis, reconcile?: { prescriptive: stri
     });
   }
 
+  // stale block regions (UAC §18.3): the same mechanical regeneration task, keyed by name, file and
+  // line so two regions of one generator produce two distinct tasks rather than colliding on one id.
+  for (const b of analysis.blockStale) {
+    tasks.push({
+      id: taskId("regenerate-derived", b.name, b.file, String(b.line)),
+      kind: "regenerate-derived",
+      title: `Block region "${b.name}" in ${b.file} is stale - regenerate it`,
+      payload: { name: b.name, output: b.file, line: b.line, invocation: `tripact generate ${b.name}` },
+    });
+  }
+
   for (const o of analysis.orphans) {
     tasks.push({
       id: taskId("fix-orphan-tag", o.tag, o.file, String(o.line)),

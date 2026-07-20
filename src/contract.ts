@@ -72,6 +72,7 @@ export const PUBLIC_CONTRACT: readonly ContractSurface[] = [
     schemaVersion: CHECK_SCHEMA_VERSION,
     fields: [
       "affectedLayers",
+      "blockStale",
       "changedPaths",
       "counts",
       "derivedStale",

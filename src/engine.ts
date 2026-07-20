@@ -5,7 +5,8 @@ import { createHash } from "node:crypto";
 import { existsSync, globSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { anchor, DEFAULT_ANCHOR_CONFIG, type AnchorResult } from "./anchor.js";
-import { DEFAULT_SECTION_TAG_PATTERN, DEFAULT_TAG_PATTERN, hintsFor, loadConfig, type Config } from "./config.js";
+import { findBlockRegions, normalizeBlockBody, type BlockRegion } from "./blocks.js";
+import { ConfigError, DEFAULT_SECTION_TAG_PATTERN, DEFAULT_TAG_PATTERN, hintsFor, loadConfig, type Config } from "./config.js";
 import { deriveOutputs, generateContent } from "./derived.js";
 import { checkDV, groupHash, scanSectionTags } from "./edges/dv.js";
 import { checkPV, scanTags, type TagHit } from "./edges/pv.js";
@@ -68,6 +69,9 @@ export interface Analysis {
   unsupportedEdges: string[];
   /** Names of declared derived outputs whose committed file does not match a fresh regeneration (UAC §18.2). */
   derivedStale: string[];
+  /** Block regions whose committed content does not match a fresh regeneration (UAC §18.3). Keyed by
+   *  name, file and line, since one block name may occur in several files and more than once in a file. */
+  blockStale: BlockStale[];
   /** Declared generators whose two back-to-back regenerations disagreed. Being non-deterministic they
    * are never reported as stale (regeneration can't fix them); a config fault to surface (UAC §18). */
   nonDeterministicGenerators: string[];
@@ -79,6 +83,54 @@ export interface Analysis {
   /** Spec/doc atoms whose text carries a prompt-injection signature (UAC §5.5). Advisory: their text
    * flows verbatim into task payloads and agent prompts, so a planted directive is flagged for review. */
   suspiciousAtoms: Array<{ file: string; line: number; signal: string; excerpt: string }>;
+}
+
+/** A block region located in a file, with the generator its name resolves to (UAC §18.3). */
+export interface CollectedBlock extends BlockRegion {
+  file: string;
+  generator: string;
+}
+
+/** A block region whose committed content does not match a fresh regeneration (UAC §18.3). */
+export interface BlockStale {
+  name: string;
+  file: string;
+  line: number;
+}
+
+/**
+ * Every declared block region in the repo, in a deterministic order (by file, then by position).
+ *
+ * A marker naming a generator absent from `blocks.generators`, and any malformed fence, are config
+ * faults rather than drift: they are collected across every scanned file and thrown together as a
+ * ConfigError so §18.3 problems report all-at-once like every other config problem (§2.2). Reporting
+ * the first and stopping would make fixing a repo with several bad markers an iterative guess.
+ */
+export function collectBlockRegions(repoRoot: string, config: Config): CollectedBlock[] {
+  if (!config.blocks) return [];
+  const found: CollectedBlock[] = [];
+  const problems: string[] = [];
+  for (const [file, content] of collectFiles(repoRoot, config.blocks.paths, config.exclude ?? [])) {
+    let regions: BlockRegion[];
+    try {
+      regions = findBlockRegions(content, file);
+    } catch (e) {
+      problems.push((e as Error).message);
+      continue;
+    }
+    for (const region of regions) {
+      const generator = config.blocks.generators[region.name];
+      if (generator === undefined) {
+        problems.push(
+          `${file}:${region.openLine}: block "${region.name}" is not declared in blocks.generators`,
+        );
+        continue;
+      }
+      found.push({ ...region, file, generator });
+    }
+  }
+  if (problems.length > 0) throw new ConfigError(problems.sort());
+  return found.sort((a, b) => (a.file === b.file ? a.openLine - b.openLine : a.file < b.file ? -1 : 1));
 }
 
 export function collectFiles(repoRoot: string, globs: string[], exclude: string[] = []): Map<string, string> {
@@ -304,6 +356,35 @@ export function analyze(repoRoot: string, opts: { skipDerived?: boolean } = {}):
     derivedStale.push(d.name); // missing file, or a stable mismatch, so it counts as stale
   }
 
+  // 5b. block-region freshness (UAC §18.3). Same contract as a whole-file output, applied to the
+  //     region between a marker pair. The finding carries file and line as well as the generator
+  //     name, because one block name may occur in several files and more than once in a file, and a
+  //     name alone would not tell a reader which region went stale.
+  const blockStale: BlockStale[] = [];
+  for (const b of opts.skipDerived ? [] : collectBlockRegions(repoRoot, config)) {
+    const d = { name: b.name, output: b.file, generator: b.generator };
+    let expected: string;
+    try {
+      expected = normalizeBlockBody(generateContent(repoRoot, d));
+    } catch {
+      blockStale.push({ name: b.name, file: b.file, line: b.openLine });
+      continue;
+    }
+    if (normalizeBlockBody(b.body) === expected) continue; // fresh
+    let second: string;
+    try {
+      second = normalizeBlockBody(generateContent(repoRoot, d));
+    } catch {
+      blockStale.push({ name: b.name, file: b.file, line: b.openLine });
+      continue;
+    }
+    if (second !== expected) {
+      if (!nonDeterministicGenerators.includes(b.name)) nonDeterministicGenerators.push(b.name);
+      continue;
+    }
+    blockStale.push({ name: b.name, file: b.file, line: b.openLine });
+  }
+
   return {
     config,
     sidecar,
@@ -320,6 +401,7 @@ export function analyze(repoRoot: string, opts: { skipDerived?: boolean } = {}):
     affectedLayers: [...affectedLayers].sort(),
     unsupportedEdges,
     derivedStale,
+    blockStale,
     nonDeterministicGenerators,
     // Layer diagnostics (UAC §5.4): a declared layer that matched no files, or a
     // prescriptive/descriptive layer that matched files but yielded no atoms. Both advisory.

@@ -72,6 +72,13 @@ export const ConfigSchema = z.object({
   // derived outputs (UAC §18.1): name → { output path, generator }. `output`/`generator`
   // non-emptiness validated in loadConfig so §18 problems report all-at-once too.
   derived: z.record(z.string(), z.object({ output: z.string(), generator: z.string() })).optional(),
+  // Block-level derived regions (UAC §18.3): `paths` names the files scanned for `<!-- tripact:x -->`
+  // markers, `generators` maps a block name to the shell command whose stdout fills it. Declared
+  // OUTSIDE layers/edges, like codeLinks: a block region never produces a coverage verdict. Generator
+  // non-emptiness validated in loadConfig so §18.3 problems report all-at-once too.
+  blocks: z
+    .object({ paths: z.array(z.string()).min(1), generators: z.record(z.string(), z.string()) })
+    .optional(),
   // Navigational code↔spec links (UAC §20.1): a code file set + tag pattern scanned for claim-id
   // tags. Declared OUTSIDE layers/edges: a code file set is never a layer role and never an edge,
   // so it never produces a coverage verdict. `tagPattern` defaults to the verificatory layer's.
@@ -281,6 +288,13 @@ export function loadConfig(repoRoot: string): Config {
     if (d.output.trim() === "") problems.push(`derived.${name}.output: empty output path`);
     if (d.generator.trim() === "") {
       problems.push(`derived.${name}.generator: empty generator (use "cli-reference" or a shell command)`);
+    }
+  }
+  // blocks map (UAC §18.3): each declared generator needs a non-empty shell command. A marker naming
+  // a generator absent from this map is reported later, by the scan that finds the marker.
+  for (const [name, command] of Object.entries(cfg.blocks?.generators ?? {})) {
+    if (command.trim() === "") {
+      problems.push(`blocks.generators.${name}: empty generator (use a shell command)`);
     }
   }
   if (problems.length) throw new ConfigError(problems);

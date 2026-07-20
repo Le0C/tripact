@@ -63,6 +63,7 @@ function reachableFrom(entry: string): Set<string> {
 
 describe("kernel/harness import boundary", () => {
   it("the library barrel reaches no harness module", () => {
+    // Implements @specs:kernelharness-boundary.no-module-reachable-from
     const reached = reachableFrom(path.join(SRC, "index.ts"));
     const leaked = HARNESS_MODULES.filter((m) => reached.has(m));
     expect(leaked).toEqual([]);
@@ -91,6 +92,7 @@ describe("kernel/harness import boundary", () => {
   });
 
   it("importing the barrel registers no builtin generator", async () => {
+    // Implements @specs:kernelharness-boundary.importing-library-registers-no
     const { generateContent, HOTLINK_MAP, GenerateError } = await import("../src/index.js");
     // hotlink-map is reserved by the kernel and registered by generators.ts, which only cli.ts
     // pulls in. Reaching it through the barrel alone must report the wiring error rather than render.

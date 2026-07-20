@@ -9,7 +9,8 @@
 // injected by the harness at boot via registerGenerator(), so the kernel never imports the
 // CLI. `cli-reference`, for instance, needs the full commander program to render, which is a
 // harness capability; keeping its impl out of this file lets engine.ts stay import-separable
-// from program.ts (enforced by test/kernel-boundary.test.ts).
+// from program.ts (UAC Cross-Cutting: Kernel/harness boundary, enforced by
+// test/kernel-boundary.test.ts).
 
 import { spawnSync } from "node:child_process";
 import type { Config } from "./config.js";

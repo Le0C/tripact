@@ -1,6 +1,7 @@
 // Markdown → groups/atoms. UAC §3.1.
 
 import { createHash } from "node:crypto";
+import { blockSkipLines, findBlockRegions } from "./blocks.js";
 import type { Atom, Group } from "./types.js";
 
 // Atoms are top-level list items (UAC §3.1), column-0 only, so indented/nested items are NOT atoms:
@@ -133,9 +134,26 @@ export function parseMarkdownLayer(layer: string, file: string, content: string)
     if (text !== "" && (BOLD_LABEL_RE.test(text) || NORMATIVE_RE.test(text))) addAtom(text, start);
   };
 
+  // Generated block regions (UAC §18.3) contribute nothing: no atoms from their lines, no groups from
+  // their headings. Their content is a generator's output, so parsing it would mint claims whose ids
+  // churn every time the generator's input moved, and the churn would report as drift no author could
+  // resolve. Malformed fences are a config-level error surfaced by the block scan itself, so a file
+  // that cannot be scanned is parsed as if it declared no regions rather than failing the whole parse.
+  let blockSkip: Set<number>;
+  try {
+    blockSkip = blockSkipLines(findBlockRegions(content, file));
+  } catch {
+    blockSkip = new Set<number>();
+  }
+
   const lines = content.split(/\r?\n/);
   for (let ln = 0; ln < lines.length; ln++) {
     const line = lines[ln] as string;
+    // Line numbering continues through a skipped region, so later claims keep their true line.
+    if (blockSkip.has(ln + 1)) {
+      flushProse();
+      continue;
+    }
     if (/^(```|~~~)/.test(line.trim())) {
       flushProse();
       inCodeFence = !inCodeFence;
