@@ -50,20 +50,25 @@ describe("tripact-detect skill content (§1.2)", () => {
   });
 
   // @specs:agent-skill-emission.tripact-detect-skill-teaches-coding
-  it("is emitted to disk while the kernel itself exposes no layer-detecting command", () => {
+  it("drives the full init flow; the kernel exposes a read-only `detect` command but still no `init`", () => {
     const repo = repoWithSkills("tripact-detect-content-");
     const content = skillFile(repo, "tripact-detect");
     expect(content).toContain("name: tripact-detect");
-    expect(content).toContain("Scaffold a tripact.yaml for this repository");
-    expect(content).toContain("classify its files into prescriptive (spec)");
+    // The skill drives init end to end: detect → kind: config → write tripact.yaml → skills → check.
+    expect(content).toContain("tripact detect");
+    expect(content).toContain("kind:");
+    expect(content).toContain("tripact.yaml");
+    expect(content).toContain("tripact skills");
+    expect(content).toContain("tripact check");
 
-    // Detection stays a judgement task: there is no kernel `init`/`detect` command to do it.
+    // Spec-system fingerprinting is a read-only `detect` command; layer classification stays a skill,
+    // and `init` remains out of scope (a harness concern).
     const help = runCli(["--help"], { cwd: repo });
     expect(help.status, help.stderr).toBe(0);
-    expect(help.stdout).not.toMatch(/^\s+init\b/m);
-    expect(help.stdout).not.toMatch(/^\s+detect\b/m);
-    const init = runCli(["init"], { cwd: repo });
-    expect(init.status).not.toBe(0);
+    expect(help.stdout).toMatch(/^\s+detect\b/m); // detect IS a command now
+    expect(help.stdout).not.toMatch(/^\s+init\b/m); // init is NOT
+    expect(runCli(["detect"], { cwd: repo }).status, "detect runs read-only").toBe(0);
+    expect(runCli(["init"], { cwd: repo }).status, "init is still not a command").not.toBe(0);
   });
 });
 
