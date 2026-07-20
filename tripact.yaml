@@ -30,6 +30,17 @@ edges:
 accept:
   policy: agents
 
+# Block-level derived regions (UAC §18.3). The README documented the five spec-system presets in four
+# hand-maintained places, and `cursor` was added to the registry with tests without reaching any of
+# them. The table is now rendered from `SPEC_SYSTEM_PRESETS`, so adding a preset updates the docs.
+blocks:
+  paths:
+    - README.md
+    - docs/manual/**/*.md
+  generators:
+    presets-table: builtin:presets-table
+    task-classes: builtin:task-classes
+
 # Navigational code↔spec links (UAC §20.1). Declared OUTSIDE layers/edges: a code file set is never
 # a layer and never an edge, so a tag here is navigation only — it never makes a claim "covered".
 # `tagPattern` defaults to the verificatory layer's (@specs:<id>), which is what we want: one tag

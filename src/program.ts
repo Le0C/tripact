@@ -427,7 +427,7 @@ export function buildProgram(): Command {
           const abs = path.join(root, file);
           const before = readFileSync(abs, "utf8");
           const after = replaceBlockRegions(before, regions, (r) =>
-            generateContent(root, { name: r.name, output: r.file, generator: r.generator }),
+            generateContent(root, { name: r.name, output: r.file, generator: r.generator }, { file: r.file, line: r.openLine }),
           );
           const names = [...new Set(regions.map((r) => r.name))].sort().join(", ");
           if (after === before) {

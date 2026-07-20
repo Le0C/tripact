@@ -229,3 +229,43 @@ describe("effort routing — validation (§16.1 / §2.2)", () => {
     expect(r.stderr).toContain('routing.write-tests: unknown effort tier "wizardry"');
   });
 });
+
+// The manual page docs/manual/routing.md documents this procedure. This block walks it exactly as
+// written, so the docs↔tests edge has something that actually exercises the instructions rather than
+// a test that merely mentions them. It is this repo's first `@docs:` coverage tag.
+describe("effort routing - the documented procedure (docs/manual/routing.md)", () => {
+  it("walks the manual: add a routing map, validate it, and reject an unknown class or tier", () => {
+    // Covers @docs:routing-a-task-class-to-an-effort-tier
+    // Step one and two: the YAML the manual prints, keyed by task class, valued by effort tier.
+    const documented = [LAYERS, "routing:", "  adjudicate: judgment", "  write-tests: implementation", "  regenerate-derived: mechanical", ""].join("\n");
+    const cfg = loadConfig(configOnly(documented));
+    expect(cfg.routing).toEqual({
+      adjudicate: "judgment",
+      "write-tests": "implementation",
+      "regenerate-derived": "mechanical",
+    });
+
+    // Step three: `tripact check` validates it.
+    expect(runCli(["check"], { cwd: repoWith(documented) }).status).not.toBe(2);
+
+    // And an unknown class or tier fails with exit code 2, reporting both problems in one pass
+    // rather than one per run, as the manual says.
+    const broken = [LAYERS, "routing:", "  not-a-class: judgment", "  adjudicate: not-a-tier", ""].join("\n");
+    let problems: string[] = [];
+    try {
+      loadConfig(configOnly(broken));
+    } catch (e) {
+      problems = e instanceof ConfigError ? e.message.split("\n") : [];
+    }
+    expect(problems.join("\n")).toContain("not-a-class");
+    expect(problems.join("\n")).toContain("not-a-tier");
+    expect(runCli(["check"], { cwd: repoWith(broken) }).status).toBe(2);
+
+    // The manual's last promise: a partial map is valid, and an unrouted class carries no hint.
+    // The first draft of that page claimed a kernel fallback instead; this assertion is what caught it.
+    const partial = [LAYERS, "routing:", "  adjudicate: judgment", ""].join("\n");
+    const partialCfg = loadConfig(configOnly(partial));
+    expect(hintsFor(partialCfg, "adjudicate")?.effort).toBe("judgment");
+    expect(hintsFor(partialCfg, "write-tests")).toBeNull();
+  });
+});

@@ -365,7 +365,7 @@ export function analyze(repoRoot: string, opts: { skipDerived?: boolean } = {}):
     const d = { name: b.name, output: b.file, generator: b.generator };
     let expected: string;
     try {
-      expected = normalizeBlockBody(generateContent(repoRoot, d));
+      expected = normalizeBlockBody(generateContent(repoRoot, d, { file: b.file, line: b.openLine }));
     } catch {
       blockStale.push({ name: b.name, file: b.file, line: b.openLine });
       continue;
@@ -373,7 +373,7 @@ export function analyze(repoRoot: string, opts: { skipDerived?: boolean } = {}):
     if (normalizeBlockBody(b.body) === expected) continue; // fresh
     let second: string;
     try {
-      second = normalizeBlockBody(generateContent(repoRoot, d));
+      second = normalizeBlockBody(generateContent(repoRoot, d, { file: b.file, line: b.openLine }));
     } catch {
       blockStale.push({ name: b.name, file: b.file, line: b.openLine });
       continue;

@@ -347,6 +347,16 @@ section carries no claims - it records the setup, not a requirement.
 - A block generator whose two back-to-back regenerations of a region disagree is reported as non-deterministic rather than stale
 - A marker naming a generator absent from `blocks.generators`, an opening fence with no matching close, and a nested fence each fail validation with exit code 2 under the all-at-once reporting of §2.2
 
+### 18.4 Generator resolution and extension
+
+- A generator string prefixed `builtin:` resolves to a kernel builtin and one prefixed `harness:` resolves to a generator the driving harness registered at boot; any other string runs as a shell command
+- The bare reserved names `cli-reference` and `hotlink-map` still resolve to their builtins, so a config written before the prefixes keeps working
+- The kernel builtin namespace is closed, while a harness may register a generator under any name no kernel builtin already holds; registering a name a builtin holds is refused, so no harness can redefine what a builtin means
+- A builtin or harness generator renders in-process and spawns no subprocess, so a config whose generators are all builtin or harness executes no external command
+- Builtin and harness generators receive a context carrying the repository root and the generator name, plus the file and line of the region when the generator is filling a block
+- The kernel provides a `presets-table` builtin rendering the spec-system preset registry (§2.3) as a markdown table of `kind:`, spec system, and what each preset declares, so a documented preset list is derived from the registry rather than transcribed beside it
+- The kernel provides a `task-classes` builtin rendering the routable task classes (§16.1) as a bullet list, so documentation of what may be routed is derived from the same constant the config validates against
+
 ---
 
 ## 20. Navigational Code↔Spec Hotlinks

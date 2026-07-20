@@ -278,6 +278,7 @@ tripact already knows, so the whole config can be `schemaVersion` plus one line.
 powers detection, so the `tripact-detect` skill can fingerprint these on disk from their signature
 files.
 
+<!-- tripact:presets-table -->
 | `kind:`     | Spec system        | What the preset declares                                                                            |
 | ----------- | ------------------ | --------------------------------------------------------------------------------------------------- |
 | `spec-kit`  | GitHub spec-kit    | prescriptive `specs/*/spec.md`; excludes the `.specify/` scaffolding so it never counts as the spec |
@@ -285,6 +286,7 @@ files.
 | `kiro`      | AWS Kiro           | prescriptive `specs/requirements.md` (EARS numbered acceptance criteria)                            |
 | `cursor`    | Cursor spec-driven | prescriptive `.cursor/specs/**/*.md`; excludes `_template.md` and `tasks.md`                        |
 | `strictdoc` | StrictDoc          | all `.sdoc` files as prescriptive, parsed by the SDOC parser                                        |
+<!-- /tripact:presets-table -->
 
 Each preset also seeds a conventional verificatory `tests` layer and a `[spec, tests]` edge, so a
 `kind:`-only config clears the two-layer floor with the correct all-uncovered baseline.

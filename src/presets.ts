@@ -20,7 +20,10 @@ export interface PresetLayer {
 export interface SpecSystemPreset {
   /** The `kind:` value. */
   name: string;
-  description: string;
+  /** Display name of the spec system, e.g. "GitHub spec-kit". A table column, so it carries no detail. */
+  label: string;
+  /** What this preset declares, phrased for a documentation table cell. */
+  declares: string;
   /** Globs whose presence on disk fingerprints this system (used by detection, never by expansion). */
   signature: string[];
   /** Layers the preset contributes, keyed by conventional layer name. */
@@ -45,7 +48,8 @@ export const SPEC_SYSTEM_PRESETS: Record<string, SpecSystemPreset> = {
   // so it is excluded.
   "spec-kit": {
     name: "spec-kit",
-    description: "GitHub spec-kit — product spec at specs/<feature>/spec.md, scaffolding under .specify/",
+    label: "GitHub spec-kit",
+    declares: "prescriptive `specs/*/spec.md`; excludes the `.specify/` scaffolding so it never counts as the spec",
     signature: [".specify/**/*", "specs/*/spec.md"],
     layers: {
       spec: { role: "prescriptive", paths: ["specs/*/spec.md"] },
@@ -59,7 +63,8 @@ export const SPEC_SYSTEM_PRESETS: Record<string, SpecSystemPreset> = {
   // double-count against the live spec.
   openspec: {
     name: "openspec",
-    description: "OpenSpec — live spec at openspec/specs/**/spec.md; per-change deltas under openspec/changes/ excluded",
+    label: "OpenSpec",
+    declares: "prescriptive `openspec/specs/**/spec.md`; excludes per-change deltas under `openspec/changes/`",
     signature: ["openspec/specs/**/spec.md", "openspec/project.md"],
     layers: {
       spec: { role: "prescriptive", paths: ["openspec/specs/**/spec.md"] },
@@ -74,7 +79,8 @@ export const SPEC_SYSTEM_PRESETS: Record<string, SpecSystemPreset> = {
   // the acceptance criteria in `requirements.md` (design/tasks are planning artefacts, not intent).
   kiro: {
     name: "kiro",
-    description: "Kiro — flat specs/requirements.md (EARS numbered acceptance criteria), design.md, tasks.md",
+    label: "AWS Kiro",
+    declares: "prescriptive `specs/requirements.md` (EARS numbered acceptance criteria)",
     signature: ["specs/requirements.md"],
     layers: {
       spec: { role: "prescriptive", paths: ["specs/requirements.md"] },
@@ -89,7 +95,8 @@ export const SPEC_SYSTEM_PRESETS: Record<string, SpecSystemPreset> = {
   // same way the kiro preset keeps only `requirements.md`, leaving the variable-named feature specs.
   cursor: {
     name: "cursor",
-    description: "Cursor spec-driven — feature specs under .cursor/specs/*.md (template + tasks excluded)",
+    label: "Cursor spec-driven",
+    declares: "prescriptive `.cursor/specs/**/*.md`; excludes `_template.md` and `tasks.md`",
     signature: [".cursor/specs/**/*.md"],
     layers: {
       spec: { role: "prescriptive", paths: [".cursor/specs/**/*.md"] },
@@ -104,7 +111,8 @@ export const SPEC_SYSTEM_PRESETS: Record<string, SpecSystemPreset> = {
   // as the repo warrants.
   strictdoc: {
     name: "strictdoc",
-    description: "StrictDoc — requirements in .sdoc files (SDOC parser), all .sdoc declared prescriptive",
+    label: "StrictDoc",
+    declares: "all `.sdoc` files as prescriptive, parsed by the SDOC parser",
     signature: ["**/*.sdoc"],
     layers: {
       spec: { role: "prescriptive", paths: ["**/*.sdoc"] },
@@ -165,4 +173,26 @@ export function detectSpecSystems(repoRoot: string): string[] {
 export function detectSpecSystem(repoRoot: string): string | null {
   const matches = detectSpecSystems(repoRoot);
   return matches.length === 1 ? (matches[0] as string) : null;
+}
+
+/**
+ * The spec-system registry as a markdown table (UAC §18.4), the `presets-table` builtin's output.
+ *
+ * The README documented these five systems in four hand-maintained places, and a preset added to the
+ * registry with tests reached none of them, so a shipped feature stayed invisible. Rendering the table
+ * from the registry is what stops that recurring: adding a preset here updates the docs.
+ *
+ * Column widths are padded to the longest cell so the committed markdown reads as a table in source as
+ * well as rendered. Rows follow registry declaration order, which is stable and deterministic.
+ */
+export function renderPresetsTable(): string {
+  const headers = ["`kind:`", "Spec system", "What the preset declares"];
+  const rows = Object.values(SPEC_SYSTEM_PRESETS).map((p) => [`\`${p.name}\``, p.label, p.declares]);
+  const widths = headers.map((h, i) => Math.max(h.length, ...rows.map((r) => (r[i] as string).length)));
+  const line = (cells: string[]) => `| ${cells.map((c, i) => c.padEnd(widths[i] as number)).join(" | ")} |`;
+  return [
+    line(headers),
+    `| ${widths.map((w) => "-".repeat(w)).join(" | ")} |`,
+    ...rows.map(line),
+  ].join("\n");
 }

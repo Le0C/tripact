@@ -6,6 +6,7 @@ import {
   DEFAULT_SECTION_TAG_PATTERN,
   DEFAULT_TAG_PATTERN,
   hintsFor,
+  KNOWN_TASK_CLASSES,
   tagFormatFromPattern,
   type EffortTier,
 } from "./config.js";
@@ -233,4 +234,16 @@ export function renderTasksHuman(queue: TaskQueue, opts: { long?: boolean } = {}
     lines.push(...truncateListing(ts.map((t) => `  ${t.id}  ${t.title}`), long, "  "));
   }
   return lines.join("\n");
+}
+
+/**
+ * The routable task classes as a markdown bullet list (UAC §18.4), the `task-classes` builtin's
+ * output. Rendered from KNOWN_TASK_CLASSES, the same constant `routing:` is validated against, so a
+ * class added to the kernel cannot leave the documentation behind.
+ *
+ * Emitted in declaration order, which groups the classes as they were designed rather than
+ * alphabetically, and is stable across runs.
+ */
+export function renderTaskClasses(): string {
+  return KNOWN_TASK_CLASSES.map((c) => `- \`${c}\``).join("\n");
 }
