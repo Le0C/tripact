@@ -58,6 +58,14 @@ skill emission below.
 - A config with fewer than two declared layers fails validation with exit code 2
 - An unknown role, an edge referencing an undeclared layer, a malformed glob, an unknown `accept.policy`, an unknown routing tier, or a malformed derived/runner entry fails validation with exit code 2 and a message naming the offending key path and the accepted values
 
+### 2.3 Spec-system presets
+
+- Config accepts an optional top-level `kind` naming a known spec system, one of `spec-kit`, `openspec`, or `strictdoc`, expanded by the kernel into layers, edges, and excludes so a minimal config can declare only `schemaVersion` and `kind`
+- Preset expansion is user-first: a layer, an edge list, or an exclude the config declares explicitly is kept unchanged, and the preset supplies only the layers, edges, and excludes the config omits
+- Preset expansion runs before structural validation, so a `kind`-only config clears the two-layer floor through the preset's own layers
+- An unknown `kind` fails validation with exit code 2 in a message naming the accepted spec systems
+- The same preset registry backs detection: each spec system declares signature globs that fingerprint it on disk, and a repository is matched to the first preset whose signatures are present
+
 ---
 
 ## 3. Claim Parsing & Identity
@@ -92,6 +100,15 @@ skill emission below.
 - One atom matching several successors (split) or several atoms collapsing into one (merge) is detected and always escalated as a `split-merge` question - never auto-resolved
 - Unmatched new atoms receive fresh ids and unmatched old atoms are marked dead - identity is forked rather than guessed
 - A group that in one transition loses an unmatched atom and gains an unmatched atom is a **fork**: it additionally emits an advisory `fork-review` question (§7.1), so identity never forks without raising one
+
+### 3.4 SDOC parsing
+
+- A layer file is dispatched to a parser by extension: a `.sdoc` file uses the StrictDoc parser and every other extension uses the markdown parser
+- StrictDoc `.sdoc` files parse by typed node, not by markdown list item: each node with a `STATEMENT` field contributes exactly one atom whose text is that statement
+- A node `STATEMENT` may be inline or a multi-line block delimited by `>>>` and `<<<`; a multi-line statement is joined into a single atom
+- `[DOCUMENT]` and `[GRAMMAR]` nodes carry no statement and yield no atoms, so a requirements file's grammar definition is never turned into pseudo-atoms
+- Non-statement fields such as `RATIONALE`, `COMMENT`, `UID`, and `TITLE` never contribute atom text, and a multi-line non-statement block is consumed without being atomised
+- SDOC atoms are grouped by their enclosing `[[SECTION]]` nesting, keyed by the section title path
 
 ---
 

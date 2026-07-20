@@ -4,6 +4,7 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { parse as parseYaml } from "yaml";
 import { z } from "zod";
+import { applyPreset, SPEC_SYSTEM_NAMES, SPEC_SYSTEM_PRESETS } from "./presets.js";
 
 export const CONFIG_FILENAME = "tripact.yaml";
 
@@ -47,8 +48,13 @@ export type AcceptPolicy = (typeof ACCEPT_POLICIES)[number];
 
 export const ConfigSchema = z.object({
   schemaVersion: z.literal(1),
-  layers: z.record(z.string(), LayerSchema),
-  edges: z.array(z.tuple([z.string(), z.string()])),
+  // Optional spec-system preset (UAC §2.3). When set, loadConfig expands it into layers/edges/exclude
+  // (see presets.ts) so a minimal config can be just `schemaVersion: 1` + `kind: spec-kit`.
+  kind: z.string().optional(),
+  // layers/edges may be omitted entirely when a `kind:` preset supplies them; the two-layer floor and
+  // edge validation run AFTER expansion (loadConfig), so an empty layer map here is not yet an error.
+  layers: z.record(z.string(), LayerSchema).default({}),
+  edges: z.array(z.tuple([z.string(), z.string()])).default([]),
   pathMap: z.record(z.string(), z.array(z.string())).optional(),
   // Globs subtracted from every layer's file set after collection (UAC §2). Archived duplicates,
   // vendored trees, and generated derived outputs live here so they never parse as source atoms.
@@ -172,8 +178,16 @@ export function loadConfig(repoRoot: string): Config {
       parsed.error.issues.map((i) => `${i.path.join(".") || "(root)"}: ${i.message}`),
     );
   }
-  const cfg = parsed.data;
+  const parsedCfg = parsed.data;
   const problems: string[] = [];
+  // Spec-system preset (UAC §2.3): validate the `kind` name, then expand it into concrete
+  // layers/edges/exclude BEFORE the structural checks below, so `kind: spec-kit` with no
+  // hand-declared layers still clears the two-layer floor. An unknown kind is reported and
+  // expansion is skipped (the un-expanded config then fails the floor too — both reported at once).
+  if (parsedCfg.kind !== undefined && !(parsedCfg.kind in SPEC_SYSTEM_PRESETS)) {
+    problems.push(`kind: unknown spec system "${parsedCfg.kind}" (known: ${SPEC_SYSTEM_NAMES.join(", ")})`);
+  }
+  const cfg = parsedCfg.kind !== undefined && parsedCfg.kind in SPEC_SYSTEM_PRESETS ? applyPreset(parsedCfg) : parsedCfg;
   const layerNames = Object.keys(cfg.layers);
   if (layerNames.length < 2) {
     problems.push(`layers: at least 2 layers are required, found ${layerNames.length} (accepted roles: prescriptive, descriptive, verificatory)`);

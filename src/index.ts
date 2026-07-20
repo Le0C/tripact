@@ -23,6 +23,7 @@ export * from "./git.js";
 export * from "./hotlinks.js";
 export * from "./id.js";
 export * from "./parser.js";
+export * from "./presets.js";
 export * from "./reconcile.js";
 export * from "./report.js";
 export * from "./sidecar.js";

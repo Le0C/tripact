@@ -4,8 +4,15 @@
 // @specs:markdown-parsing.atom-normalisation-lowercases-collapses
 // @specs:markdown-parsing.heading-marked-tbd-parses
 // @specs:markdown-parsing.parsing-deterministic-same-file
+// SDOC parsing → nodes/atoms. UAC §3.4.
+// @specs:sdoc-parsing.layer-file-dispatched-parser
+// @specs:sdoc-parsing.strictdoc-sdoc-files-parse
+// @specs:sdoc-parsing.node-statement-may-inline
+// @specs:sdoc-parsing.document-grammar-nodes-carry
+// @specs:sdoc-parsing.non-statement-fields-such-rationale
+// @specs:sdoc-parsing.sdoc-atoms-grouped-their
 import { describe, expect, it } from "vitest";
-import { normalizeText, parseMarkdownLayer } from "../src/parser.js";
+import { normalizeText, parseLayerFile, parseMarkdownLayer, parseSdocLayer } from "../src/parser.js";
 
 const DOC = `# Spec — Example
 
@@ -79,5 +86,104 @@ describe("parseMarkdownLayer", () => {
     const one = JSON.stringify(parseMarkdownLayer("uac", "UAC.md", DOC));
     const two = JSON.stringify(parseMarkdownLayer("uac", "UAC.md", DOC));
     expect(one).toBe(two);
+  });
+});
+
+// A StrictDoc document exercising: the [GRAMMAR]/[DOCUMENT] skip, an inline vs multi-line STATEMENT,
+// a RATIONALE block that must not leak, and [[SECTION]] nesting.
+const SDOC = `[DOCUMENT]
+MID: doc123
+TITLE: Requirements Tool Specification
+
+[GRAMMAR]
+ELEMENTS:
+- TAG: REQUIREMENT
+  FIELDS:
+  - TITLE: STATEMENT
+    TYPE: String
+
+[TEXT]
+STATEMENT: >>>
+This document delineates the requirements for the tool.
+It spans two lines that join into one atom.
+<<<
+
+[[SECTION]]
+MID: sec1
+TITLE: Data model
+
+[REQUIREMENT]
+UID: SDOC-SRS-18
+TITLE: Data model
+STATEMENT: >>>
+StrictDoc shall be based on a data model.
+<<<
+RATIONALE: >>>
+A consistent data model supports rich use cases.
+<<<
+
+[[SECTION]]
+MID: sec1a
+TITLE: Requirement model
+
+[REQUIREMENT]
+UID: SDOC-SRS-26
+STATEMENT: The data model shall support modeling requirements.
+
+[[/SECTION]]
+
+[[/SECTION]]
+`;
+
+describe("parseSdocLayer", () => {
+  it("parses each node's STATEMENT into one atom, skipping DOCUMENT and GRAMMAR", () => {
+    const { atoms } = parseSdocLayer("spec", "reqs.sdoc", SDOC);
+    const texts = atoms.map((a) => a.raw);
+    // 1 [TEXT] + 2 [REQUIREMENT] = 3 atoms; the [GRAMMAR] `- TITLE: STATEMENT` bullet is NOT an atom.
+    expect(atoms).toHaveLength(3);
+    expect(texts).toContain("StrictDoc shall be based on a data model.");
+    expect(texts).toContain("The data model shall support modeling requirements.");
+    expect(texts.some((t) => /TAG: REQUIREMENT|delineates/.test(t) && t.includes("TAG"))).toBe(false);
+  });
+
+  it("joins a multi-line STATEMENT into one atom and never leaks a RATIONALE block", () => {
+    const { atoms } = parseSdocLayer("spec", "reqs.sdoc", SDOC);
+    const multi = atoms.find((a) => a.raw.startsWith("This document delineates"));
+    expect(multi?.raw).toBe("This document delineates the requirements for the tool. It spans two lines that join into one atom.");
+    const dataModel = atoms.find((a) => a.raw.includes("based on a data model"));
+    expect(dataModel?.raw).toBe("StrictDoc shall be based on a data model.");
+    expect(dataModel?.raw).not.toContain("rich use cases"); // RATIONALE must not leak
+  });
+
+  it("parses an inline STATEMENT (no >>> block) as an atom", () => {
+    const { atoms } = parseSdocLayer("spec", "reqs.sdoc", SDOC);
+    expect(atoms.map((a) => a.raw)).toContain("The data model shall support modeling requirements.");
+  });
+
+  it("groups atoms by enclosing [[SECTION]] title path", () => {
+    const { atoms } = parseSdocLayer("spec", "reqs.sdoc", SDOC);
+    const req18 = atoms.find((a) => a.raw.includes("based on a data model"));
+    const req26 = atoms.find((a) => a.raw.includes("support modeling requirements"));
+    const intro = atoms.find((a) => a.raw.startsWith("This document"));
+    expect(req18?.groupPath).toBe("Data model");
+    expect(req26?.groupPath).toBe("Data model > Requirement model"); // nested section
+    expect(intro?.groupPath).toBe(""); // before any section
+  });
+
+  it("dispatches by extension: .sdoc → SDOC parser, .md → markdown parser", () => {
+    const sdoc = parseLayerFile("spec", "reqs.sdoc", SDOC);
+    const md = parseLayerFile("spec", "UAC.md", DOC);
+    // SDOC yields the requirement statement; the markdown parser would find no `- ` atoms in SDOC.
+    expect(sdoc.atoms.map((a) => a.raw)).toContain("StrictDoc shall be based on a data model.");
+    expect(md.atoms.length).toBeGreaterThan(0);
+    // The `- TAG:`/`- TITLE:` GRAMMAR bullets would become atoms under the markdown parser — proving
+    // the extension dispatch matters: markdown-parsing SDOC is exactly the grammar-noise bug.
+    const asMarkdown = parseMarkdownLayer("spec", "reqs.sdoc", SDOC);
+    expect(asMarkdown.atoms.some((a) => a.raw.startsWith("TAG:") || a.raw.startsWith("TITLE:"))).toBe(true);
+    expect(sdoc.atoms.some((a) => a.raw.startsWith("TAG:") || a.raw.startsWith("TITLE:"))).toBe(false);
+  });
+
+  it("is deterministic", () => {
+    expect(JSON.stringify(parseSdocLayer("spec", "reqs.sdoc", SDOC))).toBe(JSON.stringify(parseSdocLayer("spec", "reqs.sdoc", SDOC)));
   });
 });
