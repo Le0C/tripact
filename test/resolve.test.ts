@@ -1,10 +1,10 @@
-// `tripact resolve` — the escalation adjudication surface (UAC §7.2). Each scenario builds a scratch
+// `tripact resolve`: the escalation adjudication surface (UAC §7.2). Each scenario builds a scratch
 // git repo, baselines it with `accept` so the sidecar carries a claim identity, then rewords/replaces
-// the prescriptive text so the next `check` mints a real escalation question. The resolve behaviours
+// the prescriptive text so the next `check` mints an escalation question. The resolve behaviours
 // (validation + exit 2, --dismiss forks only, in-place shrink of multi-atom questions, journalling,
 // and the drift-clearing property) are then driven through the prebuilt CLI and asserted against the
-// on-disk sidecar / escalations.json / journal.jsonl. Only `git init` + a working tree is needed —
-// no commits, matching the fixture's own layer wiring.
+// on-disk sidecar / escalations.json / journal.jsonl. Only `git init` + a working tree is needed
+// (no commits), matching the fixture's own layer wiring.
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
@@ -82,11 +82,11 @@ describe("tripact resolve — validation & exit convention (§7.2)", () => {
     const sidecarPath = path.join(repo, ".tripact", "claims.json");
     const before = readFileSync(sidecarPath, "utf8");
 
-    // (a) referenced question must exist — an unknown id exits 2.
+    // (a) the referenced question must exist: an unknown id exits 2.
     const unknown = runCli(["resolve", "no-such-question", "--dead", "whatever"], { cwd: repo });
     expect(unknown.status, `unknown id\n${unknown.stderr}`).toBe(2);
 
-    // (b) the answer shape must match the question's kind — --dismiss is not a reanchor answer, exit 2.
+    // (b) the answer shape must match the question's kind: --dismiss is not a reanchor answer, exit 2.
     const wrongShape = runCli(["resolve", reanchor!.id, "--dismiss"], { cwd: repo });
     expect(wrongShape.status, `dismiss on reanchor\n${wrongShape.stderr}`).toBe(2);
 
@@ -133,14 +133,14 @@ describe("tripact resolve — partial disposition of a multi-atom question (§7.
     const addId = reanchor.deleted.find((d) => d.id.includes("addnumbers"))!.id;
     const subId = reanchor.deleted.find((d) => d.id.includes("subtractnumbers"))!.id;
 
-    // Resolve ONE atom — the question must survive in place under the SAME id, one atom lighter.
+    // Resolve ONE atom: the question must survive in place under the SAME id, one atom lighter.
     const first = runCli(["resolve", qid, "--match", `${addId}=${SUM_REWORD}`], { cwd: repo });
     expect(first.status, `first match\n${first.stderr}`).toBe(0);
     const afterOne = readEscalations(repo).questions.find((q) => q.id === qid);
     expect(afterOne, "question still present under the same id").toBeTruthy();
     expect(afterOne!.deleted.map((d) => d.id), "only the unresolved atom remains").toEqual([subId]);
 
-    // Resolve the remaining atom — now empty, so the question leaves the queue.
+    // Resolve the remaining atom: now empty, so the question leaves the queue.
     const second = runCli(["resolve", qid, "--match", `${subId}=${SUB_REWORD}`], { cwd: repo });
     expect(second.status, `second match\n${second.stderr}`).toBe(0);
     expect(readEscalations(repo).questions.some((q) => q.id === qid), "question gone once no atoms remain").toBe(false);

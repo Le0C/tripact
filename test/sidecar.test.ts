@@ -33,7 +33,7 @@ function makeRepo(tests: string, prefix = "tripact-sidecar-"): string {
   return repo;
 }
 
-/** Untagged verificatory file — every claim starts uncovered. */
+/** Untagged verificatory file: every claim starts uncovered. */
 const UNTAGGED = ['test("addNumbers sums two integers", () => {});', 'test("Add button shows the sum", () => {});', ""].join("\n");
 
 /** Reads the committed sidecar as parsed JSON. */
@@ -56,7 +56,7 @@ describe("sidecar identity (§3.2) — pure id minting", () => {
     expect(a.id).toMatch(/^addition\.sum-result-value-here-[0-9a-f]{6}$/);
     expect(b.id).toMatch(/^addition\.sum-result-value-here-[0-9a-f]{6}$/);
     expect(a.id).not.toBe(b.id);
-    // The non-colliding atom keeps its bare slug — no suffix.
+    // The non-colliding atom keeps its bare slug, with no suffix.
     expect(c.id).toBe("addition.totally-different-unique-wording");
   });
 
@@ -192,7 +192,7 @@ describe("sidecar persistence + records (§3.2) — driven through the CLI", () 
   // @specs:sidecar.sidecar-records-acknowledged-backlog
   it("snapshots the uncovered claim ids and section slugs into the acknowledged backlog on accept", () => {
     const repo = makeRepo(UNTAGGED, "tripact-sidecar-backlog-");
-    // The backlog is written by accept, not before it.
+    // The backlog only appears once accept has run.
     expect(existsSync(path.join(repo, ".tripact", "claims.json"))).toBe(false);
     expect(runCli(["accept", "--yes"], { cwd: repo }).status).toBe(0);
     const backlog = readSidecar(repo).backlog;

@@ -21,7 +21,7 @@ function track(repo: string): string {
   return repo;
 }
 
-/** Two tests, each tagging one of the base SPECS claims — moves both claims off "uncovered". */
+/** Two tests, each tagging one of the base SPECS claims, moving both off "uncovered". */
 const TAGGED_TESTS = [
   `// ${specTag("addition.addnumbers-returns-sum-two")}`,
   'test("addNumbers sums two integers", () => {});',
@@ -93,7 +93,7 @@ describe("tripact tasks — emission (UAC §10.1)", () => {
     expect(kinds.filter((k) => k === "write-tests")).toHaveLength(1);
     // The single undocumented manual section → exactly one cover-section task.
     expect(kinds.filter((k) => k === "cover-section")).toHaveLength(1);
-    // One fix-orphan-tag task per orphan tag — one apiece, not batched.
+    // One fix-orphan-tag task per orphan tag, emitted individually rather than batched.
     expect(kinds.filter((k) => k === "fix-orphan-tag")).toHaveLength(14);
     const grouped = tasks.find((t) => t.kind === "write-tests");
     expect((grouped?.payload.claims as unknown[]).length, "both uncovered claims in the one group task").toBe(2);
@@ -261,7 +261,7 @@ describe("tripact repair handoff — the emitted repair skill (UAC §10.2)", () 
     expect(content).toContain("tripact tasks --json"); // consume the machine-readable queue
     expect(content).toContain("conventions"); // follow per-layer conventions files where declared
     expect(content).toContain("tripact.yaml` declares");
-    // The engine never edits artefact content — repairing it is agent work.
+    // The engine never edits artefact content; repairing it is agent work.
     expect(content).toContain("The engine never edits artefact content");
     // Validate with tripact check AND the repo's own test command before reporting.
     expect(content).toContain("tripact check");
@@ -297,7 +297,7 @@ describe("tripact repair handoff — the emitted repair skill (UAC §10.2)", () 
     const specsBefore = readFileSync(specsPath, "utf8");
     const manualBefore = readFileSync(manualPath, "utf8");
 
-    // Every read/report/accept command in the kernel's surface — none may touch artefact content.
+    // Every read/report/accept command in the kernel's surface: none may touch artefact content.
     for (const argv of [["check"], ["status"], ["claims"], ["tasks"], ["diff"], ["accept", "--yes"]]) {
       runCli(argv, { cwd: repo });
       expect(readFileSync(specsPath, "utf8"), `${argv[0]} left the prescriptive artefact untouched`).toBe(specsBefore);
@@ -305,7 +305,7 @@ describe("tripact repair handoff — the emitted repair skill (UAC §10.2)", () 
       expect(readFileSync(derivedPath, "utf8"), `${argv[0]} did not generate`).toBe("stale\n");
     }
 
-    // The sole exception: derived-output generation, a deterministic derivation the kernel does own.
+    // The one exception is derived-output generation, a deterministic derivation the kernel owns.
     expect(runCli(["generate", "cli-docs"], { cwd: repo }).status).toBe(0);
     expect(readFileSync(derivedPath, "utf8"), "generate wrote the derived output").toBe("fresh\n");
     // …and even that writes only the derived output, never the hand-authored layers.

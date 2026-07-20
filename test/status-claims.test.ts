@@ -68,7 +68,7 @@ describe("tripact status (§6.1)", () => {
 
     // Byte-identical documents from the two surfaces.
     expect(statusJson.stdout).toBe(checkJson.stdout);
-    // And it is the shared check report — carries the report schema and an embedded exitCode that
+    // And it is the shared check report, carrying the report schema and an embedded exitCode that
     // status honours (both drift here, exit 1).
     const doc = JSON.parse(statusJson.stdout);
     expect(doc.schemaVersion).toBe(1);

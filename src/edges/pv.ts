@@ -1,5 +1,5 @@
 // Prescriptive ↔ Verificatory edge: claim ids ↔ test tags. UAC §4.1.
-// Pure text scan of the verificatory layer — no test-runner integration in v0.
+// Pure text scan of the verificatory layer, with no test-runner integration in v0.
 
 import type { Atom, EdgeVerdict, OrphanTag } from "../types.js";
 import type { SidecarEntry } from "../sidecar.js";
@@ -55,7 +55,7 @@ export function checkPV(
       );
       if (onEdge.length === 0) {
         // Tagged, but no verified state has ever been recorded for this atom on this edge (§4.1):
-        // the verdict is `pending`, never `stale` — the lifecycle is uncovered → pending on the
+        // the verdict is `pending`, never `stale`. The lifecycle is uncovered → pending on the
         // first tag → covered once an accept records the verified state, and a claim is never stale
         // before it has been verified once.
         kind = "pending";

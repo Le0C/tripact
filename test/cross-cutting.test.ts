@@ -28,12 +28,12 @@ function track(repo: string): string {
 const REPORT_COMMANDS = ["check", "status", "claims", "tasks", "reconcile", "hotlinks"] as const;
 
 // The tag markers a fixture test file carries. Assembled by concatenation so this file's own text
-// never matches tripact's tag pattern — a fixture's tag names a fixture claim, and a literal here
+// never matches tripact's tag pattern. A fixture's tag names a fixture claim, and a literal here
 // would surface as an orphan tag in tripact's own report.
 const SPEC_TAG = `@${"specs"}:addition.addnumbers-returns-sum-two`;
 const SECTION_TAG = `@${"docs"}:adding-numbers`;
 
-/** The fixture's tests, tagged — so a later reword leaves an orphan tag behind. */
+/** The fixture's tests, tagged, so a later reword leaves an orphan tag behind. */
 const TAGGED_TESTS = [
   `// ${SPEC_TAG}`,
   'test("addNumbers sums two integers", () => {});',
@@ -116,7 +116,7 @@ describe("cross-cutting: determinism", () => {
   const envA = { ...process.env, TZ: "UTC", LANG: "C", LC_ALL: "C" };
   const envB = { ...process.env, TZ: "Pacific/Kiritimati", LANG: "de_DE.UTF-8", LC_ALL: "de_DE.UTF-8" };
 
-  // One repo for the whole block, built and SETTLED once: `check` is documented to (re)write
+  // One repo for the whole block, built and settled once: `check` is documented to (re)write
   // .tripact/escalations.json (§5.1, §7.1), so the very first invocation adds a path to the working
   // tree and the run after it would see a different changed-paths count. The claim is that identical
   // STATE yields identical output, so settle the state first rather than measuring the queue-write
@@ -192,8 +192,8 @@ describe("cross-cutting: determinism", () => {
 describe("cross-cutting: no network I/O", () => {
   // @specs:determinism.no-checking-reporting-state-mutating
   it("performs no network I/O in any checking, reporting or state-mutating command", () => {
-    // A CJS preload trapping every egress primitive the kernel could reach for — outbound sockets,
-    // DNS, http/https, fetch — plus the server side, so an attempt to LISTEN is caught too. Each
+    // A CJS preload trapping every egress primitive the kernel could reach for (outbound sockets,
+    // DNS, http/https, fetch), plus the server side, so an attempt to LISTEN is caught too. Each
     // records to a log and throws, making a call observable as both a log line and a crashed run.
     // Loaded via NODE_OPTIONS so it patches the CLI child rather than vitest itself.
     const trapDir = track(mkdtempSync(path.join(os.tmpdir(), "tripact-xcut-nonet-")));
@@ -243,12 +243,12 @@ describe("cross-cutting: no network I/O", () => {
     for (const args of commands) {
       const r = runCli(args, { cwd: repo, env });
       // Exit codes differ per command (0 level / 1 drift), but a thrown "network blocked" surfaces
-      // as an environment error — 2 — so that is the tell, not any particular success code.
+      // as an environment error (2), so exit 2 is what the assertion looks for.
       expect(r.status, `tripact ${args.join(" ")} hit the egress trap\n${r.stderr}`).not.toBe(2);
       expect(r.stderr, `tripact ${args.join(" ")} trapped egress`).not.toContain("network blocked");
     }
     // Every command completed and the trap recorded nothing: no socket, DNS, http/https or fetch
-    // egress — and so no LLM invocation, which could only travel over one of them.
+    // egress, and so no LLM invocation, which could only travel over one of them.
     expect(readFileSync(netLog, "utf8"), "trapped network egress").toBe("");
   });
 });
@@ -268,24 +268,25 @@ describe("cross-cutting: machine readability", () => {
 
   // @specs:machine-readability.exit-codes-follow-one
   it("follows one exit convention everywhere: 0 level, 1 drift, 2 usage or environment error", () => {
-    // 1 — drift. Untagged tests leave every claim new-uncovered.
+    // 1 = drift. Untagged tests leave every claim new-uncovered.
     const repo = track(fullRepo("tripact-xcut-exit-"));
     expect(runCli(["check"], { cwd: repo }).status, "check on drift").toBe(1);
     expect(runCli(["check", "--json"], { cwd: repo }).status, "check --json on drift").toBe(1);
     expect(runCli(["status"], { cwd: repo }).status, "status on drift").toBe(1);
     expect(runCli(["tasks"], { cwd: repo }).status, "tasks with an open queue").toBe(1);
 
-    // 0 — level. Accepting baselines the tree: acknowledged backlog is not drift.
+    // 0 = level. Accepting baselines the tree: acknowledged backlog is not drift.
     expect(runCli(["accept", "--yes"], { cwd: repo }).status, "accept").toBe(0);
     expect(runCli(["check"], { cwd: repo }).status, "check after accept").toBe(0);
     expect(runCli(["status"], { cwd: repo }).status, "status after accept").toBe(0);
 
-    // 2 — usage error. Commander parse failures route through the same convention, never its own 1.
+    // 2 = usage error. Commander parse failures route through the same convention rather than
+    // Commander's own exit 1.
     expect(runCli(["frobnicate"], { cwd: repo }).status, "unknown command").toBe(2);
     expect(runCli(["check", "--nope"], { cwd: repo }).status, "unknown option").toBe(2);
     expect(runCli(["claims", "--long"], { cwd: repo }).status, "option not offered by this command").toBe(2);
 
-    // 2 — environment error: no git history to anchor a sync-point to.
+    // 2 = environment error: no git history to anchor a sync-point to.
     const noGit = track(mkdtempSync(path.join(os.tmpdir(), "tripact-xcut-nogit-")));
     writeFileSync(path.join(noGit, "SPECS.md"), SPECS);
     writeFileSync(path.join(noGit, "tripact.yaml"), CONFIG);
@@ -367,7 +368,7 @@ describe("cross-cutting: human output", () => {
     const human = runCli(["check", "--long", "--strict"], { cwd: repo }).stdout;
     const report = JSON.parse(runCli(["check", "--json", "--strict"], { cwd: repo }).stdout);
 
-    // Verdict labels are the JSON `kind` verbatim, upper-cased — the sole embellishment being the
+    // Verdict labels are the JSON `kind` verbatim, upper-cased. The one embellishment is the
     // acknowledged/new split of `uncovered`, which is itself the JSON's `acknowledged` field.
     const jsonKinds = new Set<string>(report.verdicts.map((v: { kind: string }) => v.kind));
     expect(jsonKinds.has("uncovered"), "the fixture leaves uncovered claims").toBe(true);
@@ -402,7 +403,7 @@ describe("cross-cutting: footprint", () => {
     const repo = track(fullRepo("tripact-xcut-node-"));
     expect(runCli(["check", "--json"], { cwd: repo }).status, "the CLI runs on this Node").toBe(1);
 
-    // No native dependencies: every runtime dependency is pure JS — no gyp binding, no prebuilt
+    // No native dependencies: every runtime dependency is pure JS, with no gyp binding, no prebuilt
     // binary, and no install hook that could compile one.
     for (const dep of Object.keys(pkg.dependencies)) {
       const dir = path.join(repoRoot, "node_modules", dep);

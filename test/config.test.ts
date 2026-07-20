@@ -1,6 +1,6 @@
 // Config loading + validation. UAC §2.1 (schema) and §2.2 (all-at-once validation), plus the
-// §20.1 codeLinks block. loadConfig is pure over a repo root, so most of this needs no git — a
-// temp dir with a tripact.yaml is enough. The two exit-code claims drive the real CLI.
+// §20.1 codeLinks block. loadConfig is pure over a repo root, so most of this needs no git; a
+// temp dir with a tripact.yaml is enough. The two exit-code claims drive the CLI itself.
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";

@@ -1,7 +1,7 @@
 // Command construction for tripact's CLI. Wires the deterministic kernel commands (check, status,
 // claims, tasks, resolve, verify, diff, accept, generate, mcp-serve) plus the agent-facing surface
-// (skills, prompt) — the whole callable a foreign harness drives. Run-book execution and git-commit
-// orchestration are harness concerns and live in a driving harness, not here.
+// (skills, prompt): the whole callable a foreign harness drives. Run-book execution and git-commit
+// orchestration are harness concerns and live in a driving harness rather than here.
 //
 // buildProgram() must stay free of I/O at construction time; all work happens inside command
 // actions. Exit convention (Cross-Cutting): 0 clean, 1 findings/drift, 2 usage or environment error.
@@ -158,8 +158,7 @@ export function buildProgram(): Command {
       if (opts.json) console.log(JSON.stringify(toJsonReport(analysis), null, 2));
       else console.log(renderStatus(analysis));
       // Follow the 0/1 convention like `check` (UAC Cross-Cutting): the shared JSON document embeds
-      // `exitCode`, so exiting 0 unconditionally would contradict its own payload under drift. Same
-      // document, same exit.
+      // `exitCode`, so exiting 0 unconditionally would contradict its own payload under drift.
       process.exit(exitCodeFor(analysis));
     });
 
@@ -175,7 +174,7 @@ export function buildProgram(): Command {
       if (opts.json) console.log(JSON.stringify(listing, null, 2));
       else console.log(renderClaimsHuman(listing));
       // no process.exit(0): the listing can exceed the pipe buffer, and exiting before stdout
-      // drains would truncate it — fall through to a natural exit
+      // drains would truncate it, so fall through to a natural exit
     });
 
   program
@@ -199,7 +198,7 @@ export function buildProgram(): Command {
       }
       if (opts.json) console.log(JSON.stringify(report, null, 2));
       else console.log(renderAuditHuman(report, { long: opts.long === true }));
-      // advisory: exits 0 (natural, letting stdout drain) or 2 above — never 1 (UAC §21.1)
+      // advisory: exits 0 (natural, letting stdout drain) or 2 above, never 1 (UAC §21.1)
     });
 
   program
@@ -248,7 +247,7 @@ export function buildProgram(): Command {
       const report = scanReconcile(analysis);
       if (opts.json) console.log(JSON.stringify(report, null, 2));
       else console.log(renderReconcileHuman(report));
-      process.exit(0); // advisory — never exits 1 (UAC §10.3)
+      process.exit(0); // advisory: never exits 1 (UAC §10.3)
     });
 
   program
@@ -261,7 +260,7 @@ export function buildProgram(): Command {
       const report = scanHotlinks(analysis, root);
       if (opts.json) console.log(JSON.stringify(report, null, 2));
       else console.log(renderHotlinksHuman(report));
-      process.exit(0); // advisory — navigation, never gates (UAC §20.2)
+      process.exit(0); // advisory: navigation only, never gates (UAC §20.2)
     });
 
   program
@@ -387,9 +386,9 @@ export function buildProgram(): Command {
       try {
         for (const d of targets) {
           // Self-ingest guard (UAC §18): a derived output written into a layer's own paths becomes
-          // a source atom on the next check — the generated doc would demand coverage of itself and
-          // churn on every regeneration. Warn (don't block: the operator may intend it) and name the
-          // fix — an `exclude:` entry — unless one already covers it.
+          // a source atom on the next check, so the generated doc would demand coverage of itself
+          // and churn on every regeneration. Warn (don't block: the operator may intend it) and
+          // name the fix, an `exclude:` entry, unless one already covers it.
           const inLayer = Object.entries(config.layers).find(([, lc]) => lc.paths.some((g) => matchesGlob(d.output, g)));
           const excluded = (config.exclude ?? []).some((e) => matchesGlob(d.output, e));
           if (inLayer && !excluded) {
@@ -473,8 +472,8 @@ export function buildProgram(): Command {
       if (opts.reconcile !== undefined) {
         const [p, d] = opts.reconcile.split(":");
         if (!p || !d) fail("--reconcile expects <prescriptive-layer>:<descriptive-layer>");
-        // Same layer-existence check as `tasks --reconcile` — a typo'd layer must error, not
-        // silently produce no reconcile task.
+        // Same layer-existence check as `tasks --reconcile`: a typo'd layer must error rather than
+        // produce no reconcile task.
         if (!analysis.layers.has(p) || !analysis.layers.has(d)) {
           fail(`--reconcile: unknown layer in "${opts.reconcile}" (declared: ${[...analysis.layers.keys()].join(", ")})`);
         }

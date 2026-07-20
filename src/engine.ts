@@ -24,9 +24,9 @@ import {
 import type { Atom, EdgeVerdict, Escalation, Group, OrphanTag } from "./types.js";
 
 // Prompt-injection signatures (UAC §5.5). Spec/doc atom text is embedded verbatim into task payloads
-// and agent prompts (skills.ts guards it as untrusted data, §10.1); this is the detection companion —
-// it flags atoms whose text reads as a directive to a downstream agent rather than a requirement.
-// Deliberately narrow to keep false positives near zero on real specs: the classic override phrasings
+// and agent prompts (skills.ts guards it as untrusted data, §10.1); this is the detection companion.
+// It flags atoms whose text reads as a directive to a downstream agent instead of a requirement.
+// Deliberately narrow to keep false positives near zero on specs: the classic override phrasings
 // and chat role tags, not mere mentions of "prompt" or "instruction".
 const INJECTION_SIGNALS: Array<{ re: RegExp; signal: string }> = [
   { re: /\b(ignore|disregard|forget)\s+(all\s+|any\s+|the\s+)*(previous|prior|above|earlier|preceding|foregoing)\s+(instruction|prompt|context|message|rule|direction)s?\b/i, signal: "ignore-previous-instructions" },
@@ -60,23 +60,23 @@ export interface Analysis {
   syncPoint: SyncPoint | null;
   syncPointMismatch: boolean;
   scope: "diff" | "full";
-  /** When true, acknowledged backlog drives exit 1 too — `check --strict` (UAC §5.1). */
+  /** When true, acknowledged backlog drives exit 1 too (`check --strict`, UAC §5.1). */
   strict: boolean;
   changedPaths: string[];
-  /** Layers whose pathMap globs match a changed path — claims possibly affected by code drift (UAC §5.3). */
+  /** Layers whose pathMap globs match a changed path; their claims may be affected by code drift (UAC §5.3). */
   affectedLayers: string[];
   unsupportedEdges: string[];
-  /** Names of declared derived outputs whose committed file no longer matches a fresh regeneration (UAC §18.2). */
+  /** Names of declared derived outputs whose committed file does not match a fresh regeneration (UAC §18.2). */
   derivedStale: string[];
-  /** Declared generators whose two back-to-back regenerations disagreed — non-deterministic, so
-   * never reported as stale (regeneration can't fix them); a config fault to surface (UAC §18). */
+  /** Declared generators whose two back-to-back regenerations disagreed. Being non-deterministic they
+   * are never reported as stale (regeneration can't fix them); a config fault to surface (UAC §18). */
   nonDeterministicGenerators: string[];
-  /** Declared layers whose paths matched no files — a mis-declared or unmatched glob (UAC §5.4). */
+  /** Declared layers whose paths matched no files, from a mis-declared or unmatched glob (UAC §5.4). */
   zeroFileLayers: string[];
-  /** Prescriptive/descriptive layers that matched files but parsed to zero atoms — an unparsable
-   * format or wrong glob (UAC §5.4). Verificatory layers are excluded (they carry no atoms). */
+  /** Prescriptive/descriptive layers that matched files but parsed to zero atoms, from an unparsable
+   * format or a wrong glob (UAC §5.4). Verificatory layers are excluded (they carry no atoms). */
   zeroAtomLayers: string[];
-  /** Spec/doc atoms whose text carries a prompt-injection signature (UAC §5.5) — advisory. Their text
+  /** Spec/doc atoms whose text carries a prompt-injection signature (UAC §5.5). Advisory: their text
    * flows verbatim into task payloads and agent prompts, so a planted directive is flagged for review. */
   suspiciousAtoms: Array<{ file: string; line: number; signal: string; excerpt: string }>;
 }
@@ -88,8 +88,8 @@ export function collectFiles(repoRoot: string, globs: string[], exclude: string[
     for (const rel of globSync(g, { cwd: repoRoot })) {
       const p = rel.split(path.sep).join("/");
       if (p.startsWith("node_modules/") || p.startsWith(".git/") || seen.has(p)) continue;
-      // Configured `exclude` globs (UAC §2): archived duplicates, vendored trees, generated
-      // derived outputs — dropped before parsing so they never become source atoms.
+      // Configured `exclude` globs (UAC §2) drop archived duplicates, vendored trees and generated
+      // derived outputs before parsing, so they never become source atoms.
       if (exclude.some((e) => matchesGlob(p, e))) continue;
       seen.add(p);
       files.set(p, readFileSync(path.join(repoRoot, rel), "utf8"));
@@ -127,12 +127,12 @@ export function analyze(repoRoot: string, opts: { skipDerived?: boolean } = {}):
       }
     }
     // Section slugs are the D↔V coverage key (UAC §4.2); make them unique across the layer's files
-    // so two sections can't collapse to one slug (silent double-coverage + sidecar overwrite).
+    // so two sections can't collapse to one slug (double-coverage + sidecar overwrite).
     if (lc.role === "descriptive") disambiguateSlugs(groups);
     layers.set(name, { name, role: lc.role, files, atoms, groups });
   }
 
-  // 2. re-anchor markdown layers against the sidecar (in memory only — UAC §5.1)
+  // 2. re-anchor markdown layers against the sidecar (in memory only, UAC §5.1)
   const taken = new Set(sidecar.claims.map((c) => c.id));
   // adjudicating an escalation is the `adjudicate` task class (UAC §16.1); hints are
   // advisory and absent entirely when no routing config binds the class
@@ -268,7 +268,7 @@ export function analyze(repoRoot: string, opts: { skipDerived?: boolean } = {}):
   //    byte-compare with the committed file. A missing file, or any mismatch, is derived-stale.
   //    Determinism is the generator's contract; when a regeneration disagrees with the committed
   //    file we regenerate ONCE more and compare the two regenerations. If they differ, the
-  //    generator itself is non-deterministic — regenerating would never make `check` pass — so we
+  //    generator itself is non-deterministic and regenerating would never make `check` pass, so we
   //    report it as `nonDeterministicGenerators` (a fixable config fault) rather than mislabelling
   //    it `derivedStale` (which would be permanent, misdiagnosed phantom drift). The clean case
   //    (committed matches) pays only the single regeneration.
@@ -301,7 +301,7 @@ export function analyze(repoRoot: string, opts: { skipDerived?: boolean } = {}):
         continue;
       }
     }
-    derivedStale.push(d.name); // missing file, or a stable mismatch — genuine staleness
+    derivedStale.push(d.name); // missing file, or a stable mismatch, so it counts as stale
   }
 
   return {
@@ -322,7 +322,7 @@ export function analyze(repoRoot: string, opts: { skipDerived?: boolean } = {}):
     derivedStale,
     nonDeterministicGenerators,
     // Layer diagnostics (UAC §5.4): a declared layer that matched no files, or a
-    // prescriptive/descriptive layer that matched files but yielded no atoms — both advisory.
+    // prescriptive/descriptive layer that matched files but yielded no atoms. Both advisory.
     zeroFileLayers: [...layers.values()].filter((l) => l.files.size === 0).map((l) => l.name).sort(),
     zeroAtomLayers: [...layers.values()]
       .filter((l) => l.role !== "verificatory" && l.files.size > 0 && l.atoms.length === 0)
@@ -340,7 +340,7 @@ export function analyze(repoRoot: string, opts: { skipDerived?: boolean } = {}):
   };
 }
 
-/** Build the accepted sidecar from an analysis (UAC §8.2). Pure — caller saves. */
+/** Build the accepted sidecar from an analysis (UAC §8.2). Pure; the caller saves. */
 export function buildAcceptedSidecar(repoRoot: string, analysis: Analysis): Sidecar {
   const sha = headSha(repoRoot);
   const hashOf = fileHasher(analysis.layers);
@@ -366,7 +366,7 @@ export function buildAcceptedSidecar(repoRoot: string, analysis: Analysis): Side
     }));
     // A single source atom / group can be tagged on more than one edge (e.g. specs↔unit and
     // specs↔e2e). Each edge's states carry their own `edge` tuple and must coexist, so accumulate
-    // rather than replace — otherwise the last edge processed wins and every other edge loses its
+    // rather than replace; otherwise the last edge processed wins and every other edge loses its
     // verified state, flipping back to `pending` on the next check (unrecoverable phantom drift).
     const bucket = isPV ? verifiedByAtom : verifiedByGroup;
     const key = isPV ? v.subject : `${layer}:${v.subject}`;
@@ -429,7 +429,7 @@ export function buildAcceptedSidecar(repoRoot: string, analysis: Analysis): Side
     else backlogSections.add(v.subject);
   }
   const backlog = { claims: [...backlogClaims].sort(), sections: [...backlogSections].sort() };
-  // Reconcile dismissals (UAC §10.3) survive an accept — a dismissed pairing stays dismissed until
+  // Reconcile dismissals (UAC §10.3) survive an accept: a dismissed pairing stays dismissed until
   // its text changes, which is independent of baselining.
   const dismissedReconcile = analysis.sidecar.dismissedReconcile;
   return { schemaVersion: 1, claims, groups, backlog, ...(dismissedReconcile?.length ? { dismissedReconcile } : {}) };

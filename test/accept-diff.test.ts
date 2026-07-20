@@ -1,5 +1,5 @@
 // Sync-point convention, trailer verification, `tripact accept`, and the acceptance preview
-// (`tripact diff`) — UAC §8.1–§8.4. Driven end-to-end against the prebuilt CLI the way a foreign
+// (`tripact diff`): UAC §8.1–§8.4. Driven end-to-end against the prebuilt CLI the way a foreign
 // harness would: hand-written tripact.yaml, no `init`. Each scratch repo is built, baselined via
 // `accept`, then mutated (reword / fork / reanchor) so the delta machinery has something to report.
 // Deterministic throughout: escalation ids and content hashes are content-derived, no clock.
@@ -17,7 +17,7 @@ afterAll(() => {
   for (const d of scratch) rmSync(d, { recursive: true, force: true });
 });
 
-// A two-layer (prescriptive specs ↔ verificatory tests) config — the smallest tree that exercises
+// A two-layer (prescriptive specs ↔ verificatory tests) config: the smallest tree that exercises
 // anchoring + verified states without the descriptive layer's slug machinery getting in the way.
 const CONFIG = [
   "schemaVersion: 1",
@@ -101,7 +101,7 @@ describe("Sync-point convention & trailer verification (§8.1, §8.2)", () => {
     expect(reported1, "check names the sync-point commit").toBeTruthy();
     expect(head1.startsWith(reported1!), "sync-point is the trailer-carrying commit").toBe(true);
 
-    // A newer trailer-carrying commit becomes the sync-point — check finds the MOST RECENT via git log.
+    // A newer trailer-carrying commit becomes the sync-point: check finds the MOST RECENT via git log.
     git(repo, ["commit", "--allow-empty", "-m", `bump\n\ntripact-sync-id: ${hash}`]);
     const head2 = git(repo, ["rev-parse", "HEAD"]).trim();
     expect(head2).not.toBe(head1);
@@ -129,7 +129,7 @@ describe("Sync-point convention & trailer verification (§8.1, §8.2)", () => {
 describe("tripact accept (§8.3)", () => {
   // @specs:tripact-accept.accept-refuses-run-exit
   it("refuses (exit 1) while a reanchor escalation is open, but fork-review questions never block", () => {
-    // Reanchor: a ~0.73 reword against the baseline is an open reanchor question — accept refuses.
+    // Reanchor: a ~0.73 reword against the baseline is an open reanchor question, so accept refuses.
     const blocked = coveredBaseline("tripact-accept-blocked-");
     writeFileSync(path.join(blocked, "SPECS.md"), specs("- [ ] addNumbers computes the total of two integer values"));
     const refused = runCli(["accept", "--yes"], { cwd: blocked });
@@ -137,7 +137,7 @@ describe("tripact accept (§8.3)", () => {
     expect(refused.stderr).toContain("cannot accept");
     expect(refused.stderr).toContain("[reanchor]"); // the open escalation is listed by kind
 
-    // Fork-review: a sub-0.65 reword forks identity. That question is advisory — accept proceeds
+    // Fork-review: a sub-0.65 reword forks identity. That question is advisory, so accept proceeds
     // (exit 0) and names the fork in the acceptance summary rather than blocking on it.
     const forked = newRepo(
       {
@@ -180,8 +180,8 @@ describe("tripact accept (§8.3)", () => {
 
   // @specs:tripact-accept.accept-prints-acceptance-summary
   it("prints an acceptance summary before writing: created / re-anchored / retired / verified / backlog", () => {
-    // A fork transition retires one claim and creates another, moving the backlog both ways — a
-    // summary that exercises every category the claim enumerates.
+    // A fork transition retires one claim and creates another, moving the backlog both ways, so the
+    // summary exercises every category the claim enumerates.
     const repo = newRepo(
       {
         "tripact.yaml": CONFIG,
@@ -281,7 +281,7 @@ describe("Acceptance preview: tripact diff (§8.4)", () => {
     expect(rwEdge.reBaselined).toContain("addition.addnumbers-returns-sum-two");
 
     // Test-side-only: only the tagged file's bytes changed, the claim text is untouched → a plain
-    // re-baseline with NO reword entry. This is the distinction the claim draws.
+    // re-baseline with NO reword entry, which is the distinction the claim draws.
     const tside = coveredBaseline("tripact-diff-testside-");
     writeFileSync(
       path.join(tside, "tests", "e2e", "calc.spec.ts"),
@@ -322,7 +322,7 @@ describe("Acceptance preview: tripact diff (§8.4)", () => {
 // plain spawn (pipes on both ends) can only ever exercise the scripted half. To reach the
 // interactive half we spawn a tiny driver that loads the same program module the CLI entry point
 // loads, marks both streams as a terminal, and feeds the answer on stdin. Nothing about the
-// behaviour under test is stubbed — only the terminal-ness of the streams.
+// behaviour under test is stubbed; the driver only makes the streams claim to be a terminal.
 const DRIVER = (programUrl: string): string =>
   [
     `import { buildProgram } from ${JSON.stringify(programUrl)};`,
@@ -336,7 +336,7 @@ const DRIVER = (programUrl: string): string =>
 /** Run `tripact <args>` in `cwd` with both streams pretending to be a terminal, answering `input`. */
 function runCliOnTty(args: string[], opts: { cwd: string; input: string }) {
   const { command, baseArgs } = cliInvocation();
-  const entry = baseArgs[0]; // …/dist/cli.js or …/src/cli.ts — the program module sits beside it.
+  const entry = baseArgs[0]; // …/dist/cli.js or …/src/cli.ts; the program module sits beside it.
   const programPath = path.join(path.dirname(entry), path.basename(entry).replace(/^cli\./, "program."));
   const dir = mkdtempSync(path.join(os.tmpdir(), "tripact-tty-driver-"));
   scratch.push(dir);
@@ -371,7 +371,7 @@ describe("accept confirmation (§8.3)", () => {
     expect(rSpelled.stdout).toContain("Proceed?");
     expect(existsSync(sidecarOf(spelled)), '"yes" also confirms').toBe(true);
 
-    // Anything but yes aborts — "n", and any other answer, including an empty one.
+    // Anything but yes aborts: "n", and any other answer, including an empty one.
     for (const [answer, prefix] of [
       ["n\n", "tripact-tty-n-"],
       ["maybe\n", "tripact-tty-maybe-"],
@@ -394,7 +394,7 @@ describe("accept confirmation (§8.3)", () => {
     expect(rSkip.stdout).toContain("sidecar written: .tripact/claims.json");
     expect(existsSync(sidecarOf(skipped)), "--yes writes the sidecar").toBe(true);
 
-    // Without a terminal (plain spawn — pipes both ends) accept proceeds as scripted: no prompt,
+    // Without a terminal (plain spawn, pipes both ends) accept proceeds as scripted: no prompt,
     // no --yes needed, sidecar written.
     const scripted = newRepo(files, "tripact-notty-");
     const rScripted = runCli(["accept"], { cwd: scripted });

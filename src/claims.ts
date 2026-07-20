@@ -1,4 +1,4 @@
-// `tripact claims` — alive-claim listing for tag discovery. UAC §6.2.
+// `tripact claims` - alive-claim listing for tag discovery. UAC §6.2.
 // Deterministic: layer order, then document order; dead entries sorted by id.
 
 import { CLAIMS_SCHEMA_VERSION } from "./contract.js";
@@ -66,8 +66,8 @@ export function listClaims(analysis: Analysis, opts: { all?: boolean } = {}): Cl
   }
 
   if (opts.all) {
-    // dead = retired in the sidecar, or anchored to nothing in the current tree —
-    // but never an id that is merely escalation-pending (adjudication decides its fate)
+    // dead = retired in the sidecar, or anchored to nothing in the current tree,
+    // but never an id that is only escalation-pending (adjudication decides its fate)
     const deadNow = new Set<string>();
     for (const r of analysis.anchorResults.values()) for (const id of r.deadIds) deadNow.add(id);
     for (const e of analysis.escalations) for (const d of e.deleted) deadNow.delete(d.id);

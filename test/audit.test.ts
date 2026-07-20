@@ -1,6 +1,6 @@
-// `tripact audit` — the recorded history of one claim (UAC §21.1). Each scenario builds a scratch
+// `tripact audit`: the recorded history of one claim (UAC §21.1). Each scenario builds a scratch
 // git repo with fixed commit identities and dates (audit output embeds author/date, so determinism
-// assertions need pinned history), walks it through accept/commit cycles to lay down real sidecar
+// assertions need pinned history), walks it through accept/commit cycles to lay down sidecar
 // archaeology, then drives `audit` through the prebuilt CLI. Dates are 2024 constants; the journal's
 // own timestamps are the only now()-derived values and are asserted by presence, never by value.
 import { execFileSync } from "node:child_process";
@@ -41,7 +41,7 @@ const SUM_REWORD = "addNumbers returns the total of two whole number values";
 
 const D = ["2024-01-01 10:00:00 +0000", "2024-01-02 10:00:00 +0000", "2024-01-03 10:00:00 +0000", "2024-01-04 10:00:00 +0000", "2024-01-05 10:00:00 +0000"];
 
-/** git with fixed identity AND a fixed author/committer date — audit renders both. */
+/** git with fixed identity AND a fixed author/committer date: audit renders both. */
 function gitAt(repo: string, args: string[], date: string): string {
   return execFileSync("git", ["-c", "user.email=t@t", "-c", "user.name=t", ...args], {
     cwd: repo,
@@ -55,7 +55,7 @@ function commitAll(repo: string, message: string, date: string): void {
   gitAt(repo, ["commit", "-qm", message], date);
 }
 
-/** `accept --yes`, then commit the whole tree with the printed trailer — a real sync-point (§8.1). */
+/** `accept --yes`, then commit the whole tree with the printed trailer: a sync-point (§8.1). */
 function acceptAndCommit(repo: string, message: string, date: string): string {
   const acc = runCli(["accept", "--yes"], { cwd: repo });
   expect(acc.status, `accept failed:\n${acc.stderr}`).toBe(0);
@@ -94,7 +94,7 @@ const TAGGED_TEST = `// ${specTag(SUM_ID)}\ntest("sums", () => {});\n`;
 
 /**
  * The shared lifecycle repo: created at D1's accept, verified at D2's, the test file edited at D3,
- * re-baselined at D4 — four dated waypoints of real archaeology.
+ * re-baselined at D4: four dated waypoints of archaeology.
  */
 function lifecycleRepo(prefix: string): string {
   const repo = newRepo(prefix, { "tripact.yaml": CONFIG, "SPECS.md": specs(SUM) });
@@ -166,7 +166,7 @@ describe("tripact audit — sidecar archaeology (§21.1)", () => {
     const repo = lifecycleRepo("tripact-audit-filelevel-");
     const report = auditJson(repo, SUM_ID);
     const fileEvents = report.events.filter((e) => e.source === "test-history");
-    expect(fileEvents).toHaveLength(1); // only the D3 edit — accept commits are sync-point events, not file noise
+    expect(fileEvents).toHaveLength(1); // only the D3 edit; accept commits land as sync-point events instead
     expect(fileEvents[0]!.kind).toBe("file-edited");
     expect(fileEvents[0]!.file).toBe("tests/calc.spec.ts");
     expect(fileEvents[0]!.detail).toContain("(file-level)");

@@ -1,11 +1,10 @@
 // The kernel's public contract (docs/architecture/public-contract.md). These are the machine-
-// readable documents any foreign harness — the reference CLI, an Archon workflow, a Spec Kit
-// extension, a GitHub Action — reads to drive tripact without understanding claims, hashes, or
+// readable documents any foreign harness (the reference CLI, an Archon workflow, a Spec Kit
+// extension, a GitHub Action) reads to drive tripact without understanding claims, hashes, or
 // re-anchoring. They are the kernel's API, and they are versioned deliberately: this file is the
-// single source of truth for the schema versions, replacing the magic `1` literals that used to be
-// scattered across the report/queue/listing builders.
+// single source of truth for the schema versions.
 //
-// Kernel/harness boundary: this module is kernel and imports nothing — pure constants describing
+// Kernel/harness boundary: this module is kernel and imports nothing, just constants describing
 // the surface. The builders (report.ts, tasks.ts, claims.ts, escalation.ts) stamp these versions;
 // because the MCP read tools return those builder documents verbatim (see src/mcp.ts), versioning
 // the builders versions the MCP surface at the same time.
@@ -16,8 +15,8 @@
 //     list below (and the shape-pin test enforces that the two stay in step).
 //   - BREAKING change (removing/renaming a field, or changing the meaning or type of an existing
 //     one) bumps the surface's schema version. Bumping requires updating both the constant here and
-//     the corresponding interface literal (e.g. `schemaVersion: 1` in report.ts), so a version event
-//     can never be silent — the type checker forces both edits.
+//     the corresponding interface literal (e.g. `schemaVersion: 1` in report.ts), so the type
+//     checker forces both edits and a version event always lands in the diff.
 // The 0/1/2 exit-code convention (0 level, 1 drift, 2 usage/environment error) is part of the same
 // contract and is exercised by test/machine-readability.test.ts.
 
@@ -41,7 +40,7 @@ export const HOTLINKS_SCHEMA_VERSION = 1;
 
 /** `audit <claim-id>` → AuditReport (src/audit.ts). Advisory (never exit 1). Not a PUBLIC_CONTRACT
  * surface: like `resolve` and `verify` it takes an argument, so there is no argument-free
- * invocation for the shape-pin test to drive — the version constant still lives here so a bump is
+ * invocation for the shape-pin test to drive. The version constant still lives here so a bump is
  * a deliberate contract event. */
 export const AUDIT_SCHEMA_VERSION = 1;
 
@@ -62,7 +61,7 @@ export interface ContractSurface {
 /**
  * The formal manifest of the kernel's public read contract. Consumed by
  * test/public-contract.test.ts, which runs each CLI surface and asserts the live payload's
- * `schemaVersion` and top-level key set match what is declared here — so any drift between the code
+ * `schemaVersion` and top-level key set match what is declared here, so any drift between the code
  * and this contract fails the build and forces a deliberate version decision.
  */
 export const PUBLIC_CONTRACT: readonly ContractSurface[] = [

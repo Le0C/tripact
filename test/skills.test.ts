@@ -1,7 +1,7 @@
 // Agent skill + per-item prompt generation. Two halves: pure unit tests of the deterministic
-// generators (no repo needed), and e2e of the `skills` and `prompt` CLI commands against a real
-// scratch repo. The whole point of this surface is that a foreign harness can pick up the kernel
-// and get well-formed adjudication/repair guidance and per-work-item prompts without re-deriving them.
+// generators (no repo needed), and e2e of the `skills` and `prompt` CLI commands against a scratch
+// repo. This surface lets a foreign harness pick up the kernel and get well-formed
+// adjudication/repair guidance and per-work-item prompts without re-deriving them.
 import { existsSync, readFileSync, rmSync } from "node:fs";
 import path from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
@@ -40,7 +40,7 @@ describe("skill generators (pure)", () => {
     expect(rep.content).toContain("generatedBy: acme@9.9.9");
     expect(rep.content).toContain("`acme tasks --json`");
     expect(rep.content).toContain("acme init --force"); // re-emit hint uses the harness path
-    // The command word is fully rebranded — no default `tripact <command>` leaks. (The fixed on-disk
+    // The command word is fully rebranded, so no default `tripact <command>` leaks. (The fixed on-disk
     // names `tripact.yaml` (config) and `.tripact/` (sidecar) are not command words and are expected
     // regardless of branding.)
     expect(rep.content.replace(/tripact\.yaml/g, "").replace(/\.tripact\b/g, "")).not.toContain("tripact");

@@ -29,10 +29,10 @@ export interface SyncPoint {
   sidecarHash: string;
 }
 
-/** Most recent commit carrying a real `tripact-sync-id:` trailer (UAC §8.1). `--grep` narrows to
- * commits whose message *mentions* the string, but a commit that only names it in prose (no actual
- * trailer) yields an empty trailer value — so we scan the newest matches and return the first with a
- * genuine trailer, rather than stopping at `-1` and masking an older real sync-point. */
+/** Most recent commit carrying a `tripact-sync-id:` trailer (UAC §8.1). `--grep` narrows to commits
+ * whose message *mentions* the string, but a commit that only names it in prose yields an empty
+ * trailer value. So we scan the newest matches and return the first with a non-empty trailer, rather
+ * than stopping at `-1` and masking an older sync-point. */
 export function findSyncPoint(repoRoot: string): SyncPoint | null {
   const r = git(repoRoot, [
     "log",

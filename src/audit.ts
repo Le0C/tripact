@@ -1,9 +1,9 @@
-// `audit <claim-id>` — the recorded history of one claim (UAC §21). Reconstructs a newest-first
+// `audit <claim-id>`: the recorded history of one claim (UAC §21). Reconstructs a newest-first
 // timeline from three evidence sources, none of which requires new state: the committed sidecar's
 // git history (lifecycle events at each accept), the adjudication journal (§7.2), and the git
 // history of the claim's verifying test files (file-level evidence, marked as such). A harness may
-// interleave extra events it owns — e.g. executed sync-run items (§21.2) — via
-// `extraEvents`; the kernel timeline is complete without them.
+// interleave extra events it owns (e.g. executed sync-run items, §21.2) via `extraEvents`; the
+// kernel timeline is complete without them.
 //
 // Everything here is read-only and deterministic: dates come from commits and journal entries
 // (repo state), never from a clock, so identical repo state renders byte-identical output.
@@ -20,7 +20,7 @@ import { SIDECAR_DIR } from "./sidecar.js";
 import { similarityRatio } from "./similarity.js";
 import type { EdgeVerdict } from "./types.js";
 
-/** Repo-relative sidecar path — what the archaeology walk asks git about. */
+/** Repo-relative sidecar path, which is what the archaeology walk asks git about. */
 const SIDECAR_REL = `${SIDECAR_DIR}/claims.json`;
 
 export type AuditSource = "sync-point" | "adjudication" | "test-history" | "task";
@@ -28,7 +28,7 @@ export type AuditSource = "sync-point" | "adjudication" | "test-history" | "task
 /**
  * One timeline event. `date` absent means the evidence is not yet committed (an accepted-but-
  * uncommitted sidecar, an uncommitted run directory); undated events order ahead of all dated ones
- * (UAC §21.2). Human rendering uses `kind` verbatim — one vocabulary across human and JSON output
+ * (UAC §21.2). Human rendering uses `kind` verbatim, so one vocabulary covers human and JSON output
  * (Cross-Cutting: Human output).
  */
 export interface AuditEvent {
@@ -81,7 +81,7 @@ export class AuditError extends Error {
 /** Order within one instant: lifecycle before harness tasks before adjudications before file edits. */
 const SOURCE_RANK: Record<AuditSource, number> = { "sync-point": 0, task: 1, adjudication: 2, "test-history": 3 };
 
-/** Order among lifecycle events sharing one accept commit — birth first, death last. */
+/** Order among lifecycle events sharing one accept commit: birth first, death last. */
 const KIND_RANK = ["created", "revived", "reworded", "moved", "verified-recorded", "re-baselined", "verified-dropped", "retired"];
 
 function eventInstant(e: AuditEvent): number {
@@ -164,7 +164,7 @@ function parseSidecarAt(root: string, sha: string): Sidecar | null {
 /**
  * Sidecar archaeology (UAC §21.1): walk every commit that touched the sidecar oldest-first, diff
  * this claim's record between consecutive versions, then diff the last committed version against
- * the sidecar on disk — an accepted-but-uncommitted baseline surfaces as undated events.
+ * the sidecar on disk, so an accepted-but-uncommitted baseline surfaces as undated events.
  */
 function lifecycleEvents(root: string, claimId: string, current: Sidecar): { events: AuditEvent[]; texts: Set<string>; syncCommits: Set<string> } {
   const events: AuditEvent[] = [];
@@ -191,7 +191,7 @@ function lifecycleEvents(root: string, claimId: string, current: Sidecar): { eve
   return { events, texts, syncCommits };
 }
 
-/** Journal entries naming the claim (UAC §21.1) — by id, or by exact text for `resolve-new`. */
+/** Journal entries naming the claim (UAC §21.1): by id, or by exact text for `resolve-new`. */
 function journalEvents(root: string, claimId: string, knownTexts: Set<string>): AuditEvent[] {
   let raw: string;
   try {
@@ -229,7 +229,7 @@ function journalEvents(root: string, claimId: string, knownTexts: Set<string>): 
 /**
  * File-level evidence (UAC §21.1): commits touching any file this claim's verified states have
  * ever named. Accept commits already shown as sync-point events are skipped; commits predating the
- * claim's creation are noise, not history, and are filtered when the creation date is known.
+ * claim's creation are noise and get filtered out when the creation date is known.
  */
 function testHistoryEvents(root: string, files: Set<string>, syncCommits: Set<string>, createdAt: number | null): AuditEvent[] {
   const events: AuditEvent[] = [];
@@ -359,7 +359,7 @@ export function renderAuditHuman(report: AuditReport, opts: { long?: boolean } =
   return lines.join("\n");
 }
 
-/** Repo-relative path of a run directory (UAC §21.2) — exported for harness scrapers. */
+/** Repo-relative path of a run directory (UAC §21.2), exported for harness scrapers. */
 export function runDirRel(run: number): string {
   return path.posix.join(SIDECAR_DIR, "sync-runs", String(run));
 }

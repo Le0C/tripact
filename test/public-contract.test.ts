@@ -1,14 +1,14 @@
 // Pins tripact's public read contract (see src/contract.ts) against its own live CLI output.
 // src/contract.ts is the single source of truth for the schema versions and the guaranteed
-// top-level fields of each surface; this test runs each CLI `--json` command in a real repo and
+// top-level fields of each surface; this test runs each CLI `--json` command in a scratch repo and
 // asserts the payload matches what the contract declares:
 //
 //   - schemaVersion === the declared constant, and
 //   - the set of top-level keys === the declared `fields`.
 //
 // That makes any shape drift a failing build: add or remove a top-level field and this test breaks
-// until the contract manifest is updated too — the forcing function that turns a silent shape change
-// into a deliberate version decision.
+// until the contract manifest is updated too, so a change of payload shape has to be a deliberate
+// version decision.
 import { readFileSync, rmSync } from "node:fs";
 import path from "node:path";
 import { afterAll, describe, expect, it } from "vitest";

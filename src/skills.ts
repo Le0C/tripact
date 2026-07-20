@@ -1,8 +1,7 @@
-// Agent-facing prompt & skill generation. This is kernel, not harness: generating the prose an
-// agent reads is deterministic text (no LLM, no network) - what must stay in a harness is *invoking*
-// the agent, not writing the prompt it consumes. Keeping this here is what lets any harness pick up
-// the kernel and immediately have well-formed adjudication/repair guidance and per-work-item prompts,
-// rather than re-deriving them.
+// Agent-facing prompt & skill generation. This belongs in the kernel: generating the prose an agent
+// reads is deterministic text (no LLM, no network), while what a harness owns is *invoking* the
+// agent. Keeping it here lets any harness pick up the kernel and immediately have well-formed
+// adjudication/repair guidance and per-work-item prompts, rather than re-deriving them.
 //
 // Everything is parameterised by the command word (`cli`) the driving harness exposes, so the same
 // generators emit `tripact resolve …` for the tripact CLI, or `<yourcli> resolve …` when another
@@ -65,7 +64,7 @@ function policyNote(r: Resolved): string {
 }
 
 // A standing guard against spec-borne prompt injection (UAC §10.1). Artifact text (claim/atom text)
-// embedded in a per-item brief is data to act on, never instructions to the agent — so an injected
+// embedded in a per-item brief is data to act on, never instructions to the agent, so an injected
 // directive inside a spec claim cannot redirect the agent. Emitted verbatim into taskPrompt and
 // escalationPrompt, the last kernel step before a harness hands the text to an LLM.
 export const UNTRUSTED_ARTIFACT_NOTICE =
@@ -458,7 +457,7 @@ export function agentSkills(opts?: SkillOptions): EmittedSkill[] {
 
 /**
  * Write the emitted skills under `<repoRoot>/.claude/skills/<name>/SKILL.md`. Existing files are
- * left untouched unless `force`. Returns the repo-relative paths actually written. Deterministic:
+ * left untouched unless `force`. Returns the repo-relative paths it wrote. Deterministic:
  * same options → byte-identical files.
  */
 export function emitSkills(

@@ -2,8 +2,8 @@
 // expands it into concrete layers/edges/exclude so the whole config can be as small as
 // `schemaVersion: 1` + `kind: spec-kit`. The SAME registry backs detection (the tripact-detect
 // skill, and any harness `init`): a preset's `signature` globs are the fingerprint of that system
-// on disk. Expansion is additive and non-destructive — any layer/edge/exclude the user spells out
-// wins over the preset, so a preset is a floor to build on, never an override.
+// on disk. Expansion is additive: any layer/edge/exclude the user spells out wins over the preset,
+// so a preset is a floor to build on.
 
 import { globSync } from "node:fs";
 import path from "node:path";
@@ -26,7 +26,7 @@ export interface SpecSystemPreset {
   /** Layers the preset contributes, keyed by conventional layer name. */
   layers: Record<string, PresetLayer>;
   edges: Array<[string, string]>;
-  /** Globs subtracted from every layer — archived/change-delta duplicates, framework scaffolding. */
+  /** Globs subtracted from every layer: archived/change-delta duplicates, framework scaffolding. */
   exclude: string[];
 }
 
@@ -41,8 +41,8 @@ const COMMON_TEST_GLOBS = [
 
 export const SPEC_SYSTEM_PRESETS: Record<string, SpecSystemPreset> = {
   // GitHub spec-kit: the product spec is `specs/<NNN-feature>/spec.md`. The `.specify/` tree is the
-  // framework's own scaffolding (constitution + templates) and must NEVER be counted as the spec —
-  // so it is excluded, fixing the mis-detection where `.specify/**/*.md` was read as the spec.
+  // framework's own scaffolding (constitution + templates) and must NEVER be counted as the spec,
+  // so it is excluded.
   "spec-kit": {
     name: "spec-kit",
     description: "GitHub spec-kit — product spec at specs/<feature>/spec.md, scaffolding under .specify/",
@@ -55,7 +55,7 @@ export const SPEC_SYSTEM_PRESETS: Record<string, SpecSystemPreset> = {
     exclude: [".specify/**"],
   },
   // OpenSpec: the live spec is `openspec/specs/**/spec.md`. Per-change deltas and the archive live
-  // under `openspec/changes/**` and are duplicate/superseded copies — excluded so they never
+  // under `openspec/changes/**` and are duplicate/superseded copies, excluded so they never
   // double-count against the live spec.
   openspec: {
     name: "openspec",
@@ -68,7 +68,7 @@ export const SPEC_SYSTEM_PRESETS: Record<string, SpecSystemPreset> = {
     edges: [["spec", "tests"]],
     exclude: ["openspec/changes/**"],
   },
-  // Kiro (AWS Kiro spec-driven flow): a flat spec triplet under `specs/` — `requirements.md`
+  // Kiro (AWS Kiro spec-driven flow): a flat spec triplet under `specs/` - `requirements.md`
   // (EARS acceptance criteria as numbered `1. THE … SHALL …` items), `design.md`, `tasks.md`. No
   // `.specify/` and no `specs/*/spec.md`, so it is distinct from spec-kit. The prescriptive layer is
   // the acceptance criteria in `requirements.md` (design/tasks are planning artefacts, not intent).
@@ -86,7 +86,7 @@ export const SPEC_SYSTEM_PRESETS: Record<string, SpecSystemPreset> = {
   // Cursor spec-driven flow: feature specs live under `.cursor/specs/` as arbitrarily-named markdown
   // (`## Why / What / Constraints`, `### Must / Must Not` bullets). The fixed-name `_template.md`
   // (placeholder scaffolding) and `tasks.md` (the implementation plan, not intent) are excluded, the
-  // same way the kiro preset keeps only `requirements.md` — leaving the variable-named feature specs.
+  // same way the kiro preset keeps only `requirements.md`, leaving the variable-named feature specs.
   cursor: {
     name: "cursor",
     description: "Cursor spec-driven — feature specs under .cursor/specs/*.md (template + tasks excluded)",
@@ -127,7 +127,7 @@ export const SPEC_SYSTEM_NAMES = Object.keys(SPEC_SYSTEM_PRESETS);
 export function applyPreset(cfg: Config): Config {
   if (cfg.kind === undefined) return cfg;
   const preset = SPEC_SYSTEM_PRESETS[cfg.kind];
-  if (!preset) return cfg; // unknown kind — loadConfig reports it; nothing to expand
+  if (!preset) return cfg; // unknown kind: loadConfig reports it; nothing to expand
   const layers = { ...cfg.layers };
   for (const [name, pl] of Object.entries(preset.layers)) {
     if (name in layers) continue; // user-declared layer wins
@@ -145,9 +145,9 @@ export function applyPreset(cfg: Config): Config {
 
 /**
  * Every spec system whose signature globs match on disk (UAC §2.3), in registry order. Matching is by
- * file presence alone — never file contents. A repository matching more than one system is AMBIGUOUS;
+ * file presence alone, never file contents. A repository matching more than one system is AMBIGUOUS;
  * this returns all of them so a caller (the tripact-detect skill, a harness `init`) can present the
- * candidates rather than silently pick one. Expansion itself never touches disk.
+ * candidates instead of picking one. Expansion itself never touches disk.
  */
 export function detectSpecSystems(repoRoot: string): string[] {
   const anyMatch = (globs: string[]) =>
@@ -158,9 +158,9 @@ export function detectSpecSystems(repoRoot: string): string[] {
 }
 
 /**
- * The single unambiguous spec system for a repository (UAC §2.3), or null when zero or several match —
- * so an ambiguous layout is never auto-assigned a preset ("forked, never guessed"). Use
- * `detectSpecSystems` when you need the full candidate set to adjudicate an ambiguous repo.
+ * The single unambiguous spec system for a repository (UAC §2.3), or null when zero or several
+ * match, so an ambiguous layout is never auto-assigned a preset. Use `detectSpecSystems` when you
+ * need the full candidate set to adjudicate an ambiguous repo.
  */
 export function detectSpecSystem(repoRoot: string): string | null {
   const matches = detectSpecSystems(repoRoot);

@@ -5,7 +5,7 @@ import type { EdgeVerdict, Group, OrphanTag } from "../types.js";
 import type { SidecarGroup } from "../sidecar.js";
 import { scanTags, type TagHit } from "./pv.js";
 
-/** Hash over the group's atom hashes — any atom edit changes it (UAC §4.2). */
+/** Hash over the group's atom hashes: any atom edit changes it (UAC §4.2). */
 export function groupHash(group: Group): string {
   const h = createHash("sha256");
   for (const a of group.atoms) h.update(a.hash);
@@ -46,7 +46,7 @@ export function checkDV(
       );
       if (onEdge.length === 0) {
         // Tagged, but never yet verified on this edge (§4.2): `pending`, never `stale`. A group is
-        // never stale before it has been verified once — its lifecycle mirrors P↔V's (§4.1).
+        // never stale before it has been verified once. Its lifecycle mirrors P↔V's (§4.1).
         kind = "pending";
       } else {
         const verified = onEdge.filter((v) => v.claimHash === gh);

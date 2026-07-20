@@ -15,7 +15,7 @@ export const EFFORT_TIERS = ["judgment", "planning", "implementation", "mechanic
 export type EffortTier = (typeof EFFORT_TIERS)[number];
 
 // Runner templates (UAC §17.2) are keyed by effort tier or the literal "default",
-// and interpolate exactly these placeholders — validated all-at-once in loadConfig.
+// and interpolate exactly these placeholders, validated all-at-once in loadConfig.
 export const RUNNER_KEYS = [...EFFORT_TIERS, "default"] as const;
 export const RUNNER_PLACEHOLDERS = ["promptFile", "model", "cwd"] as const;
 
@@ -73,7 +73,7 @@ export const ConfigSchema = z.object({
   // non-emptiness validated in loadConfig so §18 problems report all-at-once too.
   derived: z.record(z.string(), z.object({ output: z.string(), generator: z.string() })).optional(),
   // Navigational code↔spec links (UAC §20.1): a code file set + tag pattern scanned for claim-id
-  // tags. Declared OUTSIDE layers/edges — a code file set is never a layer role and never an edge,
+  // tags. Declared OUTSIDE layers/edges: a code file set is never a layer role and never an edge,
   // so it never produces a coverage verdict. `tagPattern` defaults to the verificatory layer's.
   codeLinks: z.object({ paths: z.array(z.string()).min(1), tagPattern: z.string().optional() }).optional(),
 });
@@ -104,10 +104,10 @@ export const DEFAULT_TAG_PATTERN = "@specs:([a-z0-9.-]+)";
 export const DEFAULT_SECTION_TAG_PATTERN = "@docs:([a-z0-9.-]+)";
 
 // --- tag-format derivation (UAC §4.1/§4.2) -------------------------------------------------------
-// A repair task must instruct the SAME literal tag the engine's scanner matches — the configured
+// A repair task must instruct the SAME literal tag the engine's scanner matches, the configured
 // `tagPattern` / `sectionTagPattern` regex. If deriveTasks hard-codes `@specs:<id>` while a layer
 // scans with a custom `@covers:(…)` pattern, the agent writes a tag `check` never recognises and
-// coverage silently never lands. So we derive the example tag from the pattern itself: drop the
+// coverage never lands. So we derive the example tag from the pattern itself: drop the
 // first capturing group in favour of a placeholder and unescape the literal segments.
 
 /** Byte offset of the first *capturing* group's `(` and one-past its matching `)`, or null. */
@@ -115,11 +115,11 @@ function firstCaptureGroup(pattern: string): { start: number; end: number } | nu
   let inClass = false;
   for (let i = 0; i < pattern.length; i++) {
     const c = pattern[i];
-    if (c === "\\") { i++; continue; } // escaped char — skip the next
+    if (c === "\\") { i++; continue; } // escaped char, skip the next
     if (inClass) { if (c === "]") inClass = false; continue; }
     if (c === "[") { inClass = true; continue; }
     if (c !== "(") continue;
-    // `(?:`, `(?=`, `(?!`, `(?<=`, `(?<!` are non-capturing / lookaround — skip; anything else captures.
+    // `(?:`, `(?=`, `(?!`, `(?<=`, `(?<!` are non-capturing / lookaround, so skip; anything else captures.
     if (/^\(\?(:|=|!|<=|<!)/.test(pattern.slice(i))) continue;
     let depth = 0;
     let cls = false;
@@ -150,7 +150,7 @@ function unescapeRegexLiteral(seg: string): string {
  */
 export function tagFormatFromPattern(pattern: string, placeholder: string): string {
   const g = firstCaptureGroup(pattern);
-  if (!g) return unescapeRegexLiteral(pattern); // no capture group — degenerate; return the literal
+  if (!g) return unescapeRegexLiteral(pattern); // no capture group: degenerate, return the literal
   return unescapeRegexLiteral(pattern.slice(0, g.start)) + placeholder + unescapeRegexLiteral(pattern.slice(g.end));
 }
 
@@ -183,7 +183,7 @@ export function loadConfig(repoRoot: string): Config {
   // Spec-system preset (UAC §2.3): validate the `kind` name, then expand it into concrete
   // layers/edges/exclude BEFORE the structural checks below, so `kind: spec-kit` with no
   // hand-declared layers still clears the two-layer floor. An unknown kind is reported and
-  // expansion is skipped (the un-expanded config then fails the floor too — both reported at once).
+  // expansion is skipped (the un-expanded config then fails the floor too, so both are reported at once).
   if (parsedCfg.kind !== undefined && !(parsedCfg.kind in SPEC_SYSTEM_PRESETS)) {
     problems.push(`kind: unknown spec system "${parsedCfg.kind}" (known: ${SPEC_SYSTEM_NAMES.join(", ")})`);
   }

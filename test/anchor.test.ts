@@ -13,7 +13,7 @@ function atom(id: string, norm: string, groupKey = "g"): AnchorAtom {
   line += 1;
   return { id, norm, raw: norm, groupKey, groupPath: groupKey, line };
 }
-/** Build an atom from raw prose, normalising it the way the real pipeline does. */
+/** Build an atom from raw prose, normalising it the way the parser pipeline does. */
 function prose(id: string, raw: string, groupKey = "g"): AnchorAtom {
   line += 1;
   return { id, norm: normalizeText(raw), raw, groupKey, groupPath: groupKey, line };
@@ -47,7 +47,7 @@ describe("anchor cascade", () => {
   });
 
   it("escalates sub-0.9 similarity instead of silently linking", () => {
-    // ratio ≈ 0.727 — inside the candidate band [0.65, 0.9)
+    // ratio ≈ 0.727, inside the candidate band [0.65, 0.9)
     const prev = [atom("one", "addnumbers returns the sum of two integer inputs")];
     const next = [atom("", "addnumbers computes the total of two integer values")];
     const r = anchor(prev, next, DEFAULT_ANCHOR_CONFIG);
@@ -88,7 +88,7 @@ describe("anchor cascade", () => {
   });
 
   it("a group that loses an unmatched atom and gains one forks — advisory fork-review @specs:re-anchoring.group-one-transition-loses", () => {
-    // Sub-0.65 reword in the same group: no candidate, no split/merge → silent identity fork.
+    // Sub-0.65 reword in the same group: no candidate, no split/merge → the identity forks.
     const prev = [prose("one", "the dashboard shows a bar chart of weekly active users")];
     const next = [prose("", "operators can export the full audit log as a signed csv file")];
     const r = anchor(prev, next, DEFAULT_ANCHOR_CONFIG);
@@ -97,7 +97,7 @@ describe("anchor cascade", () => {
     expect(r.forks).toHaveLength(1);
     expect(r.forks[0]!.deleted.map((d) => d.id)).toEqual(["one"]);
     expect(r.forks[0]!.created[0]!.text).toContain("audit log");
-    // Still recorded as dead + created — the fork question is additive, not a re-link.
+    // Still recorded as dead + created: the fork question is raised alongside and relinks nothing.
     expect(r.deadIds).toEqual(["one"]);
     expect(r.created).toHaveLength(1);
   });
@@ -112,7 +112,7 @@ describe("anchor cascade", () => {
   });
 
   it("a candidate-paired reword is a reanchor question, never a fork", () => {
-    // ratio ≈ 0.73 ∈ [0.65, 0.9): a visible reanchor candidate, so not a silent fork.
+    // ratio ≈ 0.73 ∈ [0.65, 0.9): the reword surfaces as a reanchor candidate instead of forking.
     const prev = [prose("one", "addNumbers returns the sum of two integer inputs")];
     const next = [prose("", "addNumbers computes the total of two integer values")];
     const r = anchor(prev, next, DEFAULT_ANCHOR_CONFIG);
@@ -130,7 +130,7 @@ describe("anchor cascade", () => {
     const next = [prose("", reword)];
     const r = anchor(prev, next, DEFAULT_ANCHOR_CONFIG);
     // Autojunk off (measured ratio ≈ 0.90): the atom auto-matches or escalates, but NEVER forks.
-    // (With autojunk on it scored ~0.58 and forked — the ceiling this round removed.)
+    // (With autojunk on the same pair scores ~0.58 and forks, which is why the config disables it.)
     expect(r.forks).toHaveLength(0);
     expect(r.matched.length + r.candidates.length).toBeGreaterThanOrEqual(1);
   });

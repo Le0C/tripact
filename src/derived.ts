@@ -1,15 +1,15 @@
 // Derived outputs (UAC §18): deterministically regenerable artefacts declared in
 // tripact.yaml under `derived`. Two generator kinds: builtin generators (reserved names
-// rendered in-process — no spawning, byte-identical across runs) and arbitrary shell
-// commands (stdout captured as the file content). Determinism is the contract: the same
+// rendered in-process, with no spawning and byte-identical output across runs) and arbitrary
+// shell commands (stdout captured as the file content). Determinism is the contract: the same
 // code + config always produce byte-identical output.
 //
-// Kernel/harness boundary (see docs/architecture/kernel-harness.md): this module is kernel.
+// Kernel/harness boundary: this module is kernel.
 // Builtin generators reserve a NAME here (a deterministic fact) but their IMPLEMENTATION is
 // injected by the harness at boot via registerGenerator(), so the kernel never imports the
-// CLI. The one builtin — `cli-reference` — needs the full commander program to render, which
-// is a harness capability; keeping its impl out of this file is what lets engine.ts stay
-// import-separable from program.ts (enforced by test/kernel-boundary.test.ts).
+// CLI. `cli-reference`, for instance, needs the full commander program to render, which is a
+// harness capability; keeping its impl out of this file lets engine.ts stay import-separable
+// from program.ts (enforced by test/kernel-boundary.test.ts).
 
 import { spawnSync } from "node:child_process";
 import type { Config } from "./config.js";
@@ -24,8 +24,8 @@ export const HOTLINK_MAP = "hotlink-map";
  * Reserved builtin generator names. A `derived` entry naming one of these is rendered in-process
  * by a harness-registered function rather than run as a shell command. The kernel reserves the
  * name only; the implementation is injected (registerGenerator) so this module imports no harness
- * code. An output declaring a reserved generator that was never registered is a wiring error — not
- * a shell command — so generateContent throws rather than trying to exec the name.
+ * code. An output declaring a reserved generator that was never registered is a wiring error, so
+ * generateContent throws rather than trying to exec the name as a shell command.
  */
 export const RESERVED_BUILTINS: ReadonlySet<string> = new Set([CLI_REFERENCE, HOTLINK_MAP]);
 
@@ -67,8 +67,8 @@ export function deriveOutputs(config: Config): DerivedOutput[] {
  * Produce the content for one derived output. A reserved builtin → its registered in-process
  * renderer; any other generator → run it as a shell command in `root` and capture stdout. A
  * nonzero exit (or spawn failure) throws GenerateError (UAC §18.1: shell nonzero → error exit 2).
- * A reserved builtin with no registered implementation also throws — it is a wiring error, never
- * a shell command.
+ * A reserved builtin with no registered implementation also throws, since it is a wiring error
+ * rather than a shell command.
  */
 export function generateContent(root: string, d: DerivedOutput): string {
   if (RESERVED_BUILTINS.has(d.generator)) {

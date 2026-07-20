@@ -1,8 +1,8 @@
 // The three-way "pact" join (UAC: read-surface). A pure projection over `analysis.verdicts` that
 // correlates the prescriptive↔verificatory (spec↔tests) and descriptive↔verificatory (docs↔tests)
 // edges on their one shared handle: the test file. A test that tags both `@specs:X` and `@docs:S`
-// bridges spec claim X to doc section S, so the triangle is derivable from existing verdicts — no
-// new scanning. Advisory only: it never feeds a verdict or the exit code.
+// bridges spec claim X to doc section S, so the triangle is derivable from existing verdicts with
+// no new scanning. Advisory only: it never feeds a verdict or the exit code.
 //
 // Join semantics are test-mediated. The bridge from a claim to a section IS a test that tags both;
 // a doc section written for an untested claim has no bridging test and is invisible here. Untested
@@ -30,8 +30,8 @@ const sorted = (xs: Iterable<string>): string[] => [...xs].sort();
 
 /**
  * Derive the three-way pact from the analysis. Returns all-empty (with every top-level key present)
- * unless the config declares BOTH a prescriptive↔verificatory and a descriptive↔verificatory edge —
- * without both, a "documented?" question has no meaning and every tested claim would look
+ * unless the config declares BOTH a prescriptive↔verificatory and a descriptive↔verificatory edge.
+ * Without both, a "documented?" question has no meaning and every tested claim would look
  * undocumented.
  */
 export function derivePact(analysis: Analysis): PactReport {

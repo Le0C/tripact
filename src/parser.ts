@@ -1,9 +1,9 @@
-// Markdown → groups/atoms. UAC §3.1. Port of sync-spike/uac_parser.py.
+// Markdown → groups/atoms. UAC §3.1.
 
 import { createHash } from "node:crypto";
 import type { Atom, Group } from "./types.js";
 
-// Atoms are top-level list items (column-0 only; indented/nested items are NOT atoms — UAC §3.1):
+// Atoms are top-level list items (UAC §3.1), column-0 only, so indented/nested items are NOT atoms:
 // an unordered `- ` bullet, or an ordered `1. ` / `1) ` item. Ordered items let EARS/Kiro-style
 // requirements (`1. THE system SHALL …`) atomise like bulleted acceptance criteria. The ordered
 // marker itself is not part of the atom text, so renumbering an item never changes its content hash.
@@ -14,7 +14,7 @@ const ORDERED_RE = /^\d+[.)] (.*)$/;
 const CHECKBOX_MARKER_RE = /^\[( |x|X)\] /;
 // A prose paragraph (not a list item or heading) is an atom only when it reads as a requirement:
 // either it leads with a bold label (`**User Story:** …`, `**Description:** …`) or it contains an
-// UPPERCASE RFC-2119 / EARS keyword (`SHALL`, `MUST`, `SHOULD`). Case matters — normative specs
+// UPPERCASE RFC-2119 / EARS keyword (`SHALL`, `MUST`, `SHOULD`). Case matters. Normative specs
 // capitalise the keyword, so casual lowercase "must"/"should" prose is left as ordinary text.
 const BOLD_LABEL_RE = /^\*\*[^*\n]+:\*\*/;
 const NORMATIVE_RE = /\b(?:SHALL|MUST|SHOULD)\b/;
@@ -38,10 +38,10 @@ export function contentHash(norm: string): string {
   return createHash("sha256").update(norm, "utf8").digest("hex").slice(0, 16);
 }
 
-// NOTE (ASCII assumption, UAC §3.1): `slugify` keeps only lowercased `[a-z0-9\s-]` — it does not
+// NOTE (ASCII assumption, UAC §3.1): `slugify` keeps only lowercased `[a-z0-9\s-]` and does not
 // transliterate. A heading in a non-Latin script slugs to "" (which `disambiguateSlugs` below then
 // makes unique but un-mnemonic). Deterministic, but such sections are effectively un-taggable by a
-// readable slug; a future transliteration pass would lift this.
+// readable slug; a transliteration pass would lift this.
 export function slugify(text: string, maxWords = 8): string {
   return text
     .toLowerCase()
@@ -54,12 +54,13 @@ export function slugify(text: string, maxWords = 8): string {
 
 /**
  * Make section slugs unique within a descriptive layer (UAC §4.2). `slugify` keeps only the first
- * few lowercased ASCII words, so two distinct sections — different files, or heading paths that
- * happen to share their leading words — can collapse to one slug. That is a silent correctness hole:
- * a single `@docs:<slug>` tag would mark BOTH sections covered, and one section's sidecar group
+ * few lowercased ASCII words, so two distinct sections (different files, or heading paths that
+ * happen to share their leading words) can collapse to one slug. That is a correctness hole: a
+ * single `@docs:<slug>` tag would mark BOTH sections covered, and one section's sidecar group
  * would overwrite the other's. When two or more groups share a base slug we append a short suffix
- * derived from each group's OWN identity (file + heading path), so a group's slug depends only on itself
- * — adding or removing a colliding sibling never reshuffles which suffix belongs to which section.
+ * derived from each group's OWN identity (file + heading path), so a group's slug depends only on
+ * itself, and adding or removing a colliding sibling never reshuffles which suffix belongs to which
+ * section.
  * Groups whose slug is already unique keep their bare slug. Mutates the groups in place.
  */
 export function disambiguateSlugs(groups: Group[]): void {
@@ -120,8 +121,8 @@ export function parseMarkdownLayer(layer: string, file: string, content: string)
 
   // Prose-paragraph buffer (UAC §3.1): consecutive non-structural lines accumulate here and flush at
   // any blank line or structural boundary. A flushed paragraph becomes ONE atom only if it reads as a
-  // requirement — a bold-label lead or an UPPERCASE SHALL/MUST/SHOULD — so a wrapped requirement is a
-  // single atom and ordinary prose is still dropped.
+  // requirement (a bold-label lead, or an UPPERCASE SHALL/MUST/SHOULD), so a wrapped requirement is a
+  // single atom and ordinary prose is dropped.
   let proseBuf: string[] = [];
   let proseLine = 0;
   const flushProse = () => {
@@ -158,7 +159,7 @@ export function parseMarkdownLayer(layer: string, file: string, content: string)
       continue;
     }
 
-    // A column-0 list item — unordered (`- `) or ordered (`1. ` / `1) `) — is an atom.
+    // A column-0 list item, unordered (`- `) or ordered (`1. ` / `1) `), is an atom.
     const lm = BULLET_RE.exec(line) ?? ORDERED_RE.exec(line);
     if (lm) {
       flushProse();
@@ -173,7 +174,7 @@ export function parseMarkdownLayer(layer: string, file: string, content: string)
       flushProse();
       continue;
     }
-    // A non-structural, non-blank line — accumulate as prose (may become a requirement atom on flush).
+    // A non-structural, non-blank line accumulates as prose (may become a requirement atom on flush).
     if (proseBuf.length === 0) proseLine = ln + 1;
     proseBuf.push(line.trim());
   }
@@ -185,17 +186,16 @@ export function parseMarkdownLayer(layer: string, file: string, content: string)
 // StrictDoc source is NOT markdown: content lives in typed nodes ([REQUIREMENT], [TEXT], [FEATURE],
 // [DESIGN], …) whose normative content is the `STATEMENT` field, nested inside balanced
 // [[SECTION]] … [[/SECTION]] blocks. A field value is either inline (`STATEMENT: text`) or a
-// multi-line block delimited by `>>>` … `<<<`. [DOCUMENT] and [GRAMMAR] carry no STATEMENT and so
-// never yield atoms — which is the whole point: parsing `.sdoc` as markdown previously turned the
-// [GRAMMAR] schema's `- TITLE: …` bullets into pseudo-atoms while the real requirements (STATEMENT
-// blocks, not column-0 bullets) were invisible. Here **one node with a STATEMENT = one atom**, so a
-// requirements file yields its requirements, not its grammar.
+// multi-line block delimited by `>>>` … `<<<`. One node with a STATEMENT yields one atom, and a
+// node without one yields nothing, so [DOCUMENT] and [GRAMMAR] never contribute. That keeps the
+// [GRAMMAR] schema's `- TITLE: …` bullets out of the atom set and lets a requirements file yield
+// its requirements.
 
 const SDOC_SECTION_OPEN_RE = /^\[\[?SECTION\]?\]$/;   // [[SECTION]] (current) or [SECTION] (legacy)
 const SDOC_SECTION_CLOSE_RE = /^\[\[?\/SECTION\]?\]$/; // [[/SECTION]] or [/SECTION]
 const SDOC_NODE_RE = /^\[([A-Z][A-Z0-9_]*)\]$/;       // [REQUIREMENT], [TEXT], [FEATURE], …
 const SDOC_FIELD_RE = /^([A-Z][A-Z0-9_]*): ?(.*)$/;   // FIELD: value  (value may be `>>>` to open a block)
-// Nodes that are structural, not content: they carry no STATEMENT, so they never produce atoms.
+// Structural nodes: they carry no STATEMENT, so they never produce atoms.
 const SDOC_SKIP_NODES = new Set(["DOCUMENT", "GRAMMAR"]);
 const SDOC_BLOCK_OPEN = ">>>";
 const SDOC_BLOCK_CLOSE = "<<<";
@@ -304,7 +304,7 @@ export function parseSdocLayer(layer: string, file: string, content: string): Pa
         awaitingSectionTitle.title = value;
         continue;
       }
-      if (!node) continue; // stray field outside any node (e.g. inside DOCUMENT header) — ignore
+      if (!node) continue; // stray field outside any node (e.g. inside DOCUMENT header) - ignore
       if (value === SDOC_BLOCK_OPEN) {
         // Opens a multi-line block; retain only STATEMENT.
         capturing = field;

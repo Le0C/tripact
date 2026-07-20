@@ -1,4 +1,4 @@
-// End-to-end coverage of `tripact reconcile` (UAC §10.3) — the propose-only queue that suggests
+// End-to-end coverage of `tripact reconcile` (UAC §10.3), the propose-only queue that suggests
 // existing untagged tests which may already assert an uncovered claim. Driven the way a foreign
 // harness would: a scratch git repo with a hand-written tripact.yaml, then the prebuilt CLI over
 // its lifecycle. Everything here is a black-box assertion against observed stdout / JSON / exit code.
@@ -27,7 +27,7 @@ function commit(repo: string, message: string): void {
 
 /**
  * Minimal specs+tests repo (no descriptive layer) with caller-supplied spec claim lines and test
- * titles, git-initialised and committed. Deliberately does NOT run `check`, so no sidecar exists —
+ * titles, git-initialised and committed. Deliberately does NOT run `check`, so no sidecar exists:
  * the clean slate the mutate-nothing assertion relies on.
  */
 function makeRepo(prefix: string, specLines: string[], testTitles: string[]): string {
@@ -62,15 +62,15 @@ function makeRepo(prefix: string, specLines: string[], testTitles: string[]): st
 describe("tripact reconcile — untagged-test proposals (UAC §10.3)", () => {
   // @specs:reconcile-untagged-tests.tripact-reconcile-proposes-per
   it("proposes, per uncovered prescriptive claim, existing test titles above the similarity threshold", () => {
-    // fullRepo leaves every claim uncovered (tests tag nothing) — the drift state reconcile scans.
+    // fullRepo leaves every claim uncovered (tests tag nothing), the drift state reconcile scans.
     const repo = track(fullRepo("tripact-recon-propose-"));
     const r = runCli(["reconcile", "--json"], { cwd: repo });
     expect(r.status, r.stderr).toBe(0);
     const report = JSON.parse(r.stdout);
 
     // Exactly one claim clears the fixed threshold: "addNumbers returns the sum…" ↔ the near-verbatim
-    // test title. The second claim ("Entering two numbers and clicking Add…") is *not* proposed —
-    // its closest test title scores below threshold, proving the queue is filtered, not exhaustive.
+    // test title. The second claim ("Entering two numbers and clicking Add…") is not proposed:
+    // its closest test title scores below threshold, so the threshold is what filters the queue.
     expect(report.candidates).toHaveLength(1);
     const entry = report.candidates[0];
     expect(entry.claimId).toBe("addition.addnumbers-returns-sum-two");
@@ -99,7 +99,7 @@ describe("tripact reconcile — untagged-test proposals (UAC §10.3)", () => {
     expect(cands[0].line).toBe(2);
     expect(cands[1].line).toBe(1);
 
-    // An identical tree yields an identical proposal set and ranking — same bytes on a re-run.
+    // An identical tree yields an identical proposal set and ranking: same bytes on a re-run.
     const b = runCli(["reconcile", "--json"], { cwd: repo });
     expect(b.stdout).toBe(a.stdout);
   });
@@ -135,7 +135,7 @@ describe("tripact reconcile — untagged-test proposals (UAC §10.3)", () => {
     expect(dismiss.stdout).toContain("dismissed reconcile candidate");
     expect(JSON.parse(runCli(["reconcile", "--json"], { cwd: repo }).stdout).candidates).toHaveLength(0);
 
-    // A dismissal survives an accept — accepting the baseline does not clear it.
+    // A dismissal survives an accept: accepting the baseline does not clear it.
     expect(runCli(["accept", "--yes"], { cwd: repo }).status).toBe(0);
     expect(JSON.parse(runCli(["reconcile", "--json"], { cwd: repo }).stdout).candidates).toHaveLength(0);
 
@@ -157,7 +157,7 @@ describe("tripact reconcile — untagged-test proposals (UAC §10.3)", () => {
     // Reconcile runs its own scan and exits 0 (advisory) on the same drift tree.
     expect(runCli(["reconcile"], { cwd: repo }).status).toBe(0);
 
-    // check is unchanged — same exit code and byte-identical JSON as before the reconcile run.
+    // check is unchanged: same exit code and byte-identical JSON as before the reconcile run.
     const check2 = runCli(["check", "--json"], { cwd: repo });
     expect(check2.status).toBe(1);
     expect(check2.stdout).toBe(check1.stdout);

@@ -1,9 +1,9 @@
-// Effort routing — UAC §16.1. `tripact.yaml` may carry a `routing` map (task class → effort tier)
+// Effort routing (UAC §16.1). `tripact.yaml` may carry a `routing` map (task class → effort tier)
 // and a `models` map (effort tier → model identifier). Those bindings resolve into advisory
 // `effort`/`model` hints on emitted tasks (src/tasks.ts) and on escalation questions (src/engine.ts,
 // via the `adjudicate` class). Routing/models entries validate all-at-once with the rest of the
 // config (§2.2). loadConfig + hintsFor are pure over a repo root, so the schema/validation claims
-// need no git; the hint-propagation claims drive the real CLI over a committed scratch repo.
+// need no git; the hint-propagation claims drive the CLI over a committed scratch repo.
 import { execFileSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
@@ -40,7 +40,7 @@ const LAYERS = [
   "  - [docs, tests]",
 ].join("\n");
 
-/** A temp dir carrying just a tripact.yaml (no git) — enough for loadConfig, which is pure. */
+/** A temp dir carrying just a tripact.yaml (no git): enough for loadConfig, which is pure. */
 function configOnly(yaml: string): string {
   const dir = mkdtempSync(path.join(os.tmpdir(), "tripact-routing-cfg-"));
   scratch.push(dir);

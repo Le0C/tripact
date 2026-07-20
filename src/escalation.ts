@@ -82,7 +82,7 @@ export function resolve(repoRoot: string, questionId: string, answer: Resolution
   const sidecar = loadSidecar(repoRoot);
   const byId = new Map(sidecar.claims.map((c) => [c.id, c]));
 
-  // The single atom (old and/or created) this answer disposes — used to shrink the question.
+  // The single atom (old and/or created) this answer disposes, used to shrink the question.
   let disposedOld: string | null = null;
   let disposedCreatedNorm: string | null = null;
 
@@ -115,7 +115,7 @@ export function resolve(repoRoot: string, questionId: string, answer: Resolution
     journal(repoRoot, { action: "resolve-dead", questionId, oldId: answer.oldId });
     disposedOld = answer.oldId;
   } else {
-    // "new": the created atom is genuinely new — reject its candidate pairings so
+    // "new": the created atom is a new requirement. Reject its candidate pairings so
     // they never re-escalate (UAC §7.2); the atom itself is minted at accept.
     const created = q.created.find((c) => normalizeText(c.text) === normalizeText(answer.atomText));
     if (!created) {
@@ -134,8 +134,8 @@ export function resolve(repoRoot: string, questionId: string, answer: Resolution
 
   saveSidecar(repoRoot, sidecar);
 
-  // Partial disposition (UAC §7.2): shrink the question in place — drop only the atom(s) this
-  // answer disposed, and the candidate pairings that reference them. The remaining atoms keep
+  // Partial disposition (UAC §7.2): shrink the question in place, dropping only the atom(s) this
+  // answer disposed and the candidate pairings that reference them. The remaining atoms keep
   // the SAME question id; the question leaves the queue only when no atoms remain. No re-check
   // is needed to dispose the siblings.
   if (disposedOld !== null) q.deleted = q.deleted.filter((d) => d.id !== disposedOld);

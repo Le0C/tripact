@@ -1,4 +1,4 @@
-// Faithful port of Python difflib.SequenceMatcher(autojunk=False) (char-level) —
+// Faithful port of Python difflib.SequenceMatcher(autojunk=False), char-level.
 // ratio() reproduces difflib's values with autojunk disabled, so a long atom's
 // same-meaning reword scores on its full text at any length. The Python spike's
 // golden is regenerated with autojunk=False too, keeping both sides comparable. UAC §3.3.
@@ -57,7 +57,7 @@ export class SequenceMatcher {
       }
       j2len = newj2len;
     }
-    // extend the match on both sides (no junk classes to defer — autojunk is disabled)
+    // extend the match on both sides (no junk classes to defer since autojunk is disabled)
     while (besti > alo && bestj > blo && a[besti - 1] === b[bestj - 1]) {
       besti--;
       bestj--;
@@ -118,7 +118,7 @@ export function similarityRatio(a: string, b: string): number {
   return new SequenceMatcher(a, b).ratio();
 }
 
-/** Matched chars relative to the shorter string — split/merge & extension detection. */
+/** Matched chars relative to the shorter string, for split/merge & extension detection. */
 export function containment(a: string, b: string): number {
   const m = new SequenceMatcher(a, b);
   const matched = m.getMatchingBlocks().reduce((s, bl) => s + bl.size, 0);

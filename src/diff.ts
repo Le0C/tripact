@@ -1,7 +1,7 @@
 // Acceptance preview (UAC §8.4) + the pre-write summary `tripact accept` prints (§8.3).
-// Computes the delta between the committed sidecar (loadSidecar) and the sidecar a real
-// accept would write (buildAcceptedSidecar): claims created / re-anchored / retired, and
-// per-edge verified-state changes (newly recorded vs re-baselined). Pure — writes nothing.
+// Computes the delta between the committed sidecar (loadSidecar) and the sidecar an accept
+// would write (buildAcceptedSidecar): claims created / re-anchored / retired, and
+// per-edge verified-state changes (newly recorded vs re-baselined). Pure; it writes nothing.
 // Deterministic: sorted ids throughout, no clock.
 
 import { excerpt } from "./report.js";
@@ -16,7 +16,7 @@ export interface EdgeVerifiedDelta {
 }
 
 /**
- * A re-baseline where the claim's own text moved — the reword class of §4.1 (as opposed to a
+ * A re-baseline where the claim's own text moved: the reword class of §4.1 (as opposed to a
  * test-side-only re-verify, where only a tagged file's hash shifted). This is the one re-baseline
  * that satisfies the hash machinery while the tagged test may still assert the old meaning, so it
  * is surfaced on its own with old and new text excerpts (UAC §8.3, §8.4).
@@ -27,7 +27,7 @@ export interface RewordRebaseline {
   subject: string;
   /** Recorded (old) claim text the current baseline was verified against. */
   oldText: string;
-  /** Current (new) claim text a real accept would re-baseline onto. */
+  /** Current (new) claim text an accept would re-baseline onto. */
   newText: string;
 }
 
@@ -43,7 +43,7 @@ export interface AcceptanceDelta {
   verified: EdgeVerifiedDelta[];
   /**
    * The subset of re-baselined verified states whose claim text was reworded (§4.1), each with old
-   * and new text excerpts. Sorted by subject; a superset-free view of the reword class the plain
+   * and new text excerpts. Sorted by subject. It narrows down the reword class that the plain
    * `reBaselined` list lumps in with test-side-only re-verifies.
    */
   rewordRebaselines: RewordRebaseline[];
@@ -51,12 +51,12 @@ export interface AcceptanceDelta {
   backlog: {
     /** Subjects (claim ids + section slugs) this accept would newly acknowledge as backlog. */
     newlyAcknowledged: string[];
-    /** Subjects that were backlog but are now covered — the ratchet moving down. */
+    /** Subjects that were backlog and are now covered, the ratchet moving down. */
     coveredSince: string[];
   };
   /** Content hash of the committed sidecar (the current tripact-sync-id trailer). */
   currentTrailer: string;
-  /** Content hash a real accept would print. */
+  /** Content hash an accept would print. */
   wouldBeTrailer: string;
 }
 
@@ -90,8 +90,8 @@ function verifiedIndex(sc: Sidecar): Map<string, Map<string, VerifiedState[]>> {
 }
 
 /**
- * Compute what a real accept would change, comparing the committed sidecar (`current`)
- * against the sidecar a real accept would write (`would`). Pure; caller renders or serialises.
+ * Compute what an accept would change, comparing the committed sidecar (`current`)
+ * against the sidecar that accept would write (`would`). Pure; caller renders or serialises.
  */
 export function computeAcceptanceDelta(current: Sidecar, would: Sidecar): AcceptanceDelta {
   const curById = new Map(current.claims.map((c) => [c.id, c]));
@@ -168,7 +168,7 @@ export function computeAcceptanceDelta(current: Sidecar, would: Sidecar): Accept
   };
 }
 
-/** Whether a real accept would change anything at all. */
+/** Whether an accept would change anything at all. */
 export function deltaIsEmpty(d: AcceptanceDelta): boolean {
   return (
     d.created.length === 0 &&
@@ -188,7 +188,7 @@ function idList(label: string, ids: string[], lines: string[]): void {
 
 /**
  * Human render of the acceptance delta. `trailers` toggles the current→would-be trailer
- * footer — on for `tripact diff` (§8.4), off for the `accept` pre-write summary (§8.3),
+ * footer: on for `tripact diff` (§8.4), off for the `accept` pre-write summary (§8.3),
  * which prints its own official trailer line afterwards.
  */
 export function renderDeltaHuman(d: AcceptanceDelta, opts: { trailers?: boolean } = {}): string {

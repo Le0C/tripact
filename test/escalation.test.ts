@@ -1,8 +1,8 @@
 // Escalation queue (UAC §7.1): questions the deterministic engine cannot answer are written to
-// .tripact/escalations.json. Driven the way a foreign harness would — a scratch git repo with a
+// .tripact/escalations.json. Driven the way a foreign harness would: a scratch git repo with a
 // hand-written tripact.yaml, baselined via `accept`, then a spec edit that forces a re-anchoring
 // situation the engine escalates rather than resolves. Every assertion below is matched against the
-// real prebuilt CLI's on-disk JSON, observed empirically.
+// prebuilt CLI's on-disk JSON.
 import { readFileSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
@@ -39,7 +39,7 @@ function reSpec(repo: string, variant: string): void {
   runCli(["check"], { cwd: repo });
 }
 
-/** Parse the escalation queue straight off disk — no kernel imports, as a foreign consumer would. */
+/** Parse the escalation queue straight off disk (no kernel imports), as a foreign consumer would. */
 function queue(repo: string): { schemaVersion: unknown; questions: any[] } {
   return JSON.parse(readFileSync(path.join(repo, ".tripact", "escalations.json"), "utf8"));
 }
@@ -49,7 +49,7 @@ describe("escalation queue (UAC §7.1)", () => {
   it("writes unanswerable questions to .tripact/escalations.json, replacing the queue each check", () => {
     const repo = baseline("tripact-esc-replace-");
 
-    // A reanchor situation the engine cannot silently resolve is written to the queue file.
+    // A reanchor situation the engine cannot resolve on its own is written to the queue file.
     reSpec(repo, REANCHOR_VARIANT);
     const first = queue(repo);
     expect(first.questions.length).toBe(1);

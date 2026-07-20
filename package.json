@@ -1,7 +1,7 @@
 {
   "name": "tripact",
   "version": "0.0.1",
-  "description": "The deterministic traceability kernel — keep spec, docs, and tests describing the same behaviour. A three-way pact any harness can drive.",
+  "description": "A deterministic traceability kernel that keeps spec, docs, and tests describing the same behaviour. A three-way pact any harness can drive.",
   "type": "module",
   "license": "Apache-2.0",
   "author": "Leo Coleman <leoacoleman@proton.me>",

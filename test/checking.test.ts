@@ -1,9 +1,9 @@
 // `tripact check` core behaviour (§5.1), Output (§5.2), and Scoping (§5.3), driven the way a
 // foreign harness would: a scratch git repo with a hand-written tripact.yaml, then the prebuilt
-// kernel CLI over `check` — observing exit codes, the human report, and the --json document.
+// kernel CLI over `check`, observing exit codes, the human report, and the --json document.
 //
 // All fixtures are built in temp dirs and cleaned up in afterAll. Assertions target only
-// deterministic surfaces (scope, counts, labels, layer names) — never nondeterministic ones such
+// deterministic surfaces (scope, counts, labels, layer names), never nondeterministic ones such
 // as a sync-point commit sha.
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
@@ -29,7 +29,7 @@ function trailerOf(acceptStdout: string): string {
   return sid!;
 }
 
-// A repo carrying all three layers plus a pathMap routing code under src/** to the specs layer —
+// A repo carrying all three layers plus a pathMap routing code under src/** to the specs layer:
 // the fixture the §5.3 scoping claims need. Unlike fixture.fullRepo it is committed but NOT
 // checked/accepted, so each scoping test controls the sync-point state itself.
 const SCOPED_CONFIG = `${CONFIG}pathMap:\n  'src/**': [specs]\n`;
@@ -115,13 +115,13 @@ describe("check core behaviour (§5.1)", () => {
     const out = runCli(["check"], { cwd: repo }).stdout;
     const last = out.trimEnd().split("\n").pop() ?? "";
     expect(last.startsWith("✓ level"), `last line was: ${last}`).toBe(true);
-    // 3 acknowledged claims (2 specs + 1 docs) — the backlog count is named.
+    // 3 acknowledged claims (2 specs + 1 docs); the backlog count is named.
     expect(last).toContain("3 acknowledged backlog items");
   });
 
   // @specs:tripact-check-core.check-makes-no-network
   it("makes no network call and invokes no LLM, even under a config binding routing, models, derived and codeLinks", () => {
-    // A CJS preload that traps every egress primitive the kernel could reach for — sockets, DNS,
+    // A CJS preload that traps every egress primitive the kernel could reach for: sockets, DNS,
     // http/https and fetch. Each records to a log file and throws, so a call is observable both as a
     // log line and as a crashed run. Loaded via NODE_OPTIONS so it patches the CLI child, not vitest.
     const trapDir = track(mkdtempSync(path.join(os.tmpdir(), "tripact-nonet-trap-")));
@@ -153,7 +153,7 @@ describe("check core behaviour (§5.1)", () => {
     writeFileSync(netLog, "");
 
     // "any configuration": every optional block that names an effort tier, a model, a generator
-    // command or a code file set — the ones a reader might expect to pull the kernel online.
+    // command or a code file set, the blocks a reader might expect to pull the kernel online.
     const repo = track(fullRepo("tripact-check-nonet-"));
     mkdirSync(path.join(repo, "src"), { recursive: true });
     writeFileSync(path.join(repo, "src", "app.ts"), "export const x = 1;\n");
@@ -171,7 +171,7 @@ describe("check core behaviour (§5.1)", () => {
       expect(r.stderr, "no trapped-egress crash").not.toContain("network blocked");
     }
     // The run completed all four ways and the trap recorded nothing: no socket, DNS, http/https or
-    // fetch egress — and so no LLM invocation, which could only travel over one of them.
+    // fetch egress, and so no LLM invocation, which could only travel over one of them.
     expect(readFileSync(netLog, "utf8"), "trapped network egress").toBe("");
   });
 });
@@ -209,7 +209,7 @@ describe("check output (§5.2)", () => {
     const repo = track(fullRepo("tripact-out-forks-"));
     expect(runCli(["accept", "--yes"], { cwd: repo }).status).toBe(0);
     // Rewrite the first spec claim wholesale: the old atom dies and a new one is created in the same
-    // section — a fork (§3.3). Its sibling claim is left intact so the section still exists.
+    // section, which is a fork (§3.3). Its sibling claim is left intact so the section still exists.
     writeFileSync(
       path.join(repo, "SPECS.md"),
       [

@@ -1,5 +1,5 @@
-// Repair & generation task derivation. UAC §10.1. Pure derivation from an Analysis —
-// never mutates artefacts, sidecar, or escalations.
+// Repair & generation task derivation. UAC §10.1. Pure derivation from an Analysis: it never
+// mutates artefacts, sidecar, or escalations.
 
 import { createHash } from "node:crypto";
 import {
@@ -15,8 +15,9 @@ import type { Analysis } from "./engine.js";
 import { truncateListing } from "./report.js";
 
 // Provenance marker (UAC §10.1) tagging spec/atom text embedded in a task payload as untrusted,
-// spec-derived content — so a harness can programmatically identify and fence it, not only rely on
-// the brief's prose guard (skills.ts). Emitted alongside every payload field that carries atom text.
+// spec-derived content, so a harness can programmatically identify and fence it instead of relying
+// on the brief's prose guard alone (skills.ts). Emitted alongside every payload field that carries
+// atom text.
 export const SPEC_ATOM_SOURCE = "spec-atom";
 
 export type TaskKind =
@@ -31,7 +32,7 @@ export interface Task {
   id: string;
   kind: TaskKind;
   title: string;
-  /** Everything an agent needs to act — self-contained, no tripact internals required. */
+  /** Everything an agent needs to act: self-contained, with no tripact internals required. */
   payload: Record<string, unknown>;
   /** Advisory dispatch hints from `routing`/`models` config (UAC §16.1). Absent without config. */
   effort?: EffortTier;
@@ -55,7 +56,7 @@ export function deriveTasks(analysis: Analysis, reconcile?: { prescriptive: stri
   const tasks: Task[] = [];
 
   // uncovered claims, grouped per claim group (UAC §10.1). Keyed by (group, tagFormat) so the task
-  // can name the exact tag the verificatory layer's scanner recognises — a group covered via two
+  // can name the exact tag the verificatory layer's scanner recognises. A group covered via two
   // edges with different tag patterns splits into two tasks rather than emitting one ambiguous tag.
   const uncoveredByGroup = new Map<string, { group: string; ids: string[]; tagFormat: string }>();
   const claimText = new Map(analysis.sidecar.claims.map((c) => [c.id, c.text]));
@@ -78,13 +79,13 @@ export function deriveTasks(analysis: Analysis, reconcile?: { prescriptive: stri
       if (entry) entry.ids.push(v.subject);
       else uncoveredByGroup.set(key, { group, ids: [v.subject], tagFormat });
     } else if (v.kind === "stale") {
-      // Only `stale` (verified once, then drifted) earns a reconcile task here. `pending`
-      // (tagged, never verified) deliberately falls through and emits nothing — its only cure
+      // Only `stale` (verified once, then drifted) produces a reconcile task here. `pending`
+      // (tagged, never verified) deliberately falls through and emits nothing; its only cure
       // is an accept recording the verified state, which belongs to the accept gate (UAC §10.1,
-      // §8.3, §17.2), not to repair work.
+      // §8.3, §17.2) rather than to repair work.
       //
-      // Of the two stale sub-classes (§4.1), only the **reworded** one — the claim's own text
-      // moved — earns a reconcile-stale task; judgment is needed to realign claim and test.
+      // Of the two stale sub-classes (§4.1), only the **reworded** one (the claim's own text
+      // moved) gets a reconcile-stale task, since judgment is needed to realign claim and test.
       // **Test-side-only** staleness (the claim text still matches its verified state and only a
       // tagged file's hash moved) emits no task: green validation plus the accept gate re-verify
       // it without semantic judgment (UAC §10.1, §17.2). It is test-side-only when a recorded
@@ -198,7 +199,7 @@ export function deriveTasks(analysis: Analysis, reconcile?: { prescriptive: stri
   }
 
   tasks.sort((a, b) => (a.id < b.id ? -1 : 1));
-  // advisory dispatch hints (UAC §16.1) — attached only when the config binds the task's class
+  // advisory dispatch hints (UAC §16.1), attached only when the config binds the task's class
   const hinted = tasks.map((t) => {
     const hints = hintsFor(analysis.config, t.kind);
     return hints ? { ...t, ...hints } : t;

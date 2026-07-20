@@ -1,5 +1,5 @@
 // Content lint (UAC §5.5): a prescriptive/descriptive atom whose text carries a prompt-injection
-// signature is reported as an advisory `suspiciousAtoms` warning — the detection companion to the
+// signature is reported as an advisory `suspiciousAtoms` warning, the detection companion to the
 // untrusted-data framing (§10.1). Driven the foreign-harness way + a unit check of the matcher.
 // @specs:content-lint.prescriptive-descriptive-atom-whose
 // @specs:content-lint.content-lint-advisory-deterministic
@@ -59,7 +59,7 @@ describe("content lint (§5.5) — the report", () => {
     const clean = repo({ "tripact.yaml": CONFIG, "SPEC.md": "# S\n\n- a plain requirement\n- another plain requirement\n" });
     const injStatus = runCli(["check"], { cwd: injected }).status;
     const cleanStatus = runCli(["check"], { cwd: clean }).status;
-    expect(injStatus).toBe(cleanStatus); // the lint never changes the exit code — purely advisory
+    expect(injStatus).toBe(cleanStatus); // advisory: the lint leaves the exit code alone
     const report = JSON.parse(runCli(["check", "--json"], { cwd: injected }).stdout);
     expect(report.suspiciousAtoms).toHaveLength(2);
     const lines = report.suspiciousAtoms.map((s: { line: number }) => s.line);

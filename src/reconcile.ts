@@ -1,4 +1,4 @@
-// `tripact reconcile` — propose existing untagged tests that may already assert an uncovered claim.
+// `tripact reconcile` - propose existing untagged tests that may already assert an uncovered claim.
 // Deterministic and propose-only (UAC §10.3): each uncovered non-(TBD) prescriptive claim is scored
 // against extracted test titles via the §3.3 similarity matcher and the matches are ranked. The scan
 // mutates nothing; recording a dismissal is a separate explicit write.
@@ -20,7 +20,7 @@ export interface ReconcileTest {
 export interface ReconcileEntry {
   claimId: string;
   claimText: string;
-  /** The exact tag to add if the agent confirms a candidate — the verificatory layer's format. */
+  /** The exact tag to add if the agent confirms a candidate, in the verificatory layer's format. */
   tagFormat: string;
   candidates: ReconcileTest[];
 }
@@ -31,7 +31,7 @@ export interface ReconcileReport {
 
 const DEFAULT_THRESHOLD = 0.5;
 
-// Deterministic test-title extraction — no test runner. JS/TS: the string literal argument of an
+// Deterministic test-title extraction with no test runner. JS/TS: the string literal argument of an
 // it()/test()/describe() call. pytest: a `def test_*` name, de-snaked into words.
 const JS_TITLE = /\b(?:it|test|describe)\s*\(\s*(["'`])((?:\\.|(?!\1).)*)\1/g;
 const PY_TEST = /^\s*(?:async\s+)?def\s+(test_\w+)\s*\(/;
@@ -117,7 +117,7 @@ export function reconcile(analysis: Analysis, opts: { threshold?: number } = {})
 }
 
 /**
- * Record a dismissal for a claim↔test pairing (the explicit write path — never a scan side effect,
+ * Record a dismissal for a claim↔test pairing (the explicit write path, never a scan side effect,
  * UAC §10.3). Mutates `analysis.sidecar.dismissedReconcile`; the caller saves the sidecar. Returns an
  * error when the pairing is not a current candidate.
  */

@@ -11,7 +11,7 @@
 //     A tripact config naming it still fails with the "not registered" wiring error, by design.
 //
 // Registration is a side effect, so it is invoked from the binary surface (`cli.ts`) rather than the
-// library barrel — importing `tripact` as a library must not mutate global state.
+// library barrel. Importing `tripact` as a library must not mutate global state.
 
 import { HOTLINK_MAP, registerGenerator } from "./derived.js";
 import { analyze } from "./engine.js";
@@ -21,7 +21,7 @@ import { renderHotlinkMap } from "./hotlinks.js";
  * Register every builtin generator the kernel implements. Idempotent: re-registering a name simply
  * overwrites it with the same renderer, so calling this more than once is harmless.
  *
- * The `hotlink-map` renderer re-analyses the tree, so it MUST pass `skipDerived` — otherwise the
+ * The `hotlink-map` renderer re-analyses the tree, so it MUST pass `skipDerived`. Otherwise the
  * freshness pass in `analyze()` would regenerate this very output and recurse forever.
  */
 export function registerBuiltinGenerators(): void {

@@ -1,6 +1,6 @@
 // Layer diagnostics (UAC §5.4, §6.1): a declared layer that matches no files, or a prescriptive/
 // descriptive layer that matches files but parses to zero atoms, is surfaced as an advisory warning
-// in check (human + --json) and status — without changing the exit code. Driven the foreign-harness
+// in check (human + --json) and status, without changing the exit code. Driven the foreign-harness
 // way: a scratch git repo, the prebuilt CLI, assertions on the --json document and human report.
 // @specs:layer-diagnostics.declared-layer-whose-paths
 // @specs:layer-diagnostics.prescriptive-descriptive-layer-matches
@@ -51,7 +51,7 @@ describe("layer diagnostics (§5.4)", () => {
     const report = JSON.parse(runCli(["check", "--json"], { cwd: dir }).stdout);
     expect(report.zeroAtomLayers).toEqual(["spec"]);
     expect(report.counts["zeroAtomLayers"]).toBe(1);
-    expect(report.zeroFileLayers).not.toContain("spec"); // it matched a file — not a zero-file case
+    expect(report.zeroFileLayers).not.toContain("spec"); // spec matched a file, so not a zero-file case
     expect(runCli(["check"], { cwd: dir }).stdout).toContain("parsed to 0 atoms");
   });
 
@@ -69,7 +69,7 @@ describe("layer diagnostics (§5.4)", () => {
     // spec + tests both match nothing → no atoms, no verdicts → level (exit 0) despite the warning.
     const dir = repo({ "tripact.yaml": TWO_LAYER("specs/*.md", "tests/**/*.spec.ts") });
     const res = runCli(["check"], { cwd: dir });
-    expect(res.status).toBe(0); // warning present, but exit stays 0 — advisory only
+    expect(res.status).toBe(0); // warning present, exit stays 0: advisory only
     expect(res.stdout).toContain("warning:");
     expect(res.stdout).toContain("level");
   });

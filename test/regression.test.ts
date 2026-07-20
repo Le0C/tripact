@@ -1,5 +1,5 @@
-// Regression tests for the code-review fixes (HEAD 7e362ed follow-up):
-//   H1  tag format is derived from the configured tagPattern, not hard-coded
+// Regression tests. The labels tie each block below to the invariant it guards:
+//   H1  tag format is derived from the configured tagPattern
 //   H2  a source atom tagged on multiple edges keeps every edge's verified state through accept
 //   M2  colliding section slugs are disambiguated within a descriptive layer
 //   L4  glob matching is dependency-free (no path.matchesGlob)
@@ -15,7 +15,7 @@ import type { Group } from "../src/types.js";
 import { runCli } from "./helpers/cli.js";
 
 // ---------------------------------------------------------------------------------------------
-// H1 — tagFormatFromPattern
+// H1: tagFormatFromPattern
 // ---------------------------------------------------------------------------------------------
 describe("tagFormatFromPattern (H1)", () => {
   // @specs:tripactyaml-schema.layer-accepts-optional-tagpattern
@@ -41,7 +41,7 @@ describe("tagFormatFromPattern (H1)", () => {
 });
 
 // ---------------------------------------------------------------------------------------------
-// L4 — dependency-free glob matcher
+// L4: dependency-free glob matcher
 // ---------------------------------------------------------------------------------------------
 describe("matchesGlob (L4)", () => {
   it("matches * within a segment but not across /", () => {
@@ -62,7 +62,7 @@ describe("matchesGlob (L4)", () => {
 });
 
 // ---------------------------------------------------------------------------------------------
-// M2 — slug disambiguation
+// M2: slug disambiguation
 // ---------------------------------------------------------------------------------------------
 describe("disambiguateSlugs (M2)", () => {
   const groupWith = (file: string, groupPath: string, slug: string): Group => ({
@@ -106,7 +106,7 @@ describe("disambiguateSlugs (M2)", () => {
 });
 
 // ---------------------------------------------------------------------------------------------
-// H1 + H2 — end to end against a two-verificatory-edge repo with a custom tag pattern
+// H1 + H2: end to end against a two-verificatory-edge repo with a custom tag pattern
 // ---------------------------------------------------------------------------------------------
 const scratch: string[] = [];
 afterAll(() => {
@@ -176,8 +176,9 @@ describe("tasks + accept across two edges (H1, H2)", () => {
     writeFileSync(path.join(repo, "unit", "calc.test.ts"), `// @specs:${id}\ntest("sum", () => {});\n`);
     writeFileSync(path.join(repo, "e2e", "calc.spec.ts"), `// @covers:${id}\ntest("sum", () => {});\n`);
 
-    // Accept, then re-check: H2 requires BOTH edges to be covered (level, exit 0). Under the
-    // overwrite bug one edge would fall back to `pending` and check would exit 1 forever.
+    // Accept, then re-check: H2 requires BOTH edges to be covered (level, exit 0). If accept
+    // overwrote one edge's verified state, that edge falls back to `pending` and check keeps
+    // exiting 1.
     const accept = runCli(["accept", "--yes"], { cwd: repo });
     expect(accept.status, accept.stderr).toBe(0);
 

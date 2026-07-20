@@ -17,17 +17,17 @@ export interface CheckReportJson {
   unsupportedEdges: string[];
   /** Declared derived outputs whose committed file is stale versus a fresh regeneration (UAC §18.2). */
   derivedStale: string[];
-  /** Declared generators whose back-to-back regenerations disagreed — non-deterministic (UAC §18). */
+  /** Declared generators whose back-to-back regenerations disagreed (non-deterministic, UAC §18). */
   nonDeterministicGenerators: string[];
-  /** Declared layers whose paths matched no files — advisory warning (UAC §5.4). */
+  /** Declared layers whose paths matched no files (advisory warning, UAC §5.4). */
   zeroFileLayers: string[];
-  /** Prescriptive/descriptive layers that matched files but parsed to zero atoms — advisory (UAC §5.4). */
+  /** Prescriptive/descriptive layers that matched files but parsed to zero atoms (advisory, UAC §5.4). */
   zeroAtomLayers: string[];
-  /** Atoms whose text carries a prompt-injection signature — advisory content-lint (UAC §5.5). */
+  /** Atoms whose text carries a prompt-injection signature (advisory content-lint, UAC §5.5). */
   suspiciousAtoms: Analysis["suspiciousAtoms"];
   /**
    * The three-way pact: spec claims, doc sections, and tests correlated on their shared test file
-   * (a test tagging both `@specs:` and `@docs:`). Advisory — it feeds no verdict or exit code, and
+   * (a test tagging both `@specs:` and `@docs:`). Advisory: it feeds no verdict or exit code, and
    * is all-empty unless both a spec↔tests and a docs↔tests edge are declared. Additive field.
    */
   pact: PactReport;
@@ -35,15 +35,15 @@ export interface CheckReportJson {
   exitCode: 0 | 1 | 2;
 }
 
-/** Uncovered subjects acknowledged at the last accept — backlog, not drift (UAC §5.1). */
+/** Uncovered subjects acknowledged at the last accept; backlog, exempt from drift (UAC §5.1). */
 function acknowledgedBacklogCount(analysis: Analysis): number {
   return analysis.verdicts.filter((v) => v.kind === "uncovered" && v.acknowledged).length;
 }
 
 /**
- * Groups that forked identity this transition — a dead and a created atom in the same group
- * (UAC §3.3, §5.2). A live re-anchoring-recall metric, counted structurally from the anchor
- * results (independent of whether the fork-review question was dismissed).
+ * Groups that forked identity this transition, meaning a dead and a created atom in the same
+ * group (UAC §3.3, §5.2). A live re-anchoring-recall metric, counted structurally from the anchor
+ * results, independent of whether the fork-review question was dismissed.
  */
 function forkCount(analysis: Analysis): number {
   let n = 0;
@@ -52,10 +52,10 @@ function forkCount(analysis: Analysis): number {
 }
 
 /**
- * Exit code under level semantics (UAC §5.1, Cross-Cutting): the repo is **level** (0) when
- * no pending, stale, or new-uncovered verdicts, no orphans, no escalations, no stale derived
- * outputs. Acknowledged backlog is reported but never drives exit 1 — unless `--strict`, which
- * restores coverage-gating by treating acknowledged backlog as drift too.
+ * Exit code under level semantics (UAC §5.1, Cross-Cutting): the repo is **level** (0) when it has
+ * no pending, stale, or new-uncovered verdicts, no orphans, no escalations, and no stale derived
+ * outputs. Acknowledged backlog is reported but never drives exit 1, unless `--strict`, which
+ * gates on coverage by treating acknowledged backlog as drift too.
  *
  * Implements @specs:tripact-check-core.exit-code-0-repository
  * - spec:  [UAC.md — §5.1 tripact check core behaviour]({@link ./../UAC.md})
@@ -86,10 +86,10 @@ export function toJsonReport(analysis: Analysis): CheckReportJson {
   counts["escalations"] = analysis.escalations.length;
   counts["derivedStale"] = analysis.derivedStale.length;
   counts["nonDeterministicGenerators"] = analysis.nonDeterministicGenerators.length;
-  // Fork count (UAC §5.2): re-anchoring recall as a live metric, not run-log archaeology.
+  // Fork count (UAC §5.2): re-anchoring recall as a live metric counted from the anchor results.
   counts["forks"] = forkCount(analysis);
   const pact = derivePact(analysis);
-  // Pact tallies (advisory — never drive the exit code). Inner count keys are not contract-pinned.
+  // Pact tallies (advisory; they never drive the exit code). Inner count keys are not contract-pinned.
   counts["pactComplete"] = pact.complete.length;
   counts["pactTestedUndocumented"] = pact.testedUndocumented.length;
   counts["pactUntiedSections"] = pact.untiedSections.length;
@@ -118,7 +118,7 @@ export function toJsonReport(analysis: Analysis): CheckReportJson {
 }
 
 /**
- * Human listings truncate past a fixed threshold (UAC Cross-Cutting: Human output) — the closing
+ * Human listings truncate past a fixed threshold (UAC Cross-Cutting: Human output). The closing
  * line reports the remaining count and names `--long`, which prints everything. Only the human
  * rendering truncates: the `--json` document always carries the full list (a human-output change
  * never alters any `--json` document), so `LISTING_THRESHOLD` lives entirely on this side.
@@ -126,7 +126,7 @@ export function toJsonReport(analysis: Analysis): CheckReportJson {
 export const LISTING_THRESHOLD = 12;
 
 /**
- * A short, single-line excerpt of a claim's text for the human report (UAC §5.2) — each verdict
+ * A short, single-line excerpt of a claim's text for the human report (UAC §5.2). Each verdict
  * line carries the claim's own words so a reader recognises it without opening the spec.
  */
 export function excerpt(text: string, max = 60): string {
@@ -196,8 +196,8 @@ export function renderHuman(analysis: Analysis, opts: { long?: boolean } = {}): 
     for (const v of verdicts) {
       if (v.kind === "covered") continue;
       const acknowledged = v.kind === "uncovered" && v.acknowledged;
-      // Acknowledged backlog is a count, not a line-by-line list (UAC §5.1) — unless --strict,
-      // which lists them so a release pipeline sees exactly what still owes a test.
+      // Acknowledged backlog renders as a count (UAC §5.1), unless --strict, which lists each
+      // item so a release pipeline sees exactly what still owes a test.
       if (acknowledged && !analysis.strict) {
         backlog++;
         continue;
@@ -205,7 +205,7 @@ export function renderHuman(analysis: Analysis, opts: { long?: boolean } = {}): 
       listed.push(v);
     }
     // Group non-covered verdicts under their group heading path within the edge (UAC §5.2): humans
-    // navigate the spec by section, not a flat id list. Bucket by heading (first-seen order) so each
+    // navigate the spec by section. Bucket by heading (first-seen order) so each
     // section's verdicts are contiguous even though verdicts arrive globally sorted by subject id.
     const buckets = new Map<string, EdgeVerdict[]>();
     for (const v of listed) {
@@ -280,8 +280,8 @@ export function renderHuman(analysis: Analysis, opts: { long?: boolean } = {}): 
     lines.push(`forks: ${forks} group(s) with a dead + created atom this transition (re-anchoring recall metric)`);
     lines.push("");
   }
-  // Three-way pact gaps (advisory — never affect the level/drift footer). Show only the holes:
-  // complete triangles are the healthy case and would only pad a drift-focused report. A claim's
+  // Three-way pact gaps (advisory; they never affect the level/drift footer). Show only the holes:
+  // complete triangles are the healthy case and would pad a drift-focused report. A claim's
   // text excerpt comes from its declaring atom; the location is the tagging test's file:line.
   const pact = derivePact(analysis);
   if (pact.testedUndocumented.length || pact.untiedSections.length) {
@@ -303,7 +303,7 @@ export function renderHuman(analysis: Analysis, opts: { long?: boolean } = {}): 
     lines.push("");
   }
   // Layer diagnostics (UAC §5.4): advisory warnings about a mis-declared layer. They never change
-  // the exit code — a spec that resolves to no files or no atoms is a config smell, not drift.
+  // the exit code: a spec that resolves to no files or no atoms is a config smell.
   if (analysis.zeroFileLayers.length) {
     lines.push(`warning: ${analysis.zeroFileLayers.length} layer(s) matched no files — check the glob: ${analysis.zeroFileLayers.join(", ")}`);
     lines.push("");

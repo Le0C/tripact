@@ -1,7 +1,7 @@
-// MCP serving (UAC §16.2). Drives the real `mcp-serve` stdio server the way a foreign harness
-// would: spawn the prebuilt CLI as an MCP server, connect a real MCP client over stdio, and compare
-// each read tool's JSON against the corresponding `--json` CLI command. The server is loaded lazily
-// by `mcp-serve` alone, so these are the only tests that touch the MCP SDK.
+// MCP serving (UAC §16.2). Drives the `mcp-serve` stdio server the way a foreign harness would:
+// spawn the prebuilt CLI as an MCP server, connect a real MCP client over stdio, and compare each
+// read tool's JSON against the corresponding `--json` CLI command. The server is loaded lazily by
+// `mcp-serve` alone, so these are the only tests that touch the MCP SDK.
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { execFileSync } from "node:child_process";
@@ -101,7 +101,7 @@ describe("MCP serving (§16.2)", () => {
         const viaMcp = toolText(await client.callTool({ name, arguments: {} }));
         const viaCli = runCli([name, "--json"], { cwd: repo }).stdout;
         // The CLI prints via console.log (a trailing newline); the tool emits the bare document.
-        // Same JSON document either way — identical once the CLI's trailing newline is trimmed…
+        // Same JSON document either way, identical once the CLI's trailing newline is trimmed…
         expect(viaMcp.trim(), `${name} text parity`).toBe(viaCli.trim());
         // …and structurally identical when parsed.
         expect(JSON.parse(viaMcp), `${name} parsed parity`).toEqual(JSON.parse(viaCli));
@@ -117,7 +117,7 @@ describe("MCP serving (§16.2)", () => {
   it("speaks only stdio — serving a real client opens no socket", async () => {
     // Trap the server side (createServer/listen) and the client side (connect/DNS/http/fetch). The
     // trap only RECORDS here rather than throwing: a throw inside the served process would surface
-    // as a transport failure and mask which primitive was reached. The log is the assertion.
+    // as a transport failure and mask which primitive was reached, so the log is what we assert on.
     const trapDir = mkdtempSync(path.join(os.tmpdir(), "tripact-mcp-nosock-"));
     scratch.push(trapDir);
     const trap = path.join(trapDir, "trap.cjs");
@@ -163,7 +163,7 @@ describe("MCP serving (§16.2)", () => {
     const client = new Client({ name: "test-harness", version: "0" });
     await client.connect(transport);
     try {
-      // A real round trip over the transport: if the server were reaching the client over a socket
+      // A round trip over the transport: if the server were reaching the client over a socket
       // rather than stdio, serving this call is where it would have to happen.
       const names = (await client.listTools()).tools.map((t) => t.name);
       expect(names).toContain("check");
@@ -173,7 +173,7 @@ describe("MCP serving (§16.2)", () => {
     } finally {
       await transport.close();
     }
-    // Connected, listed and served entirely over stdio pipes — no listen, no socket, no egress.
+    // Connected, listed and served entirely over stdio pipes, with no listen, socket or egress.
     expect(readFileSync(netLog, "utf8"), "mcp-serve touched a socket or the network").toBe("");
   });
 });

@@ -1,7 +1,8 @@
 // vitest globalSetup: build the CLI exactly once for the whole run, then hand every test worker the
-// absolute path to the built entrypoint. The e2e suite spawns the CLI many times; paying tsx's
-// per-call compile on each spawn lets blocked windows pile past vitest's reporter-IPC timeout. A
-// prebuilt dist/cli.js spawned with plain node runs in ~0.08s, keeping the worker responsive.
+// absolute path to the built entrypoint. The e2e suite spawns the CLI many times, and paying tsx's
+// per-call compile on every spawn blocks the worker for long enough to trip vitest's reporter-IPC
+// timeout. A prebuilt dist/cli.js spawned with plain node runs in ~0.08s, keeping the worker
+// responsive.
 //
 // globalSetup runs in the main process, separate from the forked workers. We plumb the path across
 // the boundary two ways so a plain `process.env.TRIPACT_TEST_CLI` read inside a test file always

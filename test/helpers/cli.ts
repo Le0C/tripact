@@ -1,13 +1,13 @@
 // Shared spawn helpers for the e2e suite. The CLI is resolved in exactly one place.
 //
 // Resolution order:
-//   1. TRIPACT_TEST_CLI (set by test/helpers/global-setup.ts after a one-shot build) — spawn the
+//   1. TRIPACT_TEST_CLI (set by test/helpers/global-setup.ts after a one-shot build) spawns the
 //      prebuilt dist/cli.js with plain node (~0.08s/call). This is the path taken by `pnpm test`.
-//   2. Fallback (env var absent) — tsx + src/cli.ts, for ad-hoc single-file runs
+//   2. Fallback (env var absent) is tsx + src/cli.ts, for ad-hoc single-file runs
 //      (`vitest run test/foo.test.ts`) where globalSetup did not run. Slower, but no build.
 //
-// A configured-but-missing dist is a hard error: we never silently fall back to tsx when the caller
-// asked for the built CLI, so a stale/absent build fails loudly.
+// A configured-but-missing dist is a hard error. Once the caller has asked for the built CLI a
+// stale or absent build fails loudly, rather than dropping back to tsx behind their back.
 //
 // NOTE: this file lives under test/ but is intentionally not named *.test.ts, so it is not collected
 // by vitest.
@@ -20,7 +20,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", ".
 
 let cached: { command: string; baseArgs: string[] } | undefined;
 
-/** Resolve — once — the command + leading args used to invoke the tripact CLI. */
+/** Resolve, once, the command + leading args used to invoke the tripact CLI. */
 export function cliInvocation(): { command: string; baseArgs: string[] } {
   if (cached) return cached;
   const built = process.env.TRIPACT_TEST_CLI;

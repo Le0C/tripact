@@ -10,7 +10,7 @@ export interface Atom {
   layer: string;
   /** Full heading path, e.g. "1. Project Initialisation > 1.1 Project Setup". */
   groupPath: string;
-  /** Numbering-stripped, normalised heading path — stable across renumbering (UAC §3.1). */
+  /** Numbering-stripped, normalised heading path, stable across renumbering (UAC §3.1). */
   groupKey: string;
   /** 0-based position within its group. */
   index: number;
@@ -36,9 +36,9 @@ export interface Group {
 }
 
 // Lifecycle (UAC §4.1): uncovered → pending (first tag lands) → covered (accept records the
-// verified state). `stale` is the drift kind — a claim is never stale before it has been verified
-// once. `pending` is therefore the tagged-but-never-verified state, split out from `stale` so
-// repair can tell "awaiting the accept gate" (emits no task, UAC §10.1) apart from "verified then
+// verified state). `stale` is the drift kind. A claim is never stale before it has been verified
+// once, so `pending` is the tagged-but-never-verified state, kept distinct from `stale` so repair
+// can tell "awaiting the accept gate" (emits no task, UAC §10.1) apart from "verified then
 // drifted" (emits a reconcile-stale task).
 export type EdgeVerdictKind = "covered" | "stale" | "pending" | "uncovered";
 

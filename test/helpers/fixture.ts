@@ -1,6 +1,6 @@
 // A scratch repository fixture with all three layers, wired by a hand-written tripact.yaml. tripact
 // ships no `init` command (layer detection is a judgement call, emitted as the `detect` skill), so
-// consumers author the config directly — exactly what these tests exercise. The committed sidecar
+// consumers author the config directly, which is what these tests exercise. The committed sidecar
 // lives in `.tripact/`.
 import { execFileSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
@@ -31,8 +31,8 @@ export const MANUAL = [
   "",
 ].join("\n");
 
-// Untagged on purpose: the tests exist but tag no claim, so every claim starts life uncovered —
-// the drift state the exit-code and payload assertions rely on.
+// Untagged on purpose: the tests exist but tag no claim, so every claim starts life uncovered,
+// which is the drift state the exit-code and payload assertions rely on.
 export const TESTS = [
   'test("addNumbers sums two integers", () => {});',
   'test("Add button shows the sum", () => {});',
@@ -81,13 +81,13 @@ export function fullRepo(prefix = "tripact-fixture-"): string {
 }
 
 // Tag composers for SCRATCH-REPO fixture files. Always build a fixture's `@specs:`/`@docs:` tag
-// through these — never write the literal into this suite's source.
+// through these. Never write the literal into this suite's source.
 //
 // This repository dogfoods tripact: its own `tests` layer scans `test/**/*.test.ts` for those very
-// patterns. A literal fixture tag here is indistinguishable, to the scanner, from a real coverage
-// tag — so it is read as a tag naming a claim that does not exist in this repo's UAC.md and
-// reported as an orphan tag, i.e. drift. Composing the prefix at runtime keeps the literal out of
-// this source while the scratch repo still receives the real tag it needs.
+// patterns. A literal fixture tag here is indistinguishable, to the scanner, from a coverage tag on
+// one of this repo's own claims, so it gets read as a tag naming a claim that does not exist in
+// this repo's UAC.md and reported as an orphan tag, i.e. drift. Composing the prefix at runtime
+// keeps the literal out of this source while the scratch repo still receives the tag it needs.
 const AT = "@";
 export const specTag = (id: string): string => `${AT}specs:${id}`;
 export const docsTag = (slug: string): string => `${AT}docs:${slug}`;

@@ -1,6 +1,6 @@
 // End-to-end coverage of the two coverage edges, driven through the prebuilt CLI over scratch git
-// repos: Prescriptive ↔ Verificatory (UAC §4.1 — claim ids ↔ test tags, one verdict per non-(tbd)
-// atom, orphan tags) and Descriptive ↔ Verificatory (UAC §4.2 — docs sections ↔ section tags,
+// repos: Prescriptive ↔ Verificatory (UAC §4.1: claim ids ↔ test tags, one verdict per non-(tbd)
+// atom, orphan tags) and Descriptive ↔ Verificatory (UAC §4.2: docs sections ↔ section tags,
 // evaluated at group level).
 import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
@@ -120,13 +120,13 @@ describe("Prescriptive ↔ Verificatory (§4.1)", () => {
       "addition.charlie-claim-three",
       "addition.delta-claim-four",
     ]);
-    // covered — a tag references it and the recorded verified state still matches both sides.
+    // covered: a tag references it and the recorded verified state still matches both sides.
     expect(pv.get("addition.alpha-claim-one")?.kind).toBe("covered");
-    // pending — tagged, but no verified state has ever been recorded for it on this edge.
+    // pending: tagged, but no verified state has ever been recorded for it on this edge.
     expect(pv.get("addition.bravo-claim-two")?.kind).toBe("pending");
-    // stale — a verified state exists but the tagged file's hash moved.
+    // stale: a verified state exists but the tagged file's hash moved.
     expect(pv.get("addition.charlie-claim-three")?.kind).toBe("stale");
-    // uncovered — no tag references it.
+    // uncovered: no tag references it.
     expect(pv.get("addition.delta-claim-four")?.kind).toBe("uncovered");
     // The (tbd) atom is tracked as a claim but receives no p↔v verdict at all.
     const claims = JSON.parse(runCli(["claims", "--json"], { cwd: repo }).stdout) as {
@@ -205,7 +205,7 @@ describe("Prescriptive ↔ Verificatory (§4.1)", () => {
     const id = "addition.addnumbers-returns-sum-two";
 
     // (a) test-side-only: only the tagged file moved. The claim's text still matches its verified
-    // state, and accept re-verifies it with no escalation — no judgement required.
+    // state, and accept re-verifies it with no escalation, since no judgement is required.
     const testSide = initRepo("tripact-pv-stale-test-", {
       "SPECS.md": SPECS,
       "docs/manual/using.md": MANUAL,
@@ -308,10 +308,10 @@ describe("Descriptive ↔ Verificatory (§4.2)", () => {
     expect(dv.get("adding-numbers")?.tags).toEqual([{ file: "tests/e2e/calc.spec.ts", line: 1 }]);
 
     // A configured sectionTagPattern REPLACES the default: `@guide:` links the section, while the
-    // default `@docs:` is not scanned at all on this layer — so it links nothing and is not an
+    // default `@docs:` is not scanned at all on this layer, so it links nothing and is not an
     // orphan either. The custom pattern must differ from the default for this to prove anything.
     // `@guide:` is written literally on purpose: this repo scans only `@specs:`/`@docs:`, so the
-    // literal is inert here, whereas a literal `@docs:` would be read as a real section tag of this
+    // literal is inert here, whereas a literal `@docs:` would be read as a section tag of this
     // repo's own docs layer and reported as an orphan.
     const custom = initRepo(
       "tripact-dv-custom-",
@@ -344,22 +344,22 @@ describe("Descriptive ↔ Verificatory (§4.2)", () => {
       "tests/e2e/calc.spec.ts": 'test("docs", () => {});\n',
     });
 
-    // uncovered — no section tag.
+    // uncovered: no section tag.
     expect(onEdge(check(repo), edge).get("adding-numbers")?.kind).toBe("uncovered");
 
-    // pending — tagged, never verified.
+    // pending: tagged, never verified.
     write(repo, {
       "tests/e2e/calc.spec.ts": `// ${docsTag("adding-numbers")}\ntest("docs", () => {});\n`,
     });
     commit(repo, "tag section");
     expect(onEdge(check(repo), edge).get("adding-numbers")?.kind).toBe("pending");
 
-    // covered — accept records the verified state.
+    // covered: accept records the verified state.
     accept(repo);
     commit(repo, "accept");
     expect(onEdge(check(repo), edge).get("adding-numbers")?.kind).toBe("covered");
 
-    // stale — ANY atom in the section changed since verification, including one no tag names.
+    // stale: ANY atom in the section changed since verification, including one no tag names.
     write(repo, {
       "docs/manual/using.md": MANUAL.replace(
         "Type a number in each input field",
@@ -369,14 +369,14 @@ describe("Descriptive ↔ Verificatory (§4.2)", () => {
     commit(repo, "edit an atom");
     const stale = check(repo);
     expect(onEdge(stale, edge).get("adding-numbers")?.kind).toBe("stale");
-    // The prescriptive edge is untouched by a descriptive edit — this is genuinely group-level.
+    // The prescriptive edge is untouched by a descriptive edit, so the verdict is group-level.
     expect(onEdge(stale, ["specs", "tests"]).get("addition.addnumbers-returns-sum-two")?.kind).toBe(
       "uncovered",
     );
 
     // Evaluated at group level: the only docs↔tests subject is the group slug, never an atom id.
     expect([...onEdge(stale, edge).keys()]).toEqual(["adding-numbers"]);
-    // Atoms are still tracked for identity — each carries its own id and inherits the group verdict
+    // Atoms are still tracked for identity: each carries its own id and inherits the group verdict
     // rather than being individually required to have a test.
     const listed = JSON.parse(runCli(["claims", "--json"], { cwd: repo }).stdout) as {
       claims: { id: string; layer: string; verdict?: string }[];

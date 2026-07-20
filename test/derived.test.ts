@@ -1,4 +1,4 @@
-// Derived outputs — declaration & generation (UAC §18.1) and freshness (§18.2). Derived outputs are
+// Derived outputs: declaration & generation (UAC §18.1) and freshness (§18.2). Derived outputs are
 // deterministically regenerable artefacts declared in tripact.yaml under `derived`; a generator is
 // either a reserved builtin NAME (implemented by a harness, not the kernel) or an arbitrary shell
 // command whose stdout becomes the file. `generate` writes them; `check` regenerates each in memory
@@ -103,8 +103,8 @@ describe("derived outputs — declaration & generation (§18.1)", () => {
     expect(byName["cli-reference"]).toMatchObject({ output: "CLI.md", generator: "cli-reference" });
   });
 
-  // The id predates the §18.1 split: adjudicating that reword reunited this claim's original
-  // identity with the surviving atom, so the tag stays `…kernel-reserves-builtin-names`.
+  // Claim ids track identity rather than text, so this tag stays `…kernel-reserves-builtin-names`
+  // even though the claim it anchors reads differently.
   // @specs:declaration-generation.kernel-reserves-builtin-names
   it("reserves the builtin generator names, and a reserved name with no registered implementation fails generation with a clear wiring error", () => {
     // The kernel reserves exactly these two names.
@@ -114,7 +114,7 @@ describe("derived outputs — declaration & generation (§18.1)", () => {
     expect(HOTLINK_MAP).toBe("hotlink-map");
 
     // `cli-reference` is the reserved-but-unregistered case: declaring it and asking to generate
-    // fails with a clear "not registered" wiring error and exit 2 — never a shell-command attempt.
+    // fails with a "not registered" wiring error and exit 2, never a shell-command attempt.
     const repo = derivedRepo({
       exclude: ["CLI.md"],
       derivedBlock: [
@@ -162,7 +162,7 @@ describe("derived outputs — declaration & generation (§18.1)", () => {
     );
 
     // hotlink-map is implemented by the kernel: generation succeeds and writes the rendered map,
-    // which means the renderer really is wired to the reserved name — not merely exported.
+    // which shows the renderer is wired to the reserved name rather than only exported.
     const ok = runCli(["generate", "map"], { cwd: repo });
     expect(ok.status, `generate map\n${ok.stderr}`).toBe(0);
     const map = JSON.parse(readFileSync(path.join(repo, "docs", "hotlink-map.json"), "utf8"));

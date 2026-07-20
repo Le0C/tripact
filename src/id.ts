@@ -10,7 +10,8 @@ const STOPWORDS = new Set([
 // ASCII assumption (UAC §3.2): `words` keeps only lowercased `[a-z0-9\s-]` and does not
 // transliterate. Text with no Latin word characters (a heading in another script) yields an empty
 // list, so `baseSlug` falls back to the generic "root"/"atom" parts and the disambiguation pass
-// relies on the self-derived suffix for uniqueness — deterministic, but the id carries no mnemonic.
+// relies on the self-derived suffix for uniqueness, which stays deterministic but leaves the id
+// with no mnemonic.
 // A future transliteration pass would lift this; the same assumption governs parser.ts `slugify`.
 function words(text: string): string[] {
   return text
@@ -41,16 +42,16 @@ interface Mintable {
  * (the ids already persisted in the sidecar). UAC §3.2:
  *
  * A base slug that is unique within the batch AND not already taken is kept **bare**. Any base that
- * collides — with another new atom in the batch, or with an existing id — makes **every** colliding
- * atom take a suffix derived from its OWN identity (`groupKey + norm`), mirroring parser.ts
+ * collides (with another new atom in the batch, or with an existing id) makes every colliding atom
+ * take a suffix derived from its OWN identity (`groupKey + norm`), mirroring parser.ts
  * `disambiguateSlugs`. Because the collision decision is a frequency count over the batch plus a
  * lookup in the pre-existing `taken` set (never a lookup of an id assigned earlier in this same
- * pass), an atom's id depends only on its own identity and the set of atoms present — never on the
+ * pass), an atom's id depends only on its own identity and the set of atoms present, never on the
  * order they are visited. Adding, removing, or reordering a colliding sibling leaves an
  * already-distinct atom's id untouched.
  *
- * The trailing numeric guard fires only for genuinely duplicate claims (byte-identical `norm` in the
- * same group), whose suffixes collide; any assignment among indistinguishable atoms is equivalent.
+ * The trailing numeric guard fires only for duplicate claims (byte-identical `norm` in the same
+ * group), whose suffixes collide; any assignment among indistinguishable atoms is equivalent.
  * Mutates each atom's `.id` and records it in `taken`.
  */
 export function assignIds(created: Mintable[], taken: Set<string>): void {

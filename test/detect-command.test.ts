@@ -1,5 +1,6 @@
-// `tripact detect` (UAC §2.3): reports which spec system(s) the repo matches by signature — read-only,
-// none/one/several(ambiguous) — so an agent or harness can drive `kind:` selection from the registry.
+// `tripact detect` (UAC §2.3): a read-only report of which spec system(s) the repo matches by
+// signature, either none, one, or several (ambiguous), so an agent or harness can drive `kind:`
+// selection from the registry.
 // @specs:spec-system-presets.tripact-detect-reports-read-only
 import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";

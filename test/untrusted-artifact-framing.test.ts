@@ -1,6 +1,6 @@
 // Untrusted-artifact framing (UAC §10.1, §10.2): the per-item brief and the repair/adjudicate skills
-// frame embedded claim/atom text as data to act on — never instructions to the agent — so a directive
-// injected into a spec claim cannot redirect the agent. Unit-tests the pure prompt/skill emitters.
+// frame embedded claim/atom text as data to act on, never as instructions to the agent, so a
+// directive injected into a spec claim cannot redirect it. Unit-tests the pure prompt/skill emitters.
 // @specs:task-emission.brief-frames-inlined-claim
 // @specs:repair-handoff.repair-skill-instructs-agent
 import { describe, expect, it } from "vitest";

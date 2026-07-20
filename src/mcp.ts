@@ -1,10 +1,10 @@
 // MCP stdio server. UAC §16.2. Loaded lazily by the `mcp-serve` command only, so no
-// other command ever touches the SDK. Stdio transport exclusively — no socket is
+// other command ever touches the SDK. Stdio transport exclusively: no socket is
 // opened and no network I/O happens (UAC Cross-Cutting: Determinism).
 //
 // Every read tool returns EXACTLY the JSON document the corresponding CLI `--json`
-// flag prints — same builders (toJsonReport, listClaims, deriveTasks), same
-// serialisation. `resolve` is always a write tool; `accept` is exposed only when the
+// flag prints, off the same builders (toJsonReport, listClaims, deriveTasks) and the
+// same serialisation. `resolve` is always a write tool; `accept` is exposed only when the
 // configured accept policy is `agents`, and is absent under `human` (UAC §16.2).
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
@@ -31,7 +31,7 @@ import { TRIPACT_VERSION } from "./version.js";
 /**
  * How the MCP server names itself in the initialize handshake. Defaults to tripact's own identity;
  * a harness embedding the kernel (e.g. a harness serving `mcp-serve`) passes its own name/version so
- * the server advertises under the harness the operator actually invoked.
+ * the server advertises under the harness the operator invoked.
  */
 export interface ServerIdentity {
   name?: string;

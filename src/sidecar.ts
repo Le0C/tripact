@@ -1,4 +1,4 @@
-// .tripact/claims.json — committed, stable-serialised. UAC §3.2, §8.2.
+// .tripact/claims.json: committed, stable-serialised. UAC §3.2, §8.2.
 
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -12,8 +12,8 @@ export interface VerifiedState {
 }
 
 /**
- * Total order over verified states for stable serialisation. A subject can now carry states from
- * several edges (one atom tagged on specs↔unit and specs↔e2e), so file alone is not a total order —
+ * Total order over verified states for stable serialisation. A subject can carry states from
+ * several edges (one atom tagged on specs↔unit and specs↔e2e), so file alone is not a total order:
  * two states can share a file across edges. Compare edge, then file, then targetFileHash so the
  * serialisation is byte-identical regardless of insertion order and never relies on sort stability.
  */
@@ -31,7 +31,7 @@ export interface SidecarEntry {
   layer: string;
   groupPath: string;
   groupKey: string;
-  /** Normalised text — needed to re-anchor future edits (UAC §3.3). */
+  /** Normalised text, needed to re-anchor future edits (UAC §3.3). */
   text: string;
   hash: string;
   firstSeen: string;
@@ -48,7 +48,7 @@ export interface SidecarGroup {
   layer: string;
   slug: string;
   groupPath: string;
-  /** Hash over the group's atom hashes — any atom edit changes it (UAC §4.2). */
+  /** Hash over the group's atom hashes, so any atom edit changes it (UAC §4.2). */
   hash: string;
   verified: VerifiedState[];
 }
@@ -57,7 +57,7 @@ export interface SidecarGroup {
  * The acknowledged backlog (UAC §3.2, §5.1): the uncovered claim ids and section slugs as
  * of the last accept. A subject present here is **backlog** (reported, never drift); one
  * absent is **new-uncovered** (drift). Absent or empty on an old sidecar means nothing is
- * acknowledged — the safe default, where every uncovered subject reads as new-uncovered.
+ * acknowledged, the safe default, where every uncovered subject reads as new-uncovered.
  */
 export interface AcknowledgedBacklog {
   claims: string[];
@@ -72,7 +72,7 @@ export interface Sidecar {
   /**
    * Fork-review question ids the operator has dismissed with `resolve --dismiss` (UAC §7.2).
    * A dismissed id is not re-emitted by `check` for the same dead/created pair (the id is
-   * deterministic in that pair). Absent when nothing has been dismissed — additive, sorted.
+   * deterministic in that pair). Absent when nothing has been dismissed; additive, sorted.
    */
   dismissedForks?: string[];
   /**
@@ -89,7 +89,7 @@ export interface ReconcileDismissal {
   claim: string;
   file: string;
   line: number;
-  /** contentHash(claimNorm + "\n" + testNorm) at dismissal — a change on either side re-proposes. */
+  /** contentHash(claimNorm + "\n" + testNorm) at dismissal; a change on either side re-proposes. */
   hash: string;
 }
 
@@ -117,7 +117,7 @@ export function loadSidecar(repoRoot: string): Sidecar {
   raw.claims ??= [];
   raw.groups ??= [];
   // Old sidecars predate the acknowledged backlog (UAC §3.2). Tolerate the missing field:
-  // an empty backlog makes every uncovered subject read as new-uncovered — the safe default.
+  // an empty backlog makes every uncovered subject read as new-uncovered, the safe default.
   raw.backlog ??= emptyBacklog();
   raw.backlog.claims ??= [];
   raw.backlog.sections ??= [];
@@ -187,7 +187,7 @@ export function saveSidecar(repoRoot: string, sidecar: Sidecar): void {
   writeFileSync(p, serializeSidecar(sidecar), "utf8");
 }
 
-/** Content hash of the serialised sidecar — the tripact-sync-id trailer value (UAC §8.1). */
+/** Content hash of the serialised sidecar: the tripact-sync-id trailer value (UAC §8.1). */
 export function sidecarContentHash(sidecar: Sidecar): string {
   return createHash("sha256").update(serializeSidecar(sidecar), "utf8").digest("hex").slice(0, 16);
 }

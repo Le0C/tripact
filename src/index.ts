@@ -1,4 +1,4 @@
-// tripact — the deterministic traceability kernel, as an importable library.
+// tripact - the deterministic traceability kernel, as an importable library.
 //
 // This barrel is the package's public entry (`import { analyze, toJsonReport, deriveTasks } from
 // "tripact"`). It re-exports the kernel modules: parsing, claim identity and re-anchoring, edge
@@ -7,7 +7,7 @@
 // MCP server are the binary surface and are not part of this barrel, except that buildServer /
 // serveMcp are exported so a foreign harness can embed the MCP server directly.
 //
-// The whole surface is deterministic and does no network I/O — that is what makes it embeddable.
+// The whole surface is deterministic and does no network I/O, which is what makes it embeddable.
 export * from "./anchor.js";
 export * from "./audit.js";
 export * from "./claims.js";

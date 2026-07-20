@@ -20,7 +20,7 @@ afterAll(() => {
 
 const SPEC = ["# S", "", "## 1. A", "", "- [ ] thing one happens", "- [ ] thing two happens", ""].join("\n");
 
-/** The layers/edges half of the config — identical with and without a codeLinks block. */
+/** The layers/edges half of the config, identical with and without a codeLinks block. */
 const BASE_CONFIG = [
   "schemaVersion: 1",
   "layers:",
@@ -76,7 +76,7 @@ describe("code-link configuration (§20.1)", () => {
   it("declares codeLinks outside layers and edges, so the code file set never gets a coverage verdict", () => {
     const dir = repo({ codeLinks: CODE_LINKS, code: { "x.ts": LINKED_CODE + GHOST_CODE } });
 
-    // Config shape: codeLinks is its own top-level block — never a layer, never an edge endpoint.
+    // Config shape: codeLinks is its own top-level block, never a layer or an edge endpoint.
     const cfg = loadConfig(dir);
     expect(cfg.codeLinks).toEqual({ paths: ["src/**/*.ts"] });
     expect(Object.keys(cfg.layers).sort()).toEqual(["specs", "tests"]);
@@ -180,7 +180,7 @@ describe("scanning code links (§20.2)", () => {
   // @specs:scanning-code-links.hotlinks---json-emits-machine-readable
   it("emits a schemaVersion'd map on --json and exits 0 even while the repo is in drift", () => {
     const dir = repo({ codeLinks: CODE_LINKS, code: { "x.ts": LINKED_CODE } });
-    expect(runCli(["check"], { cwd: dir }).status).toBe(1); // the repo really is drifting
+    expect(runCli(["check"], { cwd: dir }).status).toBe(1); // the repo is in drift
 
     const json = runCli(["hotlinks", "--json"], { cwd: dir });
     expect(json.status).toBe(0);

@@ -36,7 +36,7 @@ describe("kind expansion", () => {
     expect(cfg.layers.spec?.paths).toEqual(["specs/*/spec.md"]);
     expect(cfg.layers.tests?.role).toBe("verificatory");
     expect(cfg.edges).toEqual([["spec", "tests"]]);
-    expect(cfg.exclude).toContain(".specify/**"); // scaffolding excluded, not read as the spec
+    expect(cfg.exclude).toContain(".specify/**"); // scaffolding kept out of the spec layer
   });
 
   it("clears the two-layer floor for a kind-only config (expansion before validation)", () => {

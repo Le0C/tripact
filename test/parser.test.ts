@@ -52,11 +52,11 @@ describe("parseMarkdownLayer", () => {
 
   it("plain bullets are atoms; nested bullets and fenced code are not", () => {
     const { atoms } = parseMarkdownLayer("uac", "UAC.md", DOC);
-    // plain bullet is now an atom by design (§3.1)
+    // a plain bullet is an atom by design (§3.1)
     expect(atoms.some((a) => a.raw === "**addNumbers** returns the sum of two numbers")).toBe(true);
     // indented/nested list items never become atoms
     expect(atoms.some((a) => a.raw.includes("nested bullet"))).toBe(false);
-    // code-fence exclusion still holds
+    // fenced code is excluded
     expect(atoms.some((a) => a.raw.includes("code fence"))).toBe(false);
   });
 
@@ -250,8 +250,8 @@ describe("parseSdocLayer", () => {
     // SDOC yields the requirement statement; the markdown parser would find no `- ` atoms in SDOC.
     expect(sdoc.atoms.map((a) => a.raw)).toContain("StrictDoc shall be based on a data model.");
     expect(md.atoms.length).toBeGreaterThan(0);
-    // The `- TAG:`/`- TITLE:` GRAMMAR bullets would become atoms under the markdown parser — proving
-    // the extension dispatch matters: markdown-parsing SDOC is exactly the grammar-noise bug.
+    // Under the markdown parser the `- TAG:`/`- TITLE:` GRAMMAR bullets become atoms, which is why
+    // the parser dispatches on the file extension.
     const asMarkdown = parseMarkdownLayer("spec", "reqs.sdoc", SDOC);
     expect(asMarkdown.atoms.some((a) => a.raw.startsWith("TAG:") || a.raw.startsWith("TITLE:"))).toBe(true);
     expect(sdoc.atoms.some((a) => a.raw.startsWith("TAG:") || a.raw.startsWith("TITLE:"))).toBe(false);

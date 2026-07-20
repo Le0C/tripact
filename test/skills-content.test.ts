@@ -1,11 +1,11 @@
-// The *content* of four emitted agent skills (UAC §1.2): `tripact-detect` (layer classification +
+// The content of four emitted agent skills (UAC §1.2): `tripact-detect` (layer classification +
 // tripact.yaml scaffolding, the judgement task the kernel deliberately does not automate),
 // `tripact-sync` (the stage-by-stage host run-book that honours the accept policy at the final gate),
 // `tripact-reconcile` (working the propose-only queue that links claims to existing tests, §10.3),
 // and `tripact-hotlink-decoration` (writing navigational spec back-links into product code, §20.3).
 // test/skills.test.ts covers emission mechanics (which files, determinism, --force); this file covers
-// what the documents actually instruct an agent to do — pure generator assertions plus the on-disk
-// files a real `tripact skills` run produces.
+// what the documents instruct an agent to do: pure generator assertions plus the on-disk files a
+// `tripact skills` run produces.
 import { readFileSync, rmSync } from "node:fs";
 import path from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
@@ -84,7 +84,7 @@ describe("tripact-sync skill content (§1.2)", () => {
     expect(content).toContain("3. **Repair.** Run `tripact tasks --json`");
     expect(content).toContain("4. **Validate.**");
     expect(content).toContain("5. **Accept.**");
-    // Stage ordering is explicit, not incidental: adjudication precedes repair.
+    // Stage ordering is explicit: adjudication precedes repair.
     expect(content.indexOf("2. **Adjudicate first.**")).toBeLessThan(content.indexOf("3. **Repair.**"));
     expect(content.indexOf("4. **Validate.**")).toBeLessThan(content.indexOf("5. **Accept.**"));
     expect(content).toContain("Report per stage what you did.");
@@ -94,7 +94,7 @@ describe("tripact-sync skill content (§1.2)", () => {
   it("honours the configured accept policy at the final gate", () => {
     const human = loopSkill({ policy: "human" }).content;
     const agents = loopSkill({ policy: "agents" }).content;
-    // The final stage — and only the final stage — differs by policy.
+    // Only the final stage differs by policy.
     expect(human).toContain("Under the configured `human` policy, stop before accept");
     expect(human).toContain("leave baselining to a person");
     expect(human).toContain("Never run `tripact accept`");
@@ -127,7 +127,7 @@ describe("tripact-reconcile skill content (§1.2)", () => {
     expect(content).toContain("propose-only queue");
     // …reads the test rather than trusting the score…
     expect(content).toContain("open the test and read what it actually asserts - the score is a hint,\n   not proof");
-    // …tags only a genuine match, and dismisses the rest so it is not re-proposed.
+    // …tags only a confirmed match, and dismisses the rest so it is not re-proposed.
     expect(content).toContain("Never tag a test that does not\n     assert the claim");
     expect(content).toContain("reconcile --dismiss <claimId> <file> <line>");
     expect(content).toContain("re-proposed until either side's text changes");
@@ -156,13 +156,13 @@ describe("tripact-hotlink-decoration skill content (§1.2)", () => {
     expect(name).toBe("tripact-hotlink-decoration");
     expect(content).toContain("# Decorate code with spec hotlinks");
     // The decoration itself: the tag in the codeLinks form, plus a back-link to the claim and
-    // forward links to its covering tests — placed in the implementing function's docstring.
+    // forward links to its covering tests, all placed in the implementing function's docstring.
     expect(content).toContain("docstring of each function that implements a claim");
     expect(content).toContain("`codeLinks.tagPattern` form");
     expect(content).toContain("a back-link to the claim's spec FILE");
     expect(content).toContain("forward links to its covering test files");
-    // It teaches the one link form that both renders and navigates from a hover — a markdown link
-    // wrapping a {@link} tag — and warns off the fragment forms that render but refuse to navigate.
+    // It teaches the one link form that both renders and navigates from a hover (a markdown link
+    // wrapping a {@link} tag) and warns off the fragment forms that render but refuse to navigate.
     expect(content).toContain("markdown link whose target is a `{@link}` tag");
     expect(content).toContain("Link to the file, never to a line or a heading");
     expect(content).toContain("microsoft/TypeScript#47718");

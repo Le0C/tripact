@@ -1,7 +1,7 @@
 // Navigational code↔spec hotlinks (UAC §20). Scans the configured `codeLinks` file set for claim-id
 // tags placed in product-code docstrings and reports navigational links (claim ↔ code file:line) plus
-// orphan code tags. This is navigation, not verification: it produces no coverage verdict and never
-// gates. Also renders the deterministic `hotlink-map` derived output (§20.3).
+// orphan code tags. Navigational only: it produces no coverage verdict and never gates. Also
+// renders the deterministic `hotlink-map` derived output (§20.3).
 
 import { DEFAULT_TAG_PATTERN } from "./config.js";
 import { HOTLINKS_SCHEMA_VERSION } from "./contract.js";
