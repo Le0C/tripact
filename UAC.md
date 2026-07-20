@@ -64,7 +64,9 @@ skill emission below.
 - Preset expansion is user-first: a layer, an edge list, or an exclude the config declares explicitly is kept unchanged, and the preset supplies only the layers, edges, and excludes the config omits
 - Preset expansion runs before structural validation, so a `kind`-only config clears the two-layer floor through the preset's own layers
 - An unknown `kind` fails validation with exit code 2 in a message naming the accepted spec systems
-- The same preset registry backs detection: each spec system declares signature globs that fingerprint it on disk, and a repository is matched to the first preset whose signatures are present
+- The same preset registry backs detection: each spec system declares signature globs that fingerprint it on disk from file presence alone, never from file contents
+- Detection returns every spec system whose signatures are present, not only the first: a repository matching more than one spec system is ambiguous, and its candidates are surfaced for a person or agent to choose rather than resolved silently by registry order
+- A repository is auto-assigned a single `kind` only when exactly one spec system matches; when none or several match it is left unassigned, so an ambiguous layout is never silently guessed
 
 ---
 

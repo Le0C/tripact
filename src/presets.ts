@@ -144,15 +144,25 @@ export function applyPreset(cfg: Config): Config {
 }
 
 /**
- * Fingerprint the repo against every known spec system (UAC §2.3): return the `kind` whose signature
- * globs match on disk, or null. Order is registry order; the first match wins. Intended for detection
- * surfaces (the tripact-detect skill, harness `init`) — expansion itself never touches disk.
+ * Every spec system whose signature globs match on disk (UAC §2.3), in registry order. Matching is by
+ * file presence alone — never file contents. A repository matching more than one system is AMBIGUOUS;
+ * this returns all of them so a caller (the tripact-detect skill, a harness `init`) can present the
+ * candidates rather than silently pick one. Expansion itself never touches disk.
  */
-export function detectSpecSystem(repoRoot: string): string | null {
+export function detectSpecSystems(repoRoot: string): string[] {
   const anyMatch = (globs: string[]) =>
     globs.some((g) => globSync(g, { cwd: repoRoot }).some((f) => !String(f).split(path.sep).join("/").includes("node_modules")));
-  for (const [name, preset] of Object.entries(SPEC_SYSTEM_PRESETS)) {
-    if (anyMatch(preset.signature)) return name;
-  }
-  return null;
+  return Object.entries(SPEC_SYSTEM_PRESETS)
+    .filter(([, preset]) => anyMatch(preset.signature))
+    .map(([name]) => name);
+}
+
+/**
+ * The single unambiguous spec system for a repository (UAC §2.3), or null when zero or several match —
+ * so an ambiguous layout is never auto-assigned a preset ("forked, never guessed"). Use
+ * `detectSpecSystems` when you need the full candidate set to adjudicate an ambiguous repo.
+ */
+export function detectSpecSystem(repoRoot: string): string | null {
+  const matches = detectSpecSystems(repoRoot);
+  return matches.length === 1 ? (matches[0] as string) : null;
 }
