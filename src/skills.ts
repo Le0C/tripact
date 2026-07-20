@@ -369,6 +369,15 @@ call, so it is your job, not a fixed heuristic. Propose the config, confirm with
 
 ## Steps
 
+0. **Check for a known spec system first.** If the repo uses a recognised layout, prefer a
+   one-line \`kind:\` config over hand-declaring globs - the kernel expands it into the right layers,
+   edges, and excludes (and you can still override any of them):
+   - **spec-kit** - a \`.specify/\` directory and product specs at \`specs/<feature>/spec.md\` → \`kind: spec-kit\`
+     (the \`.specify/\` scaffolding is auto-excluded, never read as the spec).
+   - **openspec** - \`openspec/specs/**/spec.md\` (with \`openspec/changes/\` deltas auto-excluded) → \`kind: openspec\`.
+   - **strictdoc** - StrictDoc \`.sdoc\` requirement files (parsed natively, not as markdown) → \`kind: strictdoc\`.
+   When one matches, the whole config can be just \`schemaVersion: 1\` + \`kind: <system>\`; add a tests
+   layer / edges only if the preset's defaults do not fit. If none matches, hand-declare layers below.
 1. **Survey the repository.** Look for each role - do not assume conventional paths:
    - **prescriptive** (the source of truth): a product spec, acceptance criteria, PRD, or
      requirements checklist. Common names: \`SPECS.md\`, \`UAC.md\`, \`REQUIREMENTS.md\`, \`docs/spec/**\`.

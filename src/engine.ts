@@ -13,7 +13,7 @@ import { escalationId } from "./escalation.js";
 import { matchesGlob } from "./glob.js";
 import { changedPathsSince, findSyncPoint, headSha, type SyncPoint } from "./git.js";
 import { assignIds } from "./id.js";
-import { contentHash, disambiguateSlugs, parseMarkdownLayer } from "./parser.js";
+import { contentHash, disambiguateSlugs, parseLayerFile } from "./parser.js";
 import {
   loadSidecar,
   type Sidecar,
@@ -95,7 +95,7 @@ export function analyze(repoRoot: string, opts: { skipDerived?: boolean } = {}):
     const groups: Group[] = [];
     if (lc.role !== "verificatory") {
       for (const [file, content] of files) {
-        const parsed = parseMarkdownLayer(name, file, content);
+        const parsed = parseLayerFile(name, file, content);
         atoms.push(...parsed.atoms);
         groups.push(...parsed.groups);
       }
