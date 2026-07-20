@@ -8,9 +8,10 @@ layers:
   # Descriptive = documentation of behaviour a test could walk. Deliberately NOT `docs/**/*.md`:
   # that swept in planning and architecture prose (the feedback roadmap, the contract's
   # compatibility policy), whose sections are not procedures, so a docs↔tests verdict on them is
-  # meaningless. README.md is NOT a source here either — it is a DERIVED artifact (generated),
-  # so tracking it as a docs input is self-ingest: its regenerated sections churn as spurious
-  # docs↔tests drift. `docs/manual/` is declared ahead of having content — the on-ramp for a real manual.
+  # meaningless. README.md is hand-authored — not derived, and this repo declares no `derived`
+  # outputs at all — but it is still not a source here: its sections are orientation prose for a
+  # newcomer, not procedures a test could walk, so a docs↔tests verdict on them is meaningless for
+  # the same reason. `docs/manual/` is declared ahead of having content — the on-ramp for a real manual.
   docs:
     role: descriptive
     paths:

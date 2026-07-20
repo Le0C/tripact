@@ -1,4 +1,7 @@
-# tripact
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/tripact-lockup-dark.svg">
+  <img src="docs/assets/tripact-lockup.svg" alt="tripact" width="340">
+</picture>
 
 **tripact** is a deterministic traceability engine that helps keep your spec, docs and tests in
 sync. It is a three-way pact between your product specification, your user documentation, and your

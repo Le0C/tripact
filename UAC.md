@@ -249,11 +249,12 @@ Section §8.5 (`commit`) is a harness concern: the kernel stops at `accept` and 
 
 ## 9. Dogfooding
 
-This repository's own `tripact.yaml` declares `UAC.md` as its prescriptive layer, `README.md` and
-`docs/` as its descriptive layer, and `test/` as its verificatory layer, checking a spec↔tests edge
-and a docs↔tests edge. `tripact check` runs level on the repository, and the kernel's own claims are
-tagged by the tests under `test/`. This section carries no claims - it records the setup, not a
-requirement.
+This repository's own `tripact.yaml` declares `UAC.md` as its prescriptive layer, `docs/manual/` as
+its descriptive layer, and `test/` as its verificatory layer, checking a spec↔tests edge and a
+docs↔tests edge. `README.md` is hand-authored and deliberately outside the descriptive layer: its
+sections are orientation prose for a newcomer, not procedures a test could walk. `tripact check` runs
+level on the repository, and the kernel's own claims are tagged by the tests under `test/`. This
+section carries no claims - it records the setup, not a requirement.
 
 ---
 

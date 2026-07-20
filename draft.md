@@ -14,20 +14,10 @@ With tripact, you (or your agents) can:
 - Generate an ordered task queue based on new/changed specs
 - Propose links between existing specs + tests
 
-My goal with tripact is twofold: 1) to make tracing code changes simple and cheap, for you or your agents. 2) to give you a reliable way to enforce product specifcations, giving you or your agents less room for error or omission.
+My goal with tripact is twofold: 
+- 1) to make tracing code changes simple and cheap, for you or your agents. 
+- 2) create a reliable method for enforcing product specifcations, giving you or your agents less room for error or omission.
 
 If you are shipping faster with AI, then eventually something might break or you might get asked why something was built & when it was tested. Tripact gives you a way to answer those questions decisively.
 
 Check it out here:
-
----
-
-Today I am launching **tripact** (github), which is a traceability engine for spec driven development. It ships a CLI tool, and it does a few things:
-
-- Ties together your specs, tests & documentation into claims with stable identifiers that survive reformatting or rewording
-- Escalates ambiguous claims to a task queue for intelligent evaluation
-- Generates ordered task queues when specs are added or changed
-
-Tripact is a plain old program, i.e. it doesn't use any LLM under the hood. It is designed to be usable by agents, in a harness, in a loop or in a software factory (if you've got the token budget!).
-
-It does this by writing output in JSON, having stable exit codes (0=level, 1=drift, 2=error) and emitting skill files for specific tasks in the lifecycle.
