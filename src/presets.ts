@@ -83,6 +83,21 @@ export const SPEC_SYSTEM_PRESETS: Record<string, SpecSystemPreset> = {
     edges: [["spec", "tests"]],
     exclude: [],
   },
+  // Cursor spec-driven flow: feature specs live under `.cursor/specs/` as arbitrarily-named markdown
+  // (`## Why / What / Constraints`, `### Must / Must Not` bullets). The fixed-name `_template.md`
+  // (placeholder scaffolding) and `tasks.md` (the implementation plan, not intent) are excluded, the
+  // same way the kiro preset keeps only `requirements.md` — leaving the variable-named feature specs.
+  cursor: {
+    name: "cursor",
+    description: "Cursor spec-driven — feature specs under .cursor/specs/*.md (template + tasks excluded)",
+    signature: [".cursor/specs/**/*.md"],
+    layers: {
+      spec: { role: "prescriptive", paths: [".cursor/specs/**/*.md"] },
+      tests: { role: "verificatory", paths: [...COMMON_TEST_GLOBS] },
+    },
+    edges: [["spec", "tests"]],
+    exclude: [".cursor/specs/**/_template.md", ".cursor/specs/**/tasks.md"],
+  },
   // StrictDoc: requirements are `.sdoc` files (parsed by the SDOC parser, not markdown). A generic
   // preset can't know a repo's spec-vs-manual filename convention, so it declares all `.sdoc` as the
   // prescriptive layer; refine by hand (split a `manual` layer, add a docs/**/*.md descriptive layer)

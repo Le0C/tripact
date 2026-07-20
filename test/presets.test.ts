@@ -100,8 +100,25 @@ describe("detectSpecSystem", () => {
     expect(detectSpecSystem(speckit)).toBe("spec-kit"); // nested spec.md + .specify, not flat requirements.md
   });
 
+  it("fingerprints cursor by feature specs under .cursor/specs/", () => {
+    const d = repo({ ".cursor/specs/my-feature.md": "# Feature", ".cursor/specs/_template.md": "# T" });
+    expect(detectSpecSystem(d)).toBe("cursor");
+  });
+
   it("only advertises presets that are actually registered", () => {
-    expect(Object.keys(SPEC_SYSTEM_PRESETS).sort()).toEqual(["kiro", "openspec", "spec-kit", "strictdoc"]);
+    expect(Object.keys(SPEC_SYSTEM_PRESETS).sort()).toEqual(["cursor", "kiro", "openspec", "spec-kit", "strictdoc"]);
+  });
+});
+
+describe("cursor preset expansion", () => {
+  it("expands kind: cursor into a .cursor/specs prescriptive layer, excluding template + tasks", () => {
+    const d = repo({ "tripact.yaml": "schemaVersion: 1\nkind: cursor\n" });
+    const cfg = loadConfig(d);
+    expect(cfg.layers.spec?.role).toBe("prescriptive");
+    expect(cfg.layers.spec?.paths).toEqual([".cursor/specs/**/*.md"]);
+    expect(cfg.exclude).toContain(".cursor/specs/**/_template.md");
+    expect(cfg.exclude).toContain(".cursor/specs/**/tasks.md");
+    expect(cfg.edges).toEqual([["spec", "tests"]]);
   });
 });
 
