@@ -60,7 +60,7 @@ skill emission below.
 
 ### 2.3 Spec-system presets
 
-- Config accepts an optional top-level `kind` naming a known spec system, one of `spec-kit`, `openspec`, or `strictdoc`, expanded by the kernel into layers, edges, and excludes so a minimal config can declare only `schemaVersion` and `kind`
+- Config accepts an optional top-level `kind` naming a known spec system, one of `spec-kit`, `openspec`, `strictdoc`, or `kiro`, expanded by the kernel into layers, edges, and excludes so a minimal config can declare only `schemaVersion` and `kind`
 - Preset expansion is user-first: a layer, an edge list, or an exclude the config declares explicitly is kept unchanged, and the preset supplies only the layers, edges, and excludes the config omits
 - Preset expansion runs before structural validation, so a `kind`-only config clears the two-layer floor through the preset's own layers
 - An unknown `kind` fails validation with exit code 2 in a message naming the accepted spec systems
@@ -73,6 +73,7 @@ skill emission below.
 ### 3.1 Markdown parsing
 
 - Prescriptive and descriptive layer files parse into claim **groups** (one per heading, keyed by the full heading path) and claim **atoms** (one per `- ` list item under a heading; legacy `- [ ]` / `- [x]` checkbox items parse identically, their marker ignored)
+- A column-0 ordered list item (`1.` or `1)`) is an atom on the same terms as a `- ` bullet, so EARS/Kiro-style numbered acceptance criteria atomise; the ordered marker is not part of the atom text, so renumbering an item leaves its content hash unchanged
 - Prose paragraphs, code blocks, blockquotes, and nested (indented) list items are not atoms and never receive identities
 - Atom normalisation lowercases, collapses whitespace, and strips any checkbox marker and trailing punctuation before hashing - reformatting a line without rewording it, including converting checkbox syntax to a plain bullet, does not change its content hash
 - A heading marked `(TBD)` parses normally; its atoms are tracked in the sidecar but excluded from edge coverage verdicts (§4.1)

@@ -90,7 +90,28 @@ describe("detectSpecSystem", () => {
     expect(detectSpecSystem(d)).toBeNull();
   });
 
+  it("fingerprints kiro by a flat specs/requirements.md (no .specify, no specs/*/spec.md)", () => {
+    const d = repo({ "specs/requirements.md": "# Requirements", "specs/design.md": "# Design" });
+    expect(detectSpecSystem(d)).toBe("kiro");
+  });
+
+  it("does not confuse kiro with spec-kit (spec-kit's specs/*/spec.md + .specify win)", () => {
+    const speckit = repo({ ".specify/x.md": "s", "specs/001-x/spec.md": "# s" });
+    expect(detectSpecSystem(speckit)).toBe("spec-kit"); // nested spec.md + .specify, not flat requirements.md
+  });
+
   it("only advertises presets that are actually registered", () => {
-    expect(Object.keys(SPEC_SYSTEM_PRESETS).sort()).toEqual(["openspec", "spec-kit", "strictdoc"]);
+    expect(Object.keys(SPEC_SYSTEM_PRESETS).sort()).toEqual(["kiro", "openspec", "spec-kit", "strictdoc"]);
+  });
+});
+
+describe("kiro preset expansion", () => {
+  it("expands kind: kiro into a prescriptive specs/requirements.md layer", () => {
+    const d = repo({ "tripact.yaml": "schemaVersion: 1\nkind: kiro\n" });
+    const cfg = loadConfig(d);
+    expect(cfg.layers.spec?.role).toBe("prescriptive");
+    expect(cfg.layers.spec?.paths).toEqual(["specs/requirements.md"]);
+    expect(cfg.layers.tests?.role).toBe("verificatory");
+    expect(cfg.edges).toEqual([["spec", "tests"]]);
   });
 });

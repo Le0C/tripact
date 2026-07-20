@@ -68,6 +68,21 @@ export const SPEC_SYSTEM_PRESETS: Record<string, SpecSystemPreset> = {
     edges: [["spec", "tests"]],
     exclude: ["openspec/changes/**"],
   },
+  // Kiro (AWS Kiro spec-driven flow): a flat spec triplet under `specs/` — `requirements.md`
+  // (EARS acceptance criteria as numbered `1. THE … SHALL …` items), `design.md`, `tasks.md`. No
+  // `.specify/` and no `specs/*/spec.md`, so it is distinct from spec-kit. The prescriptive layer is
+  // the acceptance criteria in `requirements.md` (design/tasks are planning artefacts, not intent).
+  kiro: {
+    name: "kiro",
+    description: "Kiro — flat specs/requirements.md (EARS numbered acceptance criteria), design.md, tasks.md",
+    signature: ["specs/requirements.md"],
+    layers: {
+      spec: { role: "prescriptive", paths: ["specs/requirements.md"] },
+      tests: { role: "verificatory", paths: [...COMMON_TEST_GLOBS] },
+    },
+    edges: [["spec", "tests"]],
+    exclude: [],
+  },
   // StrictDoc: requirements are `.sdoc` files (parsed by the SDOC parser, not markdown). A generic
   // preset can't know a repo's spec-vs-manual filename convention, so it declares all `.sdoc` as the
   // prescriptive layer; refine by hand (split a `manual` layer, add a docs/**/*.md descriptive layer)
