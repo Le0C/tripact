@@ -8,9 +8,10 @@ own - a consuming harness does that.
 This document specifies the kernel's own behaviour. Section numbers are reserved so that a
 `(UAC §N)` citation resolves to the same requirement whether it is read here or in a driving
 harness's own specification. Concerns that belong to a driving harness rather than the kernel are out of scope here and carry
-no claims. **§1.1 Project initialisation** is one: tripact ships no `init` command, layer detection
-is emitted as the `tripact-detect` skill (§1.2), and creating the config, sidecar, and skills at
-first run is a harness responsibility. **§8.5 commit, §15 bootstrap, §17 one-invocation sync, and
+no claims. **§1.1 Project initialisation** is one: tripact ships no `init` command; spec-system
+fingerprinting is available read-only as `tripact detect` (§2.3), but layer classification is a
+judgement task emitted as the `tripact-detect` skill (§1.2), and driving that skill at first run is a
+harness responsibility. **§8.5 commit, §15 bootstrap, §17 one-invocation sync, and
 §19 doctor** are likewise harness commands - committing the sidecar, bootstrapping missing layers,
 executing a repair run-book, and environment health-checks - so the kernel stops at `accept` and
 prints the trailer for the harness to commit. **§11–§14** (LLM provider adapters, CI packaging,
@@ -26,7 +27,7 @@ skill emission below.
 ### 1.2 Agent skill emission
 
 - `tripact skills` writes six agent skills as `.claude/skills/<name>/SKILL.md` files - `tripact-detect`, `tripact-adjudicate`, `tripact-reconcile`, `tripact-repair`, `tripact-sync`, and `tripact-hotlink-decoration`
-- The `tripact-detect` skill teaches a coding agent to classify a repository's files into prescriptive, descriptive, and verificatory layers and scaffold a `tripact.yaml`, since layer detection is a judgement task the kernel does not automate
+- The `tripact-detect` skill drives repository initialisation end to end: it runs `tripact detect` to pick a spec-system `kind:` when one matches, classifies files into prescriptive, descriptive, and verificatory layers when none does, writes `tripact.yaml`, emits the working skills, and verifies with `tripact check` - layer classification stays a judgement task the kernel does not automate
 - The `tripact-adjudicate` skill instructs an agent to read `.tripact/escalations.json`, answer each question, and apply the answers with `tripact resolve` (§7.2)
 - The `tripact-reconcile` skill instructs an agent to work the propose-only reconcile queue (§10.3): read what each candidate test actually asserts, tag only one that genuinely asserts the claim, and dismiss the rest - the kernel proposes, and never tags on the agent's behalf
 - The `tripact-repair` skill instructs an agent to consume `tripact tasks --json`, apply the edits, and validate before reporting (§10.2)
@@ -67,6 +68,7 @@ skill emission below.
 - The same preset registry backs detection: each spec system declares signature globs that fingerprint it on disk from file presence alone, never from file contents
 - Detection returns every spec system whose signatures are present, not only the first: a repository matching more than one spec system is ambiguous, and its candidates are surfaced for a person or agent to choose rather than resolved silently by registry order
 - A repository is auto-assigned a single `kind` only when exactly one spec system matches; when none or several match it is left unassigned, so an ambiguous layout is never silently guessed
+- `tripact detect` reports, read-only, which spec system(s) the repository matches by signature - none, one, or several (ambiguous) - reading no file contents and writing nothing, so an agent or harness can drive `kind:` selection from the registry; `--json` emits the same result with a `schemaVersion`
 
 ---
 

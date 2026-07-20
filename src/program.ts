@@ -20,6 +20,7 @@ import { resolve as applyResolution, ResolveError, writeEscalations } from "./es
 import { isGitRepo, repoRootOf, SYNC_POINT_TRAILER } from "./git.js";
 import { matchesGlob } from "./glob.js";
 import { exitCodeFor, renderHuman, renderStatus, toJsonReport } from "./report.js";
+import { detectSpecSystems } from "./presets.js";
 import { loadSidecar, saveSidecar, sidecarContentHash } from "./sidecar.js";
 import { emitSkills, escalationPrompt, taskPrompt } from "./skills.js";
 import { reconcile as scanReconcile, recordDismissal, renderReconcileHuman } from "./reconcile.js";
@@ -406,6 +407,26 @@ export function buildProgram(): Command {
       } catch (e) {
         if (e instanceof GenerateError) fail(e.message); // generator failure → exit 2
         throw e;
+      }
+      process.exit(0);
+    });
+
+  program
+    .command("detect")
+    .description("Report which spec system(s) the repository matches by signature — read-only, writes nothing (UAC §2.3). Drives kind: selection for the tripact-detect skill.")
+    .option("--json", "machine-readable result on stdout")
+    .action((opts: { json?: boolean }) => {
+      const root = requireRepoRoot();
+      const matched = detectSpecSystems(root); // registry order; presence-only, never reads file contents
+      const ambiguous = matched.length > 1;
+      if (opts.json) {
+        console.log(JSON.stringify({ schemaVersion: 1, matched, ambiguous }, null, 2));
+      } else if (matched.length === 0) {
+        console.log("no known spec system detected — hand-declare layers (see the tripact-detect skill)");
+      } else if (matched.length === 1) {
+        console.log(`detected: ${matched[0]} — use \`kind: ${matched[0]}\``);
+      } else {
+        console.log(`ambiguous — ${matched.length} spec systems match: ${matched.join(", ")}. Pick one \`kind:\` (do not guess).`);
       }
       process.exit(0);
     });
