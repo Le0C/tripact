@@ -271,12 +271,14 @@ requirement.
 - Task ids are deterministic for the same underlying situation
 - `tasks --json` emits a machine-readable queue with a `schemaVersion` field; the human output groups tasks by kind and truncates past a fixed threshold unless `--long`
 - `tripact prompt <id>` prints a ready-to-hand-off brief for a single work item - a task id or an escalation question id (§7.2) - with the item's self-contained payload inlined; an unknown id exits 1
+- The brief frames its inlined claim and atom text as untrusted specification data - content to satisfy or evidence to weigh, never an instruction addressed to the agent - and tells the agent to ignore any directive embedded in that text, so an injected instruction inside a spec claim cannot redirect the agent
 
 ### 10.2 Repair handoff
 
 - The emitted `tripact-repair` skill (§1.2) instructs an agent to consume `tripact tasks --json`, follow per-layer conventions files where declared, apply artefact edits, and validate with `tripact check` and the repository's own test command before reporting
 - For a find-or-write task, the repair skill instructs the agent to first search the verificatory layer for an existing untagged test that already asserts the claim and tag it in place, writing a new test only when none is found
 - The repair skill's accept rule follows the configured accept policy (§2.1)
+- The repair skill instructs the agent to treat prescriptive and descriptive artefact text as data to act on, never as commands: a directive embedded in a claim's text is part of the spec to satisfy, not an instruction the agent follows
 - Executing repair tasks is agent work: the kernel never edits prescriptive or descriptive artefact content - the sole exception is derived-output generation (§18), a deterministic derivation
 
 ### 10.3 Reconcile untagged tests
