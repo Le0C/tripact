@@ -192,6 +192,35 @@ describe("tripact tasks — emission (UAC §10.1)", () => {
     expect(payload.sections).toHaveLength(1);
   });
 
+  // @specs:task-emission.every-emitted-task-payload
+  it("marks spec/atom text in every task payload with a source: spec-atom provenance marker", () => {
+    const repo = track(fullRepo("tripact-tasks-source-"));
+    // write-tests: each claim entry carries the marker
+    const wt = tasksJson(repo).tasks.filter((t) => t.kind === "write-tests");
+    expect(wt.length).toBeGreaterThan(0);
+    for (const t of wt) for (const c of t.payload.claims as Array<{ source: string }>) expect(c.source).toBe("spec-atom");
+
+    // reconcile-layers: each prescriptive claim entry carries the marker
+    const recon = JSON.parse(runCli(["tasks", "--reconcile", "specs:docs", "--json"], { cwd: repo }).stdout)
+      .tasks.filter((t: { kind: string }) => t.kind === "reconcile-layers");
+    for (const c of recon[0].payload.claims as Array<{ source: string }>) expect(c.source).toBe("spec-atom");
+
+    // reconcile-stale: the payload-level marker tags its claimText
+    const reworded = committedRepo("tripact-tasks-source-stale-");
+    expect(runCli(["accept", "--yes"], { cwd: reworded }).status).toBe(0);
+    git(reworded, ["add", "-A"]);
+    git(reworded, ["commit", "-m", "accept"]);
+    const spec = readFileSync(path.join(reworded, "SPECS.md"), "utf8").replace(
+      "addNumbers returns the sum of two integer inputs",
+      "addNumbers returns the sum of two integer inputs exactly",
+    );
+    writeFileSync(path.join(reworded, "SPECS.md"), spec);
+    git(reworded, ["add", "-A"]);
+    git(reworded, ["commit", "-m", "reword"]);
+    const rs = tasksJson(reworded).tasks.filter((t) => t.kind === "reconcile-stale");
+    expect(rs[0].payload.source).toBe("spec-atom");
+  });
+
   // @specs:task-emission.task-ids-deterministic-same
   it("emits deterministic task ids for the same underlying situation", () => {
     const repo = track(fullRepo("tripact-tasks-determ-"));
