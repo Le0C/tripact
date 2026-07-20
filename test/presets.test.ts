@@ -4,12 +4,14 @@
 // @specs:spec-system-presets.preset-expansion-runs-before
 // @specs:spec-system-presets.unknown-kind-fails-validation
 // @specs:spec-system-presets.same-preset-registry-backs
+// @specs:spec-system-presets.detection-returns-every-spec
+// @specs:spec-system-presets.repository-auto-assigned-single-kind
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { loadConfig } from "../src/config.js";
-import { detectSpecSystem, SPEC_SYSTEM_PRESETS } from "../src/presets.js";
+import { detectSpecSystem, detectSpecSystems, SPEC_SYSTEM_PRESETS } from "../src/presets.js";
 
 const dirs: string[] = [];
 afterEach(() => {
@@ -88,6 +90,23 @@ describe("detectSpecSystem", () => {
   it("returns null when no spec system signature is present", () => {
     const d = repo({ "README.md": "# hi" });
     expect(detectSpecSystem(d)).toBeNull();
+  });
+
+  it("detectSpecSystems returns EVERY matching system, not only the first (ambiguous repo)", () => {
+    // .specify + specs/001-x/spec.md → spec-kit; **/*.sdoc → strictdoc. Two systems present.
+    const d = repo({ ".specify/x.md": "s", "specs/001-x/spec.md": "# s", "docs/reqs.sdoc": "[DOCUMENT]\n" });
+    expect(detectSpecSystems(d).sort()).toEqual(["spec-kit", "strictdoc"]);
+  });
+
+  it("detectSpecSystem returns a kind only when exactly one system matches, else null (forked, never guessed)", () => {
+    const one = repo({ ".cursor/specs/f.md": "# f" });
+    expect(detectSpecSystem(one)).toBe("cursor"); // exactly one → assigned
+
+    const ambiguous = repo({ "specs/requirements.md": "# r", "notes.sdoc": "[DOCUMENT]\n" }); // kiro + strictdoc
+    expect(detectSpecSystems(ambiguous).sort()).toEqual(["kiro", "strictdoc"]);
+    expect(detectSpecSystem(ambiguous)).toBeNull(); // several match → not auto-assigned
+
+    expect(detectSpecSystem(repo({ "README.md": "# x" }))).toBeNull(); // none → null
   });
 
   it("fingerprints kiro by a flat specs/requirements.md (no .specify, no specs/*/spec.md)", () => {

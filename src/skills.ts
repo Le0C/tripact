@@ -392,8 +392,10 @@ call, so it is your job, not a fixed heuristic. Propose the config, confirm with
    - **kiro** - a flat \`specs/requirements.md\` (+ \`design.md\`, \`tasks.md\`) with numbered EARS
      acceptance criteria → \`kind: kiro\`.
    - **cursor** - feature specs under \`.cursor/specs/*.md\` (template + tasks auto-excluded) → \`kind: cursor\`.
-   When one matches, the whole config can be just \`schemaVersion: 1\` + \`kind: <system>\`; add a tests
-   layer / edges only if the preset's defaults do not fit. If none matches, hand-declare layers below.
+   When exactly one matches, the whole config can be just \`schemaVersion: 1\` + \`kind: <system>\`; add a
+   tests layer / edges only if the preset's defaults do not fit. If **several** match (an ambiguous
+   layout), do not guess — present the candidates to the user and let them pick the \`kind\`. If none
+   matches, hand-declare layers below.
 1. **Survey the repository.** Look for each role - do not assume conventional paths:
    - **prescriptive** (the source of truth): a product spec, acceptance criteria, PRD, or
      requirements checklist. Common names: \`SPECS.md\`, \`UAC.md\`, \`REQUIREMENTS.md\`, \`docs/spec/**\`.
