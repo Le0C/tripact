@@ -2,7 +2,7 @@
 // timeline from three evidence sources, none of which requires new state: the committed sidecar's
 // git history (lifecycle events at each accept), the adjudication journal (§7.2), and the git
 // history of the claim's verifying test files (file-level evidence, marked as such). A harness may
-// interleave extra events it owns — prodsync adds executed sync-run items (§21.2) — via
+// interleave extra events it owns — e.g. executed sync-run items (§21.2) — via
 // `extraEvents`; the kernel timeline is complete without them.
 //
 // Everything here is read-only and deterministic: dates come from commits and journal entries

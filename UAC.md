@@ -5,9 +5,9 @@ test artefacts into claims with stable identities, checks the declared edges bet
 emits claims, queues, and instructions. It never edits artefacts and never drives a loop of its
 own - a consuming harness does that.
 
-This document specifies the kernel's own behaviour. Section numbers are shared with the harness
-specification (prodsync's `UAC.md`) so that a `(UAC §N)` citation resolves to the same requirement
-on either side. Concerns that belong to a driving harness rather than the kernel are out of scope here and carry
+This document specifies the kernel's own behaviour. Section numbers are reserved so that a
+`(UAC §N)` citation resolves to the same requirement whether it is read here or in a driving
+harness's own specification. Concerns that belong to a driving harness rather than the kernel are out of scope here and carry
 no claims. **§1.1 Project initialisation** is one: tripact ships no `init` command, layer detection
 is emitted as the `tripact-detect` skill (§1.2), and creating the config, sidecar, and skills at
 first run is a harness responsibility. **§8.5 commit, §15 bootstrap, §17 one-invocation sync, and
@@ -356,7 +356,7 @@ requirement.
 Section §21.2 (executed sync-run history) is a harness concern. The kernel's timeline is complete on
 its own, and it leaves a merge point open: `runAudit` accepts a harness's own events and interleaves
 them into the same deterministic order, and `runDirRel` names a run directory under
-`.tripact/sync-runs/` for a harness scraper. A driving harness - prodsync - owns reading its executed
+`.tripact/sync-runs/` for a harness scraper. A driving harness owns reading its executed
 sync-run items and passing them in; the kernel emits none itself.
 
 ---
