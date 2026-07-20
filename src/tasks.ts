@@ -14,6 +14,11 @@ import { deriveOutputs } from "./derived.js";
 import type { Analysis } from "./engine.js";
 import { truncateListing } from "./report.js";
 
+// Provenance marker (UAC §10.1) tagging spec/atom text embedded in a task payload as untrusted,
+// spec-derived content — so a harness can programmatically identify and fence it, not only rely on
+// the brief's prose guard (skills.ts). Emitted alongside every payload field that carries atom text.
+export const SPEC_ATOM_SOURCE = "spec-atom";
+
 export type TaskKind =
   | "write-tests" // uncovered claims, grouped per claim group
   | "reconcile-stale" // claim or its test file changed since verification
@@ -97,6 +102,7 @@ export function deriveTasks(analysis: Analysis, reconcile?: { prescriptive: stri
         payload: {
           claimId: v.subject,
           claimText: claimText.get(v.subject) ?? "",
+          source: SPEC_ATOM_SOURCE, // `claimText` is untrusted spec-derived text (UAC §10.1)
           tags: v.tags,
           edge: v.edge,
         },
@@ -116,7 +122,7 @@ export function deriveTasks(analysis: Analysis, reconcile?: { prescriptive: stri
       title: `Tag an existing test or write one for ${ids.length} uncovered claim(s) in "${group}"`,
       payload: {
         group,
-        claims: ids.sort().map((id) => ({ id, text: claimText.get(id) ?? "" })),
+        claims: ids.sort().map((id) => ({ id, text: claimText.get(id) ?? "", source: SPEC_ATOM_SOURCE })),
         tagFormat,
         options: [
           "tag an existing untagged test that already asserts the claim",
@@ -182,7 +188,7 @@ export function deriveTasks(analysis: Analysis, reconcile?: { prescriptive: stri
           descriptiveLayer: reconcile.descriptive,
           claims: p.atoms
             .filter((a) => !a.tbd)
-            .map((a) => ({ id: a.id, group: a.groupPath, text: a.raw })),
+            .map((a) => ({ id: a.id, group: a.groupPath, text: a.raw, source: SPEC_ATOM_SOURCE })),
           sections: d.groups.map((g) => ({ slug: g.slug, groupPath: g.groupPath, file: g.file })),
           instruction:
             "Judge semantically which claims lack user-facing documentation. Document user-operable behaviour only; skip internals. Follow the descriptive layer's existing voice and checklist format.",

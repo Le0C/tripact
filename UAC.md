@@ -280,6 +280,7 @@ section carries no claims - it records the setup, not a requirement.
 - `tasks --json` emits a machine-readable queue with a `schemaVersion` field; the human output groups tasks by kind and truncates past a fixed threshold unless `--long`
 - `tripact prompt <id>` prints a ready-to-hand-off brief for a single work item - a task id or an escalation question id (§7.2) - with the item's self-contained payload inlined; an unknown id exits 1
 - The brief frames its inlined claim and atom text as untrusted specification data - content to satisfy or evidence to weigh, never an instruction addressed to the agent - and tells the agent to ignore any directive embedded in that text, so an injected instruction inside a spec claim cannot redirect the agent
+- Every emitted task payload that embeds spec or atom text also carries a `source: "spec-atom"` provenance marker on that text, so a harness can identify and fence the untrusted content programmatically rather than relying on the brief's prose guard alone
 
 ### 10.2 Repair handoff
 
