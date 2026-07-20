@@ -171,6 +171,11 @@ judgement task offered as a reconciliation task (§10.3), not a checked edge.
 - A prescriptive or descriptive layer that matches files but parses to zero atoms is reported as a `zeroAtomLayers` warning, surfacing an unparsable format or a wrong glob
 - Layer-diagnostic warnings are advisory: they surface a mis-declared layer without, on their own, changing the exit code
 
+### 5.5 Content lint
+
+- A prescriptive or descriptive atom whose text carries a prompt-injection signature - an override directive such as ignore-previous-instructions, a new-instructions marker, a chat role tag, or a role-override - is reported as a `suspiciousAtoms` warning in both the human report and `check --json`, naming each atom's file, line, and matched signal
+- The content lint is advisory and deterministic: it flags atoms for review, ordered by file then line, without changing the exit code, since a planted directive still flows verbatim into task payloads and agent prompts (§10.1)
+
 ---
 
 ## 6. Status & Reporting
