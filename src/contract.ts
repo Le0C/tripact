@@ -83,6 +83,7 @@ export const PUBLIC_CONTRACT: readonly ContractSurface[] = [
       "pact",
       "schemaVersion",
       "scope",
+      "suspiciousAtoms",
       "syncPoint",
       "unsupportedEdges",
       "verdicts",

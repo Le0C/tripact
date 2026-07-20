@@ -23,6 +23,24 @@ import {
 } from "./sidecar.js";
 import type { Atom, EdgeVerdict, Escalation, Group, OrphanTag } from "./types.js";
 
+// Prompt-injection signatures (UAC §5.5). Spec/doc atom text is embedded verbatim into task payloads
+// and agent prompts (skills.ts guards it as untrusted data, §10.1); this is the detection companion —
+// it flags atoms whose text reads as a directive to a downstream agent rather than a requirement.
+// Deliberately narrow to keep false positives near zero on real specs: the classic override phrasings
+// and chat role tags, not mere mentions of "prompt" or "instruction".
+const INJECTION_SIGNALS: Array<{ re: RegExp; signal: string }> = [
+  { re: /\b(ignore|disregard|forget)\s+(all\s+|any\s+|the\s+)*(previous|prior|above|earlier|preceding|foregoing)\s+(instruction|prompt|context|message|rule|direction)s?\b/i, signal: "ignore-previous-instructions" },
+  { re: /\bnew\s+instructions?\s*:/i, signal: "new-instructions" },
+  { re: /<\/?(system|assistant|user)\b[^>]*>/i, signal: "chat-role-tag" },
+  { re: /\byou\s+are\s+now\s+(a|an|the|in)\b/i, signal: "role-override" },
+];
+
+/** The first injection signal an atom's text matches, or null. Exported for the content-lint (UAC §5.5). */
+export function injectionSignal(text: string): string | null {
+  for (const s of INJECTION_SIGNALS) if (s.re.test(text)) return s.signal;
+  return null;
+}
+
 export interface LayerData {
   name: string;
   role: "prescriptive" | "descriptive" | "verificatory";
@@ -58,6 +76,9 @@ export interface Analysis {
   /** Prescriptive/descriptive layers that matched files but parsed to zero atoms — an unparsable
    * format or wrong glob (UAC §5.4). Verificatory layers are excluded (they carry no atoms). */
   zeroAtomLayers: string[];
+  /** Spec/doc atoms whose text carries a prompt-injection signature (UAC §5.5) — advisory. Their text
+   * flows verbatim into task payloads and agent prompts, so a planted directive is flagged for review. */
+  suspiciousAtoms: Array<{ file: string; line: number; signal: string; excerpt: string }>;
 }
 
 export function collectFiles(repoRoot: string, globs: string[], exclude: string[] = []): Map<string, string> {
@@ -307,6 +328,15 @@ export function analyze(repoRoot: string, opts: { skipDerived?: boolean } = {}):
       .filter((l) => l.role !== "verificatory" && l.files.size > 0 && l.atoms.length === 0)
       .map((l) => l.name)
       .sort(),
+    // Content-lint (UAC §5.5): flag prescriptive/descriptive atoms whose text reads as an injected
+    // directive. Deterministic order: by file, then line.
+    suspiciousAtoms: [...layers.values()]
+      .filter((l) => l.role !== "verificatory")
+      .flatMap((l) => l.atoms)
+      .map((a) => ({ atom: a, signal: injectionSignal(a.raw) }))
+      .filter((x): x is { atom: Atom; signal: string } => x.signal !== null)
+      .map((x) => ({ file: x.atom.file, line: x.atom.line, signal: x.signal, excerpt: x.atom.raw.slice(0, 80) }))
+      .sort((a, b) => a.file.localeCompare(b.file) || a.line - b.line),
   };
 }
 

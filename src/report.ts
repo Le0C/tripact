@@ -23,6 +23,8 @@ export interface CheckReportJson {
   zeroFileLayers: string[];
   /** Prescriptive/descriptive layers that matched files but parsed to zero atoms — advisory (UAC §5.4). */
   zeroAtomLayers: string[];
+  /** Atoms whose text carries a prompt-injection signature — advisory content-lint (UAC §5.5). */
+  suspiciousAtoms: Analysis["suspiciousAtoms"];
   /**
    * The three-way pact: spec claims, doc sections, and tests correlated on their shared test file
    * (a test tagging both `@specs:` and `@docs:`). Advisory — it feeds no verdict or exit code, and
@@ -93,6 +95,7 @@ export function toJsonReport(analysis: Analysis): CheckReportJson {
   counts["pactUntiedSections"] = pact.untiedSections.length;
   counts["zeroFileLayers"] = analysis.zeroFileLayers.length;
   counts["zeroAtomLayers"] = analysis.zeroAtomLayers.length;
+  counts["suspiciousAtoms"] = analysis.suspiciousAtoms.length;
   return {
     schemaVersion: CHECK_SCHEMA_VERSION,
     scope: analysis.scope,
@@ -107,6 +110,7 @@ export function toJsonReport(analysis: Analysis): CheckReportJson {
     nonDeterministicGenerators: analysis.nonDeterministicGenerators,
     zeroFileLayers: analysis.zeroFileLayers,
     zeroAtomLayers: analysis.zeroAtomLayers,
+    suspiciousAtoms: analysis.suspiciousAtoms,
     pact,
     counts,
     exitCode: exitCodeFor(analysis),
@@ -306,6 +310,11 @@ export function renderHuman(analysis: Analysis, opts: { long?: boolean } = {}): 
   }
   if (analysis.zeroAtomLayers.length) {
     lines.push(`warning: ${analysis.zeroAtomLayers.length} layer(s) matched files but parsed to 0 atoms — wrong glob or unparsable format: ${analysis.zeroAtomLayers.join(", ")}`);
+    lines.push("");
+  }
+  if (analysis.suspiciousAtoms.length) {
+    lines.push(`warning: ${analysis.suspiciousAtoms.length} atom(s) carry a prompt-injection signature — review before an agent works them:`);
+    lines.push(...truncateListing(analysis.suspiciousAtoms.map((s) => `  [${s.signal}] ${s.file}:${s.line} — "${excerpt(s.excerpt)}"`), long, "  "));
     lines.push("");
   }
   for (const u of analysis.unsupportedEdges) lines.push(`note: edge ${u}`);
