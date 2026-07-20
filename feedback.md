@@ -1,7 +1,0 @@
-# feedback & suggestions
-
-- tags: we should add a tagging modality which does short alpha-numeric hashes instead of descriptive names. These could be up to ~7 characters long. Reasoning: descriptive names can be useful, but not required for coding agents; hashes are fewer characters. This would also avoid subject-slug clashes.
-- prescriptive layer search adapters: we need to be able to detect more spec patterns, e.g. penspec/specs/** or /.specify/ etc. 
-- descriptive layer search adapters: we need to be able to detect more descriptive locations too
-- function decoration: we could use the claim tags in function descriptions as well as test descriptions. We could insert hotlinks back to the spec document, so that if a user hovers on a function to get intellisense, then can click to open the spec directly. This hotlinking could also go fwd for the tests. In this regard, I think we should build out the tagging module, and include config for tag_spec and tag_test. The goal here is to link the product code which pertains to a spec back to the spec document and/or test
-- when doing first checks on a repo, we generate large numbers of claims which start life as "uncovered" because we have no tags to link them to tests. We generate "write test" tasks for these, but it might be reasonable to generate "find test or write" tasks instead. I think we could do with a reconcile command which attempts to associated newly made uncovered claims to tests. Question: could we then back propogate the tags to the code paths which the tests cover?
