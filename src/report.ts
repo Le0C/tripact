@@ -19,6 +19,10 @@ export interface CheckReportJson {
   derivedStale: string[];
   /** Declared generators whose back-to-back regenerations disagreed — non-deterministic (UAC §18). */
   nonDeterministicGenerators: string[];
+  /** Declared layers whose paths matched no files — advisory warning (UAC §5.4). */
+  zeroFileLayers: string[];
+  /** Prescriptive/descriptive layers that matched files but parsed to zero atoms — advisory (UAC §5.4). */
+  zeroAtomLayers: string[];
   /**
    * The three-way pact: spec claims, doc sections, and tests correlated on their shared test file
    * (a test tagging both `@specs:` and `@docs:`). Advisory — it feeds no verdict or exit code, and
@@ -87,6 +91,8 @@ export function toJsonReport(analysis: Analysis): CheckReportJson {
   counts["pactComplete"] = pact.complete.length;
   counts["pactTestedUndocumented"] = pact.testedUndocumented.length;
   counts["pactUntiedSections"] = pact.untiedSections.length;
+  counts["zeroFileLayers"] = analysis.zeroFileLayers.length;
+  counts["zeroAtomLayers"] = analysis.zeroAtomLayers.length;
   return {
     schemaVersion: CHECK_SCHEMA_VERSION,
     scope: analysis.scope,
@@ -99,6 +105,8 @@ export function toJsonReport(analysis: Analysis): CheckReportJson {
     unsupportedEdges: analysis.unsupportedEdges,
     derivedStale: analysis.derivedStale,
     nonDeterministicGenerators: analysis.nonDeterministicGenerators,
+    zeroFileLayers: analysis.zeroFileLayers,
+    zeroAtomLayers: analysis.zeroAtomLayers,
     pact,
     counts,
     exitCode: exitCodeFor(analysis),
@@ -290,6 +298,16 @@ export function renderHuman(analysis: Analysis, opts: { long?: boolean } = {}): 
     }
     lines.push("");
   }
+  // Layer diagnostics (UAC §5.4): advisory warnings about a mis-declared layer. They never change
+  // the exit code — a spec that resolves to no files or no atoms is a config smell, not drift.
+  if (analysis.zeroFileLayers.length) {
+    lines.push(`warning: ${analysis.zeroFileLayers.length} layer(s) matched no files — check the glob: ${analysis.zeroFileLayers.join(", ")}`);
+    lines.push("");
+  }
+  if (analysis.zeroAtomLayers.length) {
+    lines.push(`warning: ${analysis.zeroAtomLayers.length} layer(s) matched files but parsed to 0 atoms — wrong glob or unparsable format: ${analysis.zeroAtomLayers.join(", ")}`);
+    lines.push("");
+  }
   for (const u of analysis.unsupportedEdges) lines.push(`note: edge ${u}`);
   const code = exitCodeFor(analysis);
   if (code === 0) {
@@ -307,15 +325,20 @@ export function renderStatus(analysis: Analysis): string {
   const lines: string[] = [];
   lines.push("tripact status");
   lines.push("");
+  // Layer-diagnostic warnings (UAC §5.4/§6.1): a zero-file layer, or a zero-atom prescriptive/
+  // descriptive layer, is marked inline alongside its counts.
+  const zeroFile = new Set(analysis.zeroFileLayers);
+  const zeroAtom = new Set(analysis.zeroAtomLayers);
   for (const layer of analysis.layers.values()) {
+    const warn = zeroFile.has(layer.name) ? "  ⚠ no files — check the glob" : zeroAtom.has(layer.name) ? "  ⚠ 0 atoms — wrong glob or unparsable format" : "";
     if (layer.role === "verificatory") {
-      lines.push(`layer ${layer.name} (${layer.role}): ${layer.files.size} files`);
+      lines.push(`layer ${layer.name} (${layer.role}): ${layer.files.size} files${warn}`);
       continue;
     }
     const alive = layer.atoms.length;
     const tbd = layer.atoms.filter((a) => a.tbd).length;
     const dead = analysis.sidecar.claims.filter((c) => c.layer === layer.name && !c.alive).length;
-    lines.push(`layer ${layer.name} (${layer.role}): ${alive} atoms (${tbd} TBD) · ${dead} dead ids retained`);
+    lines.push(`layer ${layer.name} (${layer.role}): ${alive} atoms (${tbd} TBD) · ${dead} dead ids retained${warn}`);
   }
   lines.push("");
   const byEdge = new Map<string, EdgeVerdict[]>();
