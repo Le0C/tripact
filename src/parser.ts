@@ -12,6 +12,12 @@ import type { Atom, Group } from "./types.js";
 const BULLET_RE = /^- (.*)$/;
 const ORDERED_RE = /^\d+[.)] (.*)$/;
 const CHECKBOX_MARKER_RE = /^\[( |x|X)\] /;
+// A prose paragraph (not a list item or heading) is an atom only when it reads as a requirement:
+// either it leads with a bold label (`**User Story:** …`, `**Description:** …`) or it contains an
+// UPPERCASE RFC-2119 / EARS keyword (`SHALL`, `MUST`, `SHOULD`). Case matters — normative specs
+// capitalise the keyword, so casual lowercase "must"/"should" prose is left as ordinary text.
+const BOLD_LABEL_RE = /^\*\*[^*\n]+:\*\*/;
+const NORMATIVE_RE = /\b(?:SHALL|MUST|SHOULD)\b/;
 const HEADING_RE = /^(#{1,6}) (.*)$/;
 const NUMBERING_RE = /^\d+(\.\d+)*\.?\s+/;
 const TBD_RE = /\(tbd\)/i;
@@ -91,10 +97,46 @@ export function parseMarkdownLayer(layer: string, file: string, content: string)
   const atoms: Atom[] = [];
   let inCodeFence = false;
 
+  // Add one atom under the current heading path (shared by list items and requirement paragraphs).
+  const addAtom = (body: string, lineNo: number) => {
+    // skip the H1 document title (level 0) in paths, like the reference parser
+    const groupPath = displayStack.slice(1).filter(Boolean).join(" > ");
+    const groupKey = keyStack.slice(1).filter(Boolean).join(" > ");
+    const tbd = tbdStack.some(Boolean);
+    let group = groups.get(groupKey);
+    if (!group) {
+      const leafKey = [...keyStack].reverse().find(Boolean) ?? groupKey;
+      group = { layer, groupPath, slug: slugify(leafKey), file, line: lineNo, tbd, atoms: [] };
+      groups.set(groupKey, group);
+    }
+    const norm = normalizeText(body);
+    const atom: Atom = {
+      id: "", layer, groupPath, groupKey, index: group.atoms.length,
+      file, line: lineNo, raw: body, norm, hash: contentHash(norm), tbd,
+    };
+    group.atoms.push(atom);
+    atoms.push(atom);
+  };
+
+  // Prose-paragraph buffer (UAC §3.1): consecutive non-structural lines accumulate here and flush at
+  // any blank line or structural boundary. A flushed paragraph becomes ONE atom only if it reads as a
+  // requirement — a bold-label lead or an UPPERCASE SHALL/MUST/SHOULD — so a wrapped requirement is a
+  // single atom and ordinary prose is still dropped.
+  let proseBuf: string[] = [];
+  let proseLine = 0;
+  const flushProse = () => {
+    if (proseBuf.length === 0) return;
+    const text = proseBuf.join(" ").replace(/\s+/g, " ").trim();
+    const start = proseLine;
+    proseBuf = [];
+    if (text !== "" && (BOLD_LABEL_RE.test(text) || NORMATIVE_RE.test(text))) addAtom(text, start);
+  };
+
   const lines = content.split(/\r?\n/);
   for (let ln = 0; ln < lines.length; ln++) {
     const line = lines[ln] as string;
     if (/^(```|~~~)/.test(line.trim())) {
+      flushProse();
       inCodeFence = !inCodeFence;
       continue;
     }
@@ -102,6 +144,7 @@ export function parseMarkdownLayer(layer: string, file: string, content: string)
 
     const hm = HEADING_RE.exec(line);
     if (hm) {
+      flushProse();
       const level = (hm[1] as string).length - 1;
       const title = (hm[2] as string).trim();
       displayStack[level] = title;
@@ -118,45 +161,23 @@ export function parseMarkdownLayer(layer: string, file: string, content: string)
     // A column-0 list item — unordered (`- `) or ordered (`1. ` / `1) `) — is an atom.
     const lm = BULLET_RE.exec(line) ?? ORDERED_RE.exec(line);
     if (lm) {
+      flushProse();
       // strip a legacy checkbox marker so plain and checkbox syntaxes hash identically
       const body = (lm[1] as string).replace(CHECKBOX_MARKER_RE, "").trim();
       if (body === "") continue;
-      // skip the H1 document title (level 0) in paths, like the reference parser
-      const groupPath = displayStack.slice(1).filter(Boolean).join(" > ");
-      const groupKey = keyStack.slice(1).filter(Boolean).join(" > ");
-      const tbd = tbdStack.some(Boolean);
-      let group = groups.get(groupKey);
-      if (!group) {
-        const leafKey = [...keyStack].reverse().find(Boolean) ?? groupKey;
-        group = {
-          layer,
-          groupPath,
-          slug: slugify(leafKey),
-          file,
-          line: ln + 1,
-          tbd,
-          atoms: [],
-        };
-        groups.set(groupKey, group);
-      }
-      const norm = normalizeText(body);
-      const atom: Atom = {
-        id: "", // assigned by the anchorer / sidecar
-        layer,
-        groupPath,
-        groupKey,
-        index: group.atoms.length,
-        file,
-        line: ln + 1,
-        raw: body,
-        norm,
-        hash: contentHash(norm),
-        tbd,
-      };
-      group.atoms.push(atom);
-      atoms.push(atom);
+      addAtom(body, ln + 1);
+      continue;
     }
+
+    if (line.trim() === "") {
+      flushProse();
+      continue;
+    }
+    // A non-structural, non-blank line — accumulate as prose (may become a requirement atom on flush).
+    if (proseBuf.length === 0) proseLine = ln + 1;
+    proseBuf.push(line.trim());
   }
+  flushProse();
   return { groups: [...groups.values()], atoms };
 }
 

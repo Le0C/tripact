@@ -5,6 +5,7 @@
 // @specs:markdown-parsing.heading-marked-tbd-parses
 // @specs:markdown-parsing.parsing-deterministic-same-file
 // @specs:markdown-parsing.column-0-ordered-list-item
+// @specs:markdown-parsing.prose-paragraph-atom-reads
 // SDOC parsing → nodes/atoms. UAC §3.4.
 // @specs:sdoc-parsing.layer-file-dispatched-parser
 // @specs:sdoc-parsing.strictdoc-sdoc-files-parse
@@ -103,6 +104,50 @@ describe("parseMarkdownLayer", () => {
     const { atoms } = parseMarkdownLayer("s", "f.md", "## G\n\n1. top level item\n  2. nested item is not an atom\n");
     expect(atoms).toHaveLength(1);
     expect(atoms[0]?.raw).toBe("top level item");
+  });
+
+  it("atomises a bold-label lead paragraph (**User Story:** ...)", () => {
+    const doc = `## Requirement 1
+
+**User Story:** As a fan, I want to view drivers, so that I can explore history
+
+#### Acceptance Criteria
+
+1. THE app SHALL display drivers
+`;
+    const { atoms } = parseMarkdownLayer("spec", "requirements.md", doc);
+    const story = atoms.find((a) => /^user story/i.test(a.norm));
+    expect(story).toBeDefined();
+    expect(story?.raw).toBe("**User Story:** As a fan, I want to view drivers, so that I can explore history");
+    expect(story?.groupPath).toBe("Requirement 1"); // grouped under the requirement, above Acceptance Criteria
+  });
+
+  it("atomises an UPPERCASE SHALL/MUST/SHOULD prose paragraph, but not keyword-free prose", () => {
+    const doc = `## Auth
+
+The system SHALL authenticate users via OAuth.
+
+This is ordinary descriptive prose with no normative keyword.
+
+The API MUST return 404 for unknown resources.
+`;
+    const { atoms } = parseMarkdownLayer("spec", "s.md", doc);
+    expect(atoms.map((a) => a.raw)).toEqual([
+      "The system SHALL authenticate users via OAuth.",
+      "The API MUST return 404 for unknown resources.",
+    ]);
+  });
+
+  it("lowercase must/should in prose is NOT a requirement atom (case-sensitive)", () => {
+    const { atoms } = parseMarkdownLayer("s", "f.md", "## G\n\nYou must be logged in and should see a banner.\n");
+    expect(atoms).toHaveLength(0);
+  });
+
+  it("joins a wrapped requirement paragraph into a single atom", () => {
+    const doc = "## G\n\nThe application SHALL display a list of\ndrivers including current and historical racers.\n";
+    const { atoms } = parseMarkdownLayer("s", "f.md", doc);
+    expect(atoms).toHaveLength(1);
+    expect(atoms[0]?.raw).toBe("The application SHALL display a list of drivers including current and historical racers.");
   });
 
   it("marks (TBD) atoms via their heading", () => {
