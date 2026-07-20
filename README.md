@@ -1,7 +1,7 @@
 # tripact
 
 **tripact** is a deterministic traceability engine that helps keep your spec, docs and tests in
-sync. It a three-way pact between your product specification, your user documentation, and your
+sync. It is a three-way pact between your product specification, your user documentation, and your
 tests. It turns requirements and docs into _claims_ with stable identities, links those claims to
 tests through explicit tags, and reports when any side stops agreeing with the others.
 
@@ -14,7 +14,7 @@ newly uncovered, and what went **stale** because a claim or its test changed sin
 
 No LLM is used in this process, so the output is deterministic. Any ambiguous claims that require judgement - like "is this reworded requirement functionally the same as it was before, or is it now a new claim?" - are surfaced as a structured queue for you or your agent to answer.
 
-**tripact** is intended to be a **engine** that any agent or harness can drive, because it is an executable that only emits claims and instructions, it doesn't spawn any agents of its own.
+**tripact** is intended to be an **engine** that any agent or harness can drive, because it is an executable that only emits claims and instructions, it doesn't spawn any agents of its own.
 
 - **Spec-driven development with coding agents.** Every specification you write becomes a claim with
   a stable id; tag the test that proves it and tripact confirms the link, so you always know which

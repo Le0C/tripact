@@ -3,8 +3,8 @@
   "version": "0.0.1",
   "description": "The deterministic traceability kernel — keep spec, docs, and tests describing the same behaviour. A three-way pact any harness can drive.",
   "type": "module",
-  "license": "MIT",
-  "author": "Leo Coleman <leo.coleman@gscan.eu>",
+  "license": "Apache-2.0",
+  "author": "Leo Coleman <leoacoleman@proton.me>",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Le0C/tripact.git"
@@ -37,8 +37,12 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "NOTICE"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc",
     "dev": "tsx src/cli.ts",

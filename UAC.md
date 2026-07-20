@@ -336,6 +336,12 @@ requirement.
 - `audit --json` emits the header and the full timeline machine-readably with a `schemaVersion` field; the command exits 0 (advisory), or 2 on a config or usage error, and never exits 1
 - The human timeline truncates past the fixed threshold with the closing line naming `--long`; `--json` always carries every event
 
+Section §21.2 (executed sync-run history) is a harness concern. The kernel's timeline is complete on
+its own, and it leaves a merge point open: `runAudit` accepts a harness's own events and interleaves
+them into the same deterministic order, and `runDirRel` names a run directory under
+`.tripact/sync-runs/` for a harness scraper. A driving harness - prodsync - owns reading its executed
+sync-run items and passing them in; the kernel emits none itself.
+
 ---
 
 ## Cross-Cutting Concerns
