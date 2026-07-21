@@ -11,7 +11,11 @@ layers:
   # meaningless. README.md is hand-authored — not derived, and this repo declares no `derived`
   # outputs at all — but it is still not a source here: its sections are orientation prose for a
   # newcomer, not procedures a test could walk, so a docs↔tests verdict on them is meaningless for
-  # the same reason. `docs/manual/` is declared ahead of having content — the on-ramp for a real manual.
+  # the same reason. Each page under `docs/manual/` is walked by a matching `test/manual/*.test.ts`,
+  # which tags the section slug and the spec ids on ONE line so the pact bridges only what the page
+  # genuinely documents (UAC §6.4). Much of this spec is engine behaviour a user manual should never
+  # describe — sidecar format, re-anchoring, generator resolution, the cross-cutting properties — so
+  # a permanently incomplete three-way reading here is the intended state, not a backlog.
   docs:
     role: descriptive
     paths:
