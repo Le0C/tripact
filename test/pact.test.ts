@@ -127,7 +127,12 @@ describe("three-way pact", () => {
     expect(doc.counts.pactUntiedSections).toBe(1);
 
     // Human surfaces: check lists the gaps, status prints the one-line summary.
-    const human = runCli(["check"], { cwd: repo }).stdout;
+    // Collapsed by default (UAC §5.2) — the gaps are advisory, so they get one line unless asked.
+    const collapsed = runCli(["check"], { cwd: repo }).stdout;
+    expect(collapsed).toContain("three-way gaps: 1 tested but undocumented, 1 untied section");
+    expect(collapsed).not.toContain("tested but undocumented (1):");
+
+    const human = runCli(["check", "--long"], { cwd: repo }).stdout;
     expect(human).toContain("three-way gaps:");
     expect(human).toContain("tested but undocumented (1):");
     expect(human).toContain("untied sections (1):");

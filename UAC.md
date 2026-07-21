@@ -157,10 +157,15 @@ judgement task offered as a reconciliation task (§10.3), not a checked edge.
 ### 5.2 Output
 
 - Default output is a human-readable report that groups non-covered verdicts under their group heading path within each edge
-- Each reported verdict line carries the claim id, a text excerpt, and a location: the tag's file:line for tagged verdicts, the claim's own declaring file:line for uncovered ones
+- Each reported verdict line carries the claim id and a location - the tag's file:line for tagged verdicts, the claim's own declaring file:line for uncovered ones - plus a text excerpt whenever the width budget leaves room for one
 - Report counts include a **forks** metric (§3.3) in both the human report and `check --json`
 - `check --json` emits a single machine-readable report on stdout with nothing else, carrying a `schemaVersion` field
 - `check --long` prints every listing in full instead of truncating past a fixed threshold
+- The report opens with a headline naming the verdict and the counts behind it, and closes with the same verdict, so a long report states its outcome without being scrolled to the end
+- Advisory three-way gaps collapse to a single line naming their counts; `--long` lists them in full
+- Verdict lines render as aligned columns - kind, claim id, text excerpt, location - so one column can be read down
+- A verdict line is budgeted to the terminal's width, shortening the text excerpt rather than wrapping the line; when too little room remains the excerpt is dropped before the id or the location is
+- When colour is on, a verdict kind is tinted by whether it drives drift or is merely acknowledged; the tint is added to the word and never replaces it
 
 ### 5.3 Scoping
 

@@ -365,14 +365,18 @@ describe("cross-cutting: human output", () => {
   // @specs:human-output.human-reports-name-verdicts
   it("names verdicts and question kinds with exactly the --json vocabulary", () => {
     const repo = driftedRepo("tripact-xcut-vocab-");
-    const human = runCli(["check", "--long", "--strict"], { cwd: repo }).stdout;
+    // Wide, so the excerpt column is present and the verdict-line shape below matches.
+    const human = runCli(["check", "--long", "--strict"], {
+      cwd: repo,
+      env: { ...process.env, COLUMNS: "160" },
+    }).stdout;
     const report = JSON.parse(runCli(["check", "--json", "--strict"], { cwd: repo }).stdout);
 
     // Verdict labels are the JSON `kind` verbatim, upper-cased. The one embellishment is the
     // acknowledged/new split of `uncovered`, which is itself the JSON's `acknowledged` field.
     const jsonKinds = new Set<string>(report.verdicts.map((v: { kind: string }) => v.kind));
     expect(jsonKinds.has("uncovered"), "the fixture leaves uncovered claims").toBe(true);
-    const labels = [...human.matchAll(/^ {4}([A-Z-]+) +\S+ — "/gm)].map((m) => m[1]);
+    const labels = [...human.matchAll(/^ {4}([A-Z-]+) +\S+ +"/gm)].map((m) => m[1]);
     expect(labels.length, "the human report lists verdicts").toBeGreaterThan(0);
     for (const label of labels) {
       const kind = label === "NEW-UNCOVERED" || label === "BACKLOG" ? "uncovered" : label.toLowerCase();

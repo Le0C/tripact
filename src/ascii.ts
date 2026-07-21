@@ -132,6 +132,32 @@ export function renderBanner(opts: { colour: boolean; depth?: ColourDepth } = { 
   });
 }
 
+/**
+ * Tint one run of text (UAC §5.2). `attention` is for a state the reader must act on, `inert` for
+ * one that is acknowledged or advisory. Colour is always *added* to text that already reads
+ * correctly without it — never a substitute for the word.
+ */
+export function tint(
+  text: string,
+  tone: "attention" | "inert",
+  opts: { colour: boolean; depth?: ColourDepth },
+): string {
+  if (!opts.colour) return text;
+  const depth = opts.depth ?? { truecolor: true };
+  const ink = tone === "attention" ? fg(TORQUE, TORQUE_256, depth) : fg(STEEL, STEEL_256, depth);
+  return `${ink}${text}${RESET}`;
+}
+
+/** Dim one run of text — for detail that should recede rather than be read. */
+export function dim(text: string, opts: { colour: boolean }): string {
+  return opts.colour ? `${DIM}${text}${RESET}` : text;
+}
+
+/** Printable cell count, ignoring any SGR sequences the string carries. */
+export function displayWidth(text: string): number {
+  return [...text.replace(/\x1b\[[0-9;]*m/g, "")].length;
+}
+
 /** Config shape this module reads; kept structural so it does not import the config schema. */
 export interface DisplayConfig {
   display?: { mark?: boolean | undefined; colour?: boolean | undefined } | undefined;

@@ -158,7 +158,12 @@ export function buildProgram(): Command {
         // Design elements are a property of this invocation's stream, not of the analysis, so they
         // are resolved here and never inside the engine (UAC Cross-Cutting: Human output).
         const display = resolveDisplay(analysis.config, process.env, process.stdout.isTTY === true);
-        console.log(renderHuman(analysis, { long: opts.long === true, display }));
+        // Width is likewise a property of this stream, not of the analysis (UAC §5.2). A terminal
+        // reports its own; a pipe reports none, so COLUMNS is honoured next — it is how a caller
+        // states an intended width for output it is capturing — and failing both, the reporter
+        // falls back to a fixed budget rather than to no budget.
+        const width = process.stdout.columns || Number(process.env.COLUMNS) || undefined;
+        console.log(renderHuman(analysis, { long: opts.long === true, display, width }));
       }
       process.exit(exitCodeFor(analysis));
     });

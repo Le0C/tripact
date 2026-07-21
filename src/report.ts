@@ -1,6 +1,6 @@
 // Human + JSON reporters. UAC §5.2, §6.1. Deterministic: no timestamps, stable ordering.
 
-import { PLAIN, renderBanner, renderMark, type DisplayOptions, type MarkState } from "./ascii.js";
+import { PLAIN, dim, renderBanner, renderMark, tint, type DisplayOptions, type MarkState } from "./ascii.js";
 import { CHECK_SCHEMA_VERSION } from "./contract.js";
 import type { Analysis } from "./engine.js";
 import { derivePact, type PactReport } from "./triangle.js";
@@ -184,12 +184,80 @@ export function markStateFor(analysis: Analysis): MarkState {
   return newUncovered ? "uncovered" : "drifted";
 }
 
+/**
+ * Fallback width when the stream reports none (a pipe, a CI log, a test). Set wide enough that a
+ * redirected report still carries excerpts for ordinary claim ids, since a captured report is
+ * usually one somebody is going to read later without the repository in front of them.
+ */
+export const DEFAULT_WIDTH = 120;
+/**
+ * Below this many columns the excerpt is dropped rather than shaved to nothing (UAC §5.2). Set
+ * above the point where an excerpt stops being readable: a dozen characters of a requirement is
+ * not a shorter excerpt, it is a worse line — the id and location still say everything needed to
+ * go and look.
+ */
+const MIN_EXCERPT = 32;
+
+/**
+ * The counts behind the verdict, in the order a reader triages them: what breaks the build first,
+ * then what is merely owed. Empty entries are dropped so the headline never pads itself with zeros.
+ */
+function headlineCounts(analysis: Analysis): string[] {
+  const n = (kind: EdgeVerdict["kind"]) =>
+    analysis.verdicts.filter((v) => v.kind === kind && !(kind === "uncovered" && v.acknowledged)).length;
+  // Plurals are declared, not derived: most of these labels are verdict-kind names, which are
+  // adjectives and do not take an -s at all.
+  const parts: Array<[number, string, string]> = [
+    [n("stale"), "stale", "stale"],
+    [n("uncovered"), "new-uncovered", "new-uncovered"],
+    [n("pending"), "pending", "pending"],
+    [analysis.orphans.length, "orphan tag", "orphan tags"],
+    [analysis.escalations.length, "escalation", "escalations"],
+    [analysis.derivedStale.length + analysis.blockStale.length, "stale derived output", "stale derived outputs"],
+    [
+      analysis.nonDeterministicGenerators.length,
+      "non-deterministic generator",
+      "non-deterministic generators",
+    ],
+    [acknowledgedBacklogCount(analysis), "acknowledged backlog", "acknowledged backlog"],
+  ];
+  return parts
+    .filter(([count]) => count > 0)
+    .map(([count, one, many]) => `${count} ${count === 1 ? one : many}`);
+}
+
+/**
+ * The verdict in words (UAC §5.1, §5.2). This is the line that carries the meaning; any tint or
+ * mark beside it is a second reading of the same fact, never the only one.
+ */
+export function verdictLine(analysis: Analysis, code: 0 | 1 = exitCodeFor(analysis)): string {
+  if (code !== 0) return "✗ drift detected";
+  // Level: no stale/new-uncovered/orphans/escalations/derived-stale (UAC §5.1). Name the
+  // acknowledged backlog count when non-zero so the debt stays visible.
+  const backlog = acknowledgedBacklogCount(analysis);
+  return backlog > 0 ? `✓ level — ${backlog} acknowledged backlog items (see tripact tasks)` : "✓ level";
+}
+
+/** Per-edge coverage, for the headline's second line. */
+function edgeSummaries(analysis: Analysis): string[] {
+  const byEdge = new Map<string, { covered: number; total: number }>();
+  for (const v of analysis.verdicts) {
+    const k = `${v.edge[0]} ↔ ${v.edge[1]}`;
+    const e = byEdge.get(k) ?? { covered: 0, total: 0 };
+    e.total++;
+    if (v.kind === "covered") e.covered++;
+    byEdge.set(k, e);
+  }
+  return [...byEdge].map(([edge, e]) => `${edge} ${e.covered}/${e.total}`);
+}
+
 export function renderHuman(
   analysis: Analysis,
-  opts: { long?: boolean; display?: DisplayOptions } = {},
+  opts: { long?: boolean; display?: DisplayOptions; width?: number | undefined } = {},
 ): string {
   const long = opts.long === true;
   const display = opts.display ?? PLAIN;
+  const width = opts.width && opts.width > 0 ? opts.width : DEFAULT_WIDTH;
   const lines: string[] = [];
   const head = analysis.syncPoint
     ? `sync-point ${analysis.syncPoint.commit.slice(0, 8)} · scope: diff (${analysis.changedPaths.length} changed paths)`
@@ -207,6 +275,21 @@ export function renderHuman(
       `⚠ changed code maps to layers via pathMap: ${analysis.affectedLayers.join(", ")} — their claims may no longer describe the product; re-run their tests`,
     );
   }
+  lines.push("");
+
+  // Headline (UAC §5.2): the verdict and the counts behind it, before any detail. A drift report can
+  // run to hundreds of lines, and its outcome should not be something you scroll to find. The same
+  // verdict closes the report, so either end answers the question.
+  const code = exitCodeFor(analysis);
+  const verdict = verdictLine(analysis, code);
+  const counts = headlineCounts(analysis);
+  lines.push(
+    counts.length
+      ? `${tint(verdict, code === 0 ? "inert" : "attention", display)} — ${counts.join(" · ")}`
+      : tint(verdict, code === 0 ? "inert" : "attention", display),
+  );
+  const edges = edgeSummaries(analysis);
+  if (edges.length) lines.push(dim(`  ${edges.join(" · ")}`, display));
   lines.push("");
 
   // Subject → its declaring atom/group, so each verdict line can carry the claim's text excerpt and
@@ -239,6 +322,9 @@ export function renderHuman(
   }
   for (const [edge, verdicts] of byEdge) {
     const covered = verdicts.filter((v) => v.kind === "covered").length;
+    // A fully-clean edge is already stated in the headline's per-edge summary; repeating it here
+    // as a section header with nothing under it is the redundancy the headline was meant to remove.
+    if (covered === verdicts.length) continue;
     lines.push(`edge ${edge}: ${covered}/${verdicts.length} covered`);
     let backlog = 0;
     const listed: EdgeVerdict[] = [];
@@ -268,22 +354,49 @@ export function renderHuman(
     // Truncation counts verdict lines only (not the section headings), preserving the fixed threshold
     // and the closing "… and N more" line naming --long.
     const shown = long ? ordered : ordered.slice(0, LISTING_THRESHOLD);
-    let lastGroup: string | undefined;
-    for (const { heading, v } of shown) {
-      if (heading !== lastGroup) {
-        lines.push(`  ${heading}`);
-        lastGroup = heading;
-      }
+    // Columns are sized to the rows actually shown, so a report of short ids does not carry the
+    // gutter a long one would need (UAC §5.2). Id and location are never shortened: the id is what
+    // you paste into a tag or `tripact audit`, and the location is what you open.
+    const rows = shown.map(({ heading, v }) => {
       const info = subjectOf(v);
-      const label = v.kind === "uncovered" ? (v.acknowledged ? "BACKLOG" : "NEW-UNCOVERED") : v.kind.toUpperCase();
-      // Each line carries the claim id, a text excerpt, and a location: the tag's file:line for
-      // tagged verdicts, the claim's own declaring file:line for uncovered ones (UAC §5.2).
-      const loc = v.tags[0]
-        ? `${v.tags[0].file}:${v.tags[0].line}`
-        : info.declaredAt
-          ? `${info.declaredAt.file}:${info.declaredAt.line}`
-          : "?";
-      lines.push(`    ${label.padEnd(13)} ${v.subject} — "${excerpt(info.text)}" (${loc})`);
+      return {
+        heading,
+        v,
+        label: v.kind === "uncovered" ? (v.acknowledged ? "BACKLOG" : "NEW-UNCOVERED") : v.kind.toUpperCase(),
+        text: info.text,
+        // Each line carries a location: the tag's file:line for tagged verdicts, the claim's own
+        // declaring file:line for uncovered ones (UAC §5.2).
+        loc: v.tags[0]
+          ? `${v.tags[0].file}:${v.tags[0].line}`
+          : info.declaredAt
+            ? `${info.declaredAt.file}:${info.declaredAt.line}`
+            : "?",
+      };
+    });
+    const idW = Math.max(0, ...rows.map((r) => r.v.subject.length));
+    const locW = Math.max(0, ...rows.map((r) => r.loc.length));
+    const INDENT = 4;
+    const LABEL_W = 13;
+    // Whatever is left after the fixed columns and their single-space gutters belongs to the
+    // excerpt; below a floor it is dropped entirely rather than shaved into uselessness.
+    const room = width - INDENT - LABEL_W - 1 - idW - 1 - locW - 1 - 2; // 2 for the quotes
+    // The excerpt column is sized to the longest excerpt it actually holds, not to the room
+    // available: padding every row out to the full budget would push the location column to the
+    // far edge and open a corridor of whitespace whenever the claims happen to be short.
+    const texts = room >= MIN_EXCERPT ? rows.map((r) => excerpt(r.text, room)) : [];
+    const excerptW = Math.max(0, ...texts.map((t) => [...t].length));
+    let lastGroup: string | undefined;
+    for (const [i, r] of rows.entries()) {
+      if (r.heading !== lastGroup) {
+        lines.push(`  ${r.heading}`);
+        lastGroup = r.heading;
+      }
+      const tone = r.label === "BACKLOG" ? "inert" : "attention";
+      const label = tint(r.label.padEnd(LABEL_W), tone, display);
+      const id = r.v.subject.padEnd(idW);
+      const text = texts[i];
+      const body = text === undefined ? "" : ` "${text}"${" ".repeat(excerptW - [...text].length)}`;
+      lines.push(`    ${label} ${id}${body} ${dim(r.loc, display)}`.trimEnd());
     }
     if (!long && ordered.length > LISTING_THRESHOLD) {
       lines.push(`    … and ${ordered.length - LISTING_THRESHOLD} more — run with --long to see all`);
@@ -348,7 +461,16 @@ export function renderHuman(
   // complete triangles are the healthy case and would pad a drift-focused report. A claim's
   // text excerpt comes from its declaring atom; the location is the tagging test's file:line.
   const pact = derivePact(analysis);
-  if (pact.testedUndocumented.length || pact.untiedSections.length) {
+  if ((pact.testedUndocumented.length || pact.untiedSections.length) && !long) {
+    // Collapsed by default (UAC §5.2). These gaps feed no verdict and no exit code, and on a large
+    // repository they are the bulk of an otherwise clean report — a passing run should not spend
+    // most of its lines on a list nobody asked for.
+    const parts: string[] = [];
+    if (pact.testedUndocumented.length) parts.push(`${pact.testedUndocumented.length} tested but undocumented`);
+    if (pact.untiedSections.length) parts.push(`${pact.untiedSections.length} untied section${pact.untiedSections.length === 1 ? "" : "s"}`);
+    lines.push(dim(`three-way gaps: ${parts.join(", ")} — advisory; --long lists them`, display));
+    lines.push("");
+  } else if (pact.testedUndocumented.length || pact.untiedSections.length) {
     lines.push("three-way gaps:");
     if (pact.testedUndocumented.length) {
       lines.push(`  tested but undocumented (${pact.testedUndocumented.length}):`);
@@ -400,18 +522,6 @@ export function renderHuman(
     lines.push("");
   }
   for (const u of analysis.unsupportedEdges) lines.push(`note: edge ${u}`);
-  const code = exitCodeFor(analysis);
-  // The verdict in words. This is the line that carries the meaning; the mark beside it is a
-  // second reading of the same fact, never the only one (UAC Cross-Cutting: Human output).
-  let verdict: string;
-  if (code === 0) {
-    // Level: no stale/new-uncovered/orphans/escalations/derived-stale (UAC §5.1). Name the
-    // acknowledged backlog count when non-zero so the debt stays visible.
-    const backlog = acknowledgedBacklogCount(analysis);
-    verdict = backlog > 0 ? `✓ level — ${backlog} acknowledged backlog items (see tripact tasks)` : "✓ level";
-  } else {
-    verdict = "✗ drift detected";
-  }
   if (display.mark) {
     const state = markStateFor(analysis);
     const mark = renderMark(state, { colour: display.colour, depth: display.depth });
@@ -423,7 +533,7 @@ export function renderHuman(
       lines.push(caption ? `${row}  ${caption}` : row);
     }
   } else {
-    lines.push(verdict);
+    lines.push(tint(verdict, code === 0 ? "inert" : "attention", display));
   }
   return lines.join("\n");
 }

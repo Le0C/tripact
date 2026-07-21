@@ -197,10 +197,12 @@ describe("check output (§5.2)", () => {
   // @specs:output.each-reported-verdict-line
   it("carries the claim id, a text excerpt, and the declaring file:line on each uncovered verdict line", () => {
     const repo = track(fullRepo("tripact-out-line-"));
-    const out = runCli(["check"], { cwd: repo }).stdout;
-    // id · excerpt · location (the claim's own declaring file:line, since uncovered verdicts are untagged).
+    // A wide budget, so the excerpt column is in play: it is the one part of the line that a
+    // narrow terminal gives up (UAC §5.2).
+    const out = runCli(["check"], { cwd: repo, env: { ...process.env, COLUMNS: "160" } }).stdout;
+    // Columns: id · excerpt · location (the claim's own declaring file:line — uncovered is untagged).
     expect(out).toMatch(
-      /addition\.addnumbers-returns-sum-two — "addNumbers returns the sum of two integer inputs" \(SPECS\.md:7\)/,
+      /addition\.addnumbers-returns-sum-two +"addNumbers returns the sum of two integer inputs" +SPECS\.md:7/,
     );
   });
 
