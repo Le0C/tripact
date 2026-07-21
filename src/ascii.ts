@@ -148,12 +148,17 @@ export interface DisplayOptions {
 /**
  * Whether to draw design elements, and in what colour depth (UAC Cross-Cutting: Human output).
  *
+ * The two classes have opposite defaults, because they earn their space differently. Colour is
+ * **on**: it rides along the lines a reader is already reading and costs no room. The mark is
+ * **off**: it is six lines of decoration per report, which reads as noise in the common case of
+ * running `check` repeatedly, so it is opted into by a repository that wants it.
+ *
  * Precedence, strongest first: the repository's own config, then `NO_COLOR`, then `FORCE_COLOR`,
  * then whether the stream is a terminal. Config wins over the environment because it is the
  * repository stating an intent, not the invocation stating a capability — a repo that has turned
- * the mark off should not have it forced back on by a CI variable.
+ * colour off should not have it forced back on by a CI variable.
  *
- * Non-terminal output suppresses both classes, so a piped or redirected report is plain text. Set
+ * Non-terminal output is plain, so a piped or redirected report carries no escapes. Set
  * `FORCE_COLOR` to capture a decorated report into a file deliberately.
  */
 export function resolveDisplay(
@@ -169,7 +174,9 @@ export function resolveDisplay(
     truecolor: env.COLORTERM === "truecolor" || env.COLORTERM === "24bit",
   };
 
-  const mark = declared?.mark === false ? false : forced || isTTY;
+  // Opt-in: absent or false leaves the mark undrawn. It still answers to the stream, so opting in
+  // does not put escapes into a pipe.
+  const mark = declared?.mark === true ? forced || isTTY : false;
   const colour = declared?.colour === false ? false : noColour ? false : forced || isTTY;
   return { mark, colour, depth };
 }

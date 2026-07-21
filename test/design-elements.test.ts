@@ -94,32 +94,46 @@ describe("turning design elements off (Cross-Cutting: Human output, §2.1)", () 
     expect(() => ConfigSchema.parse({ schemaVersion: 1, display: { mark: "no" } })).toThrow();
   });
 
-  test("@specs:human-output.design-elements-suppressed-output - config off beats a terminal, and each key turns off only its own class", () => {
-    expect(resolveDisplay({ display: { mark: false } }, {}, true)).toMatchObject({ mark: false, colour: true });
-    expect(resolveDisplay({ display: { colour: false } }, {}, true)).toMatchObject({ mark: true, colour: false });
-    expect(resolveDisplay({ display: { mark: false, colour: false } }, {}, true)).toMatchObject({
-      mark: false,
+  test("@specs:human-output.human-output-carries-visual - the mark is off unless opted into; colour is on unless turned off", () => {
+    // Opposite defaults: colour rides the lines already being read, the mark costs six lines.
+    expect(resolveDisplay(undefined, {}, true)).toMatchObject({ mark: false, colour: true });
+    expect(resolveDisplay({ display: {} }, {}, true)).toMatchObject({ mark: false, colour: true });
+    expect(resolveDisplay({ display: { mark: false } }, {}, true)).toMatchObject({ mark: false });
+    expect(resolveDisplay({ display: { mark: true } }, {}, true)).toMatchObject({ mark: true });
+  });
+
+  test("@specs:human-output.design-elements-suppressed-output - each key governs only its own class", () => {
+    expect(resolveDisplay({ display: { colour: false } }, {}, true)).toMatchObject({ mark: false, colour: false });
+    expect(resolveDisplay({ display: { mark: true, colour: false } }, {}, true)).toMatchObject({
+      mark: true,
       colour: false,
     });
   });
 
   test("@specs:human-output.design-elements-suppressed-output - config off beats FORCE_COLOR, because the repository outranks the invocation", () => {
-    const d = resolveDisplay({ display: { mark: false, colour: false } }, { FORCE_COLOR: "1" }, true);
+    const d = resolveDisplay({ display: { colour: false } }, { FORCE_COLOR: "1" }, true);
     expect(d).toMatchObject({ mark: false, colour: false });
   });
 
   test("@specs:human-output.design-elements-suppressed-output - NO_COLOR suppresses colour by presence, whatever its value", () => {
     expect(tty({ NO_COLOR: "1" }).colour).toBe(false);
     expect(tty({ NO_COLOR: "" }).colour).toBe(false);
-    // It is a colour switch, so the mark itself survives it.
-    expect(tty({ NO_COLOR: "1" }).mark).toBe(true);
+    // It is a colour switch, so an opted-in mark survives it and simply renders untinted.
+    expect(resolveDisplay({ display: { mark: true } }, { NO_COLOR: "1" }, true)).toMatchObject({
+      mark: true,
+      colour: false,
+    });
   });
 
   test("@specs:human-output.design-elements-suppressed-output - a non-terminal stream suppresses both classes", () => {
-    const piped = resolveDisplay(undefined, {}, false);
-    expect(piped).toMatchObject({ mark: false, colour: false });
+    expect(resolveDisplay(undefined, {}, false)).toMatchObject({ mark: false, colour: false });
+    // Opting the mark in does not put escapes into a pipe: it still answers to the stream.
+    expect(resolveDisplay({ display: { mark: true } }, {}, false)).toMatchObject({ mark: false, colour: false });
     // FORCE_COLOR is the deliberate override, for capturing a decorated report into a file.
-    expect(resolveDisplay(undefined, { FORCE_COLOR: "1" }, false)).toMatchObject({ mark: true, colour: true });
+    expect(resolveDisplay({ display: { mark: true } }, { FORCE_COLOR: "1" }, false)).toMatchObject({
+      mark: true,
+      colour: true,
+    });
     expect(resolveDisplay(undefined, { FORCE_COLOR: "0" }, false)).toMatchObject({ mark: false, colour: false });
   });
 
