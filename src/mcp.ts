@@ -23,6 +23,7 @@ import {
   type Resolution,
 } from "./escalation.js";
 import { SYNC_POINT_TRAILER } from "./git.js";
+import { UNTRUSTED_ARTIFACT_NOTICE, UNTRUSTED_ARTIFACT_RULE } from "./skills.js";
 import { toJsonReport } from "./report.js";
 import { saveSidecar, sidecarContentHash } from "./sidecar.js";
 import { deriveTasks } from "./tasks.js";
@@ -43,9 +44,32 @@ type ToolResult = {
   isError?: boolean;
 };
 
-/** Serialise exactly as the CLI does: `JSON.stringify(doc, null, 2)`. */
+/**
+ * Serialise exactly as the CLI does: `JSON.stringify(doc, null, 2)`, plus the untrusted-data notice
+ * as a SEPARATE block (UAC §16.2).
+ *
+ * Separate, and second, on purpose. The document has to stay byte-identical to the CLI's `--json`
+ * (contract.ts: MCP read tools return it verbatim), so nothing may be prepended into or around it,
+ * and a consumer reading `content[0]` must still find parseable JSON. Ordering costs nothing here
+ * because the guard does not depend on this block: every tool whose result reproduces repository
+ * text states the rule in its own description, which the model reads when the tools are registered —
+ * before any result exists to carry an injected directive.
+ */
 function jsonDoc(doc: unknown): ToolResult {
-  return { content: [{ type: "text", text: JSON.stringify(doc, null, 2) }] };
+  return {
+    content: [
+      { type: "text", text: JSON.stringify(doc, null, 2) },
+      { type: "text", text: UNTRUSTED_ARTIFACT_NOTICE },
+    ],
+  };
+}
+
+/**
+ * Append the standing untrusted-data rule to a tool description (UAC §16.2). Tool descriptions reach
+ * the model at registration, so this is the guard that genuinely precedes every result.
+ */
+function withUntrustedRule(description: string): string {
+  return `${description}\n\n${UNTRUSTED_ARTIFACT_RULE}`;
 }
 
 function errorResult(message: string): ToolResult {
@@ -72,7 +96,7 @@ export function buildServer(repoRoot: string, identity: ServerIdentity = {}): Mc
     "tasks",
     {
       description:
-        "Derive the repair/generation work queue from the current repository state — the same JSON `tripact tasks --json` prints. Each task's payload is self-contained; tasks may carry advisory `effort`/`model` dispatch hints when the config binds them. Optionally pass a reconcile pair to also emit a layer-reconciliation task.",
+        withUntrustedRule("Derive the repair/generation work queue from the current repository state — the same JSON `tripact tasks --json` prints. Each task's payload is self-contained; tasks may carry advisory `effort`/`model` dispatch hints when the config binds them. Optionally pass a reconcile pair to also emit a layer-reconciliation task."),
       inputSchema: {
         reconcile: z
           .string()
@@ -102,7 +126,7 @@ export function buildServer(repoRoot: string, identity: ServerIdentity = {}): Mc
     "claims",
     {
       description:
-        "List every alive claim with id, layer, group path, normalised text, and best edge verdict — the same JSON `tripact claims --json` prints. Use these exact ids when tagging tests; never derive an id from claim text. Set `all` to include dead claims with their last known text.",
+        withUntrustedRule("List every alive claim with id, layer, group path, normalised text, and best edge verdict — the same JSON `tripact claims --json` prints. Use these exact ids when tagging tests; never derive an id from claim text. Set `all` to include dead claims with their last known text."),
       inputSchema: {
         all: z.boolean().optional().describe("Include dead (retired) claims, marked with their last text"),
       },
@@ -115,7 +139,7 @@ export function buildServer(repoRoot: string, identity: ServerIdentity = {}): Mc
     "check",
     {
       description:
-        "Run the deterministic drift check across declared edges and refresh the escalation queue — the same JSON `tripact check --json` prints (verdicts, orphan tags, escalations, exitCode: 0 clean / 1 drift).",
+        withUntrustedRule("Run the deterministic drift check across declared edges and refresh the escalation queue — the same JSON `tripact check --json` prints (verdicts, orphan tags, escalations, exitCode: 0 clean / 1 drift)."),
     },
     () =>
       guarded(() => {
@@ -129,7 +153,7 @@ export function buildServer(repoRoot: string, identity: ServerIdentity = {}): Mc
     "status",
     {
       description:
-        "Read-only traceability summary of the current state — the same JSON `tripact status --json` prints. Never writes anything.",
+        withUntrustedRule("Read-only traceability summary of the current state — the same JSON `tripact status --json` prints. Never writes anything."),
     },
     () => guarded(() => jsonDoc(toJsonReport(analyze(repoRoot)))),
   );
@@ -138,7 +162,7 @@ export function buildServer(repoRoot: string, identity: ServerIdentity = {}): Mc
     "escalations",
     {
       description:
-        "List the open escalation questions the engine could not decide deterministically — the same JSON document `tripact check` writes to .tripact/escalations.json. Answer them with the `resolve` tool.",
+        withUntrustedRule("List the open escalation questions the engine could not decide deterministically — the same JSON document `tripact check` writes to .tripact/escalations.json. Answer them with the `resolve` tool."),
     },
     () =>
       guarded(() => {
@@ -152,7 +176,7 @@ export function buildServer(repoRoot: string, identity: ServerIdentity = {}): Mc
     "resolve",
     {
       description:
-        "Apply an adjudication answer to one escalation question (the only write tool; baselining via `accept` is not available over MCP). Pass exactly one of `match` (same requirement restated — the old claim keeps its id), `new` (genuinely new requirement), `dead` (requirement removed — the id is retired), or `dismiss` (accept an advisory fork-review fork so it is not re-emitted).",
+        withUntrustedRule("Apply an adjudication answer to one escalation question (the only write tool; baselining via `accept` is not available over MCP). Pass exactly one of `match` (same requirement restated — the old claim keeps its id), `new` (genuinely new requirement), `dead` (requirement removed — the id is retired), or `dismiss` (accept an advisory fork-review fork so it is not re-emitted)."),
       inputSchema: {
         questionId: z.string().describe("Escalation question id from the `escalations` or `check` tool"),
         match: z
@@ -210,7 +234,7 @@ export function buildServer(repoRoot: string, identity: ServerIdentity = {}): Mc
       "accept",
       {
         description:
-          "Baseline the current tree: write claim anchoring + verified states into .tripact/claims.json and clear the escalation queue, returning the tripact-sync-id trailer. Exposed only under the `agents` accept policy. Refuses while reanchor/split-merge escalations are open. Runs with no prompt.",
+          withUntrustedRule("Baseline the current tree: write claim anchoring + verified states into .tripact/claims.json and clear the escalation queue, returning the tripact-sync-id trailer. Exposed only under the `agents` accept policy. Refuses while reanchor/split-merge escalations are open. Runs with no prompt."),
       },
       () =>
         guarded(() => {

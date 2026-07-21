@@ -348,6 +348,8 @@ section carries no claims - it records the setup, not a requirement.
 - `tripact mcp-serve` exposes the task queue, claim listing, check report, status summary, and escalation queue as MCP read tools over stdio, plus `resolve` as a write tool
 - `accept` is exposed as a write tool only when the accept policy is `agents`, and is absent under `human`
 - Each MCP read tool returns the same JSON document the corresponding CLI `--json` flag produces
+- Every MCP tool whose result reproduces repository text states the untrusted-data rule in its own description, so the guard reaches the model when the tools are registered - before any result exists to carry an injected directive
+- A result carrying repository text also carries the framing notice alongside the document, as a separate block so the document itself stays byte-identical to the CLI's
 
 ---
 
