@@ -2,6 +2,8 @@ node_modules
 dist/
 *.tsbuildinfo
 .grepai/
+# Captured console output from repo trials and output-design iteration — scratch, never committed.
+*.log
 # Sidecar (UAC §3.2): claims.json + journal.jsonl are canonical and committed (identity ledger +
 # audit log). escalations.json is regenerated on every check (§7.1) and sync-runs/ is harness run
 # scratch (§21.2) — both ephemeral, never committed.
