@@ -234,8 +234,11 @@ describe("effort routing — validation (§16.1 / §2.2)", () => {
 // written, so the docs↔tests edge has something that actually exercises the instructions rather than
 // a test that merely mentions them. It is this repo's first `@docs:` coverage tag.
 describe("effort routing - the documented procedure (docs/manual/routing.md)", () => {
-  it("walks the manual: add a routing map, validate it, and reject an unknown class or tier", () => {
-    // Covers @docs:routing-a-task-class-to-an-effort-tier
+  // The `@docs:` tag sits on the SAME LINE as the `@specs:` ids this walkthrough genuinely asserts,
+  // because that is what bridges a claim to a section (UAC §6.4). A `@docs:` tag on its own line
+  // would bridge nothing, and one sharing only the file would bridge everything — including the
+  // claims elsewhere in this file that the manual page never mentions.
+  it("@specs:effort-routing.tripactyaml-accepts-routing-map @specs:effort-routing.routing-models-entries-validated @specs:effort-routing.emitted-tasks-escalation-questions @docs:routing-a-task-class-to-an-effort-tier - walks the manual: add a routing map, validate it, reject an unknown class or tier, and leave an unrouted class unhinted", () => {
     // Step one and two: the YAML the manual prints, keyed by task class, valued by effort tier.
     const documented = [LAYERS, "routing:", "  adjudicate: judgment", "  write-tests: implementation", "  regenerate-derived: mechanical", ""].join("\n");
     const cfg = loadConfig(configOnly(documented));
@@ -267,5 +270,18 @@ describe("effort routing - the documented procedure (docs/manual/routing.md)", (
     const partialCfg = loadConfig(configOnly(partial));
     expect(hintsFor(partialCfg, "adjudicate")?.effort).toBe("judgment");
     expect(hintsFor(partialCfg, "write-tests")).toBeNull();
+
+    // …and the same promise as the manual states it — about the *emitted tasks*, not just the
+    // resolved hint. Walked here so this test genuinely asserts the claim it tags, rather than
+    // tagging one that a sibling test proves.
+    const partialRepo = repoWith([LAYERS, "routing:", "  write-tests: implementation", ""].join("\n"));
+    const queue = JSON.parse(runCli(["tasks", "--json"], { cwd: partialRepo }).stdout);
+    const routed = queue.tasks.find((t: { kind: string }) => t.kind === "write-tests");
+    const unrouted = queue.tasks.find((t: { kind: string }) => t.kind === "cover-section");
+    expect(routed?.effort).toBe("implementation");
+    if (unrouted) {
+      expect(unrouted.effort).toBeUndefined();
+      expect(unrouted.model).toBeUndefined();
+    }
   });
 });

@@ -706,6 +706,35 @@ tag format and the allowed options are inlined), and every claim of progress it 
 re-running `tripact check`. The agent never has to hold your traceability state in its head; that is
 the sidecar's job.
 
+### The third edge: is it documented?
+
+`check` and `status` report a **three-way pact** alongside the two edges — for each spec claim that
+has a test, whether a documented section is bridged to it:
+
+```console
+three-way gaps: 239 tested but undocumented — advisory; --long lists them
+```
+
+The bridge is **one test tagging both**, on the same line:
+
+```ts
+it("@specs:effort-routing.tripactyaml-accepts-routing-map @docs:routing-a-task-class-to-an-effort-tier - walks the manual", () => {
+```
+
+Same line, not merely the same file. That distinction is the whole value of the number. If sharing a
+file were enough, one `@docs:` tag dropped into a test file would mark every claim tested in that
+file as documented — including the ones the page never mentions — and the metric would report
+coverage that does not exist. The tool exists to refuse exactly that, so it refuses it here too.
+
+Three readings follow: **complete** (bridged), **tested but undocumented** (no bridge), and **untied**
+(a test-covered section that reaches no claim — usually a page describing something untracked, or a
+`@docs:` tag stranded on its own line). All three are advisory: the pact feeds no verdict and no exit
+code. An untested claim is not in the pact at all, since it already reports as `uncovered`.
+
+Expect this number to stay well short of complete, and treat that as normal. Plenty of a spec is
+engine behaviour a *user* manual should never describe; documenting it to move a counter is how the
+counter stops meaning anything.
+
 ### Inside a loop
 
 For an interactive agent the loop already ships: the `tripact-sync` skill _is_ the loop, with the

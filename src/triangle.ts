@@ -59,13 +59,23 @@ export function derivePact(analysis: Analysis): PactReport {
   const sectionTagsByTest = new Map<string, Set<string>>(); // test file -> section slugs it tags
   const sectionsWithTests = new Map<string, Set<string>>(); // slug -> test files tagging it
 
+  // The join handle is the tag's own line, not its file (UAC §6.4). tripact scans tests as text in
+  // any language and has no notion of a test block, so the line is the finest handle it can honestly
+  // claim — and since the convention is that tags live in the test's title, one line IS one test.
+  //
+  // Joining on the file instead would let a single `@docs:` tag anywhere in a file mark every claim
+  // tagged in that file as documented, including claims the section never mentions. That is the
+  // false-coverage failure this tool exists to prevent, and it would be reporting it about itself.
+  const siteOf = (t: { file: string; line: number }) => `${t.file}:${t.line}`;
+  const fileOfSite = (site: string) => site.slice(0, site.lastIndexOf(":"));
+
   for (const v of analysis.verdicts) {
     const role = nonVerifRole(v.edge);
     for (const t of v.tags) {
       if (role === "prescriptive") {
-        addTo(specClaimsWithTests, v.subject, t.file);
+        addTo(specClaimsWithTests, v.subject, siteOf(t));
       } else if (role === "descriptive") {
-        addTo(sectionTagsByTest, t.file, v.subject);
+        addTo(sectionTagsByTest, siteOf(t), v.subject);
         addTo(sectionsWithTests, v.subject, t.file);
       }
     }
@@ -76,14 +86,17 @@ export function derivePact(analysis: Analysis): PactReport {
   const reachableSections = new Set<string>();
 
   for (const claim of sorted(specClaimsWithTests.keys())) {
-    const testFiles = specClaimsWithTests.get(claim) ?? new Set<string>();
+    const sites = specClaimsWithTests.get(claim) ?? new Set<string>();
     const sections = new Set<string>();
-    for (const f of testFiles) for (const s of sectionTagsByTest.get(f) ?? []) sections.add(s);
+    for (const site of sites) for (const s of sectionTagsByTest.get(site) ?? []) sections.add(s);
+    // Reported as files, not sites: the join tightened, the emitted shape did not. A consumer of
+    // `tests` still gets the files that tag the claim.
+    const tests = sorted(new Set([...sites].map(fileOfSite)));
     if (sections.size > 0) {
       for (const s of sections) reachableSections.add(s);
-      complete.push({ claim, sections: sorted(sections), tests: sorted(testFiles) });
+      complete.push({ claim, sections: sorted(sections), tests });
     } else {
-      testedUndocumented.push({ claim, tests: sorted(testFiles) });
+      testedUndocumented.push({ claim, tests });
     }
   }
 

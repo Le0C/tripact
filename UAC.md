@@ -224,6 +224,14 @@ judgement task offered as a reconciliation task (§10.3), not a checked edge.
 Section §6.3 (bare-invocation orientation) is out of scope: invoking `tripact` with no arguments
 prints command help, not a repo orientation - orientation is a harness affordance.
 
+### 6.4 Three-way pact
+
+- The three-way pact correlates the spec↔tests and docs↔tests edges into one reading per spec claim: **complete** where a documented section is bridged to it, **tested but undocumented** where none is, and **untied** for a test-covered doc section no spec claim reaches
+- The bridge from a spec claim to a doc section is a single test that tags both: a `@specs:` tag and a `@docs:` tag on the same line, in the same file
+- Tags merely sharing a test file do not bridge, so a documented section cannot mark a claim documented that it never describes, and adding one `@docs:` tag to a file of unrelated tests raises no claim's reading
+- The pact is advisory: it feeds no verdict and no exit code, and an untested claim is not part of it, since it already reports as uncovered on the spec↔tests edge
+- The pact is empty unless the config declares both a spec↔tests and a docs↔tests edge, because "is this documented?" has no meaning without a descriptive layer to answer it
+
 ---
 
 ## 7. Escalation & Agent Handoff

@@ -141,7 +141,109 @@ describe("three-way pact", () => {
     expect(status).toContain("three-way: 1 complete · 1 tested-undocumented · 1 untied section(s)");
   });
 
-  it("is all-empty when only a spec↔tests edge is declared (applicability guard)", () => {
+  it("@specs:three-way-pact.tags-merely-sharing-test - a @docs: tag elsewhere in the file bridges nothing", () => {
+    const repo = makeRepo("  - [specs, tests]\n  - [docs, tests]");
+    repos.push(repo);
+
+    const initial = checkJson(repo);
+    const specIds = subjectsOn(initial, "specs").sort();
+    const addId = specIds.find((s) => s.startsWith("addition."))!;
+    const subId = specIds.find((s) => s.startsWith("subtraction."))!;
+    const addingSlug = subjectsOn(initial, "docs").find((s) => s.includes("adding"))!;
+
+    // One file, three tags, the section tag on its own line — the shape that used to mark BOTH
+    // claims documented on a page describing only addition. Subtraction is not mentioned anywhere
+    // in the manual, so a join that called it documented would be inventing coverage.
+    writeFileSync(
+      path.join(repo, "tests", "calc.spec.ts"),
+      [
+        `test("@specs:${addId} - add", () => {});`,
+        `test("@specs:${subId} - subtract", () => {});`,
+        `// @docs:${addingSlug}`,
+        "",
+      ].join("\n"),
+    );
+
+    const doc = checkJson(repo);
+    expect(doc.pact.complete).toEqual([]);
+    expect(doc.pact.testedUndocumented.map((c: { claim: string }) => c.claim).sort()).toEqual(
+      [addId, subId].sort(),
+    );
+    // The section is test-covered but reaches no claim, which is exactly what "untied" reports.
+    expect(doc.pact.untiedSections).toEqual([addingSlug]);
+  });
+
+  it("@specs:three-way-pact.bridge-from-spec-claim - the bridge is one line carrying both tags, and it bridges only that line's claims", () => {
+    const repo = makeRepo("  - [specs, tests]\n  - [docs, tests]");
+    repos.push(repo);
+
+    const initial = checkJson(repo);
+    const specIds = subjectsOn(initial, "specs").sort();
+    const addId = specIds.find((s) => s.startsWith("addition."))!;
+    const subId = specIds.find((s) => s.startsWith("subtraction."))!;
+    const addingSlug = subjectsOn(initial, "docs").find((s) => s.includes("adding"))!;
+
+    // Same file as above; the only change is that the section tag now shares the addition line.
+    writeFileSync(
+      path.join(repo, "tests", "calc.spec.ts"),
+      [
+        `test("@specs:${addId} @docs:${addingSlug} - add", () => {});`,
+        `test("@specs:${subId} - subtract", () => {});`,
+        "",
+      ].join("\n"),
+    );
+
+    const doc = checkJson(repo);
+    // Addition bridges; subtraction, in the same file, does not.
+    expect(doc.pact.complete).toEqual([
+      { claim: addId, sections: [addingSlug], tests: ["tests/calc.spec.ts"] },
+    ]);
+    expect(doc.pact.testedUndocumented).toEqual([{ claim: subId, tests: ["tests/calc.spec.ts"] }]);
+    expect(doc.pact.untiedSections).toEqual([]);
+  });
+
+  it("@specs:three-way-pact.three-way-pact-correlates-spectests @specs:three-way-pact.pact-advisory-feeds-no - the pact reports three readings and drives no exit code", () => {
+    const repo = makeRepo("  - [specs, tests]\n  - [docs, tests]");
+    repos.push(repo);
+
+    const initial = checkJson(repo);
+    const specIds = subjectsOn(initial, "specs").sort();
+    const addId = specIds.find((s) => s.startsWith("addition."))!;
+    const subId = specIds.find((s) => s.startsWith("subtraction."))!;
+    const addingSlug = subjectsOn(initial, "docs").find((s) => s.includes("adding"))!;
+    const troubleshootingSlug = subjectsOn(initial, "docs").find((s) => s.includes("troubleshoot"))!;
+
+    writeFileSync(
+      path.join(repo, "tests", "calc.spec.ts"),
+      [
+        `test("@specs:${addId} @docs:${addingSlug} - add", () => {});`,
+        // Tested, but bridged to no section — an untagged claim would be `uncovered` instead, and
+        // uncovered claims are outside the pact entirely.
+        `test("@specs:${subId} - subtract", () => {});`,
+        `test("@docs:${troubleshootingSlug} - restart", () => {});`,
+        "",
+      ].join("\n"),
+    );
+
+    const doc = checkJson(repo);
+    // All three readings present at once: complete, tested-undocumented, untied.
+    expect(doc.pact.complete.length).toBe(1);
+    expect(doc.pact.testedUndocumented.length).toBe(1);
+    expect(doc.pact.untiedSections).toEqual([troubleshootingSlug]);
+
+    // Advisory: the exit code is driven by the edges, not by the pact. Here the tree still has an
+    // uncovered claim and an unverified section, so it drifts — but for those reasons, not this one.
+    const before = doc.exitCode;
+    const accepted = runCli(["accept", "--yes"], { cwd: repo });
+    expect(accepted.status).toBe(0);
+    const after = checkJson(repo);
+    // Still two pact holes after acceptance, and yet the tree is level: the pact moved nothing.
+    expect(after.pact.testedUndocumented.length + after.pact.untiedSections.length).toBeGreaterThan(0);
+    expect(after.exitCode).toBe(0);
+    expect(before).toBe(1);
+  });
+
+  it("@specs:three-way-pact.pact-empty-unless-config - is all-empty when only a spec↔tests edge is declared (applicability guard)", () => {
     const repo = makeRepo("  - [specs, tests]");
     repos.push(repo);
 
