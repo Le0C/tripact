@@ -97,6 +97,8 @@ skill emission below.
 - Order-independent minting governs only the first assignment of a fresh atom; re-anchoring an existing repository reuses the persisted sidecar id and never rewrites it
 - An id, once assigned, is never reused - a deleted claim's entry is marked dead, not removed
 - Sidecar serialisation is stable: entries are sorted by id with fixed formatting, so an unchanged repository state always produces a byte-identical file and minimal git diffs
+- A sidecar left carrying version-control conflict markers is reported as an unresolved merge naming the file and the resolution, not as a parse error, since a committed ledger that two branches both accepted into is the ordinary way this file breaks
+- Any other unreadable sidecar is reported with the file path and the underlying reason, so the failure is attributable to a file rather than to the tool
 
 ### 3.3 Re-anchoring
 

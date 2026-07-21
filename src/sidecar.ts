@@ -107,10 +107,45 @@ export function emptySidecar(): Sidecar {
   return { schemaVersion: 1, claims: [], groups: [], backlog: emptyBacklog() };
 }
 
+// Version-control conflict markers, anchored at column 0 as git writes them. Checked before the
+// JSON parse error is reported, because two branches that both ran `accept` is the ordinary way
+// this file breaks — and `Expected property name at position 44` tells that user nothing.
+const CONFLICT_MARKER_RE = /^(<{7}|={7}|>{7})/m;
+
 export function loadSidecar(repoRoot: string): Sidecar {
   const p = sidecarPath(repoRoot);
   if (!existsSync(p)) return emptySidecar();
-  const raw = JSON.parse(readFileSync(p, "utf8")) as Sidecar;
+  const text = readFileSync(p, "utf8");
+  let raw: Sidecar;
+  try {
+    raw = JSON.parse(text) as Sidecar;
+  } catch (e) {
+    if (CONFLICT_MARKER_RE.test(text)) {
+      // The recipe is "discard one side and re-derive", never "hand-merge". Claim ids are
+      // content-derived, so the side that loses its baseline re-derives to the same ids and the
+      // following accept records them again: no identity is lost, nothing is re-anchored.
+      // Comment column computed from the longest command, so the recipe stays aligned if the
+      // sidecar directory is ever renamed.
+      const recipe: Array<[string, string]> = [
+        [`git checkout --ours ${SIDECAR_DIR}/claims.json`, "or --theirs; either is fine"],
+        ["tripact check", "the other side's claims read as pending"],
+        ["tripact accept", "records them again"],
+      ];
+      const gutter = Math.max(...recipe.map(([cmd]) => cmd.length)) + 4;
+      throw new Error(
+        [
+          `${p} still contains merge conflict markers.`,
+          "",
+          "  Two branches each ran `accept`, so both wrote the claim ledger. Do NOT hand-merge it:",
+          "  take either side whole and rebuild it, which loses nothing because claim ids are",
+          "  derived from claim content, not from the file.",
+          "",
+          ...recipe.map(([cmd, note]) => `    ${cmd.padEnd(gutter)}# ${note}`),
+        ].join("\n"),
+      );
+    }
+    throw new Error(`could not read ${p}: ${(e as Error).message}`);
+  }
   if (raw.schemaVersion !== 1) {
     throw new Error(`unsupported sidecar schemaVersion in ${p}: ${String(raw.schemaVersion)}`);
   }

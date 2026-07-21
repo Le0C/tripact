@@ -56,7 +56,7 @@ No LLM is used in this process, so the output is deterministic. Any ambiguous cl
 - [Configuration](#configuration) - every `tripact.yaml` key
 - [Derived outputs and generators](#derived-outputs-and-generators) - `derived`, `blocks`, generator prefixes, `--allow-shell`
 - [CLI reference](#cli-reference) - every command, flag and exit code
-- [Usage](#usage) - agent instructions, loops, harnesses, CI, the library API
+- [Usage](#usage) - agent instructions, loops, harnesses, CI, merging on a team, the library API
 - [Project](#project) - contributing, security, licence
 
 ## Quickstart
@@ -853,6 +853,36 @@ unverified. See [SECURITY.md](./SECURITY.md).
 
 To prove a build sits at a known sync point, put the `tripact-sync-id` trailer from `accept` into the
 commit and check it with `tripact verify <hash>`.
+
+### On a team, and merging
+
+`.tripact/claims.json` is the claim ledger and it is committed, so two branches that both ran
+`accept` will both have written it, and git will report a conflict there alongside the spec and test
+conflicts you expected.
+
+**Do not hand-merge it.** Take either side whole and rebuild:
+
+```console
+$ git checkout --ours .tripact/claims.json    # or --theirs; either is fine
+$ tripact check                               # the discarded side's claims read as pending
+$ tripact accept                              # records them again
+```
+
+This loses nothing, and the reason is worth understanding: a claim's id is derived from the claim's
+own content, not from the ledger. So the claims belonging to whichever side you discarded re-derive
+to exactly the same ids, come back as `pending`, and the following `accept` records them — zero
+re-anchored, zero retired. Hand-merging the JSON risks inventing a state neither branch ever had,
+which is the one thing an identity ledger must not contain.
+
+Two habits keep this rare:
+
+- **Accept last.** Treat `accept` the way you would a lockfile update: do it at the end of the
+  branch, once the spec and tests have settled, rather than repeatedly as you go.
+- **Rebase before accepting.** `tripact check` after a rebase tells you what actually moved; an
+  accept on top of an up-to-date branch usually leaves nothing to conflict over.
+
+If you do end up running `check` against a sidecar that still has conflict markers in it, tripact
+says so and repeats the recipe above rather than reporting a JSON parse error.
 
 ### As a library
 
