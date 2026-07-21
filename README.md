@@ -3,6 +3,11 @@
   <img src="docs/assets/tripact-lockup.svg" alt="tripact" width="340">
 </picture>
 
+[![npm](https://img.shields.io/npm/v/tripact?color=DD6320)](https://www.npmjs.com/package/tripact)
+[![CI](https://github.com/Le0C/tripact/actions/workflows/ci.yml/badge.svg)](https://github.com/Le0C/tripact/actions/workflows/ci.yml)
+[![licence: Apache-2.0](https://img.shields.io/badge/licence-Apache--2.0-blue)](./LICENSE)
+[![node](https://img.shields.io/node/v/tripact)](https://nodejs.org)
+
 **tripact** is a deterministic traceability engine that helps keep your spec, docs and tests in
 sync. It is a three-way pact between your product specification, your user documentation, and your
 tests. It turns requirements and docs into _claims_ with stable identities, links those claims to
