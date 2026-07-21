@@ -44,6 +44,20 @@ describe("the report headline (§5.2)", () => {
     expect(lines.at(-1)).toBe(verdict);
   });
 
+  test("@specs:output.report-opens-headline-naming - a level tree names its backlog once, not twice", () => {
+    // The level verdict already reads "✓ level — N acknowledged backlog items", so the headline's
+    // count list must not append the same number again.
+    const a = analysed();
+    // Force the level+backlog shape: every uncovered verdict acknowledged, nothing else outstanding.
+    for (const v of a.verdicts) if (v.kind === "uncovered") v.acknowledged = true;
+    a.orphans = [];
+    a.escalations = [];
+    const headline = renderHuman(a, { width: 160 }).split("\n").map(strip).find((l) => l.startsWith("✓"));
+    expect(headline).toBeDefined();
+    expect(headline).toContain("acknowledged backlog items");
+    expect(headline!.match(/acknowledged backlog/g)).toHaveLength(1);
+  });
+
   test("@specs:output.report-opens-headline-naming - per-edge coverage rides under the headline, and a clean edge is not repeated as an empty section", () => {
     const lines = renderHuman(analysed(), { width: 160 }).split("\n").map(strip);
     expect(lines.some((l) => /↔.*\d+\/\d+/.test(l))).toBe(true);

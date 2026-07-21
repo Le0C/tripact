@@ -202,7 +202,7 @@ const MIN_EXCERPT = 32;
  * The counts behind the verdict, in the order a reader triages them: what breaks the build first,
  * then what is merely owed. Empty entries are dropped so the headline never pads itself with zeros.
  */
-function headlineCounts(analysis: Analysis): string[] {
+function headlineCounts(analysis: Analysis, code: 0 | 1): string[] {
   const n = (kind: EdgeVerdict["kind"]) =>
     analysis.verdicts.filter((v) => v.kind === kind && !(kind === "uncovered" && v.acknowledged)).length;
   // Plurals are declared, not derived: most of these labels are verdict-kind names, which are
@@ -219,7 +219,9 @@ function headlineCounts(analysis: Analysis): string[] {
       "non-deterministic generator",
       "non-deterministic generators",
     ],
-    [acknowledgedBacklogCount(analysis), "acknowledged backlog", "acknowledged backlog"],
+    // On a level tree the verdict line already names the backlog, so repeating it here would read
+    // as two different numbers saying the same thing. On a drifting one it is new information.
+    [code === 0 ? 0 : acknowledgedBacklogCount(analysis), "acknowledged backlog", "acknowledged backlog"],
   ];
   return parts
     .filter(([count]) => count > 0)
@@ -282,7 +284,7 @@ export function renderHuman(
   // verdict closes the report, so either end answers the question.
   const code = exitCodeFor(analysis);
   const verdict = verdictLine(analysis, code);
-  const counts = headlineCounts(analysis);
+  const counts = headlineCounts(analysis, code);
   lines.push(
     counts.length
       ? `${tint(verdict, code === 0 ? "inert" : "attention", display)} — ${counts.join(" · ")}`

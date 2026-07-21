@@ -105,6 +105,27 @@ export const SPEC_SYSTEM_PRESETS: Record<string, SpecSystemPreset> = {
     edges: [["spec", "tests"]],
     exclude: [".cursor/specs/**/_template.md", ".cursor/specs/**/tasks.md"],
   },
+  // Cucumber / Gherkin: `features/**/*.feature`, parsed by the Gherkin parser (§3.5) rather than as
+  // markdown. Unlike every other preset the prescriptive layer here is not markdown at all, so the
+  // preset carries no exclude — a `.feature` file is a spec by construction, and the sibling
+  // `step_definitions/` and `support/` trees are Ruby/JS code that the prescriptive glob cannot
+  // match anyway. The test globs add Ruby, since Cucumber's largest install base is Rails and the
+  // suite that verifies these scenarios is usually RSpec rather than the step definitions.
+  cucumber: {
+    name: "cucumber",
+    label: "Cucumber / Gherkin",
+    declares: "prescriptive `features/**/*.feature` (scenarios as claims), parsed by the Gherkin parser",
+    signature: ["features/**/*.feature"],
+    layers: {
+      spec: { role: "prescriptive", paths: ["features/**/*.feature"] },
+      tests: {
+        role: "verificatory",
+        paths: [...COMMON_TEST_GLOBS, "spec/**/*_spec.rb", "test/**/*_test.rb"],
+      },
+    },
+    edges: [["spec", "tests"]],
+    exclude: [],
+  },
   // StrictDoc: requirements are `.sdoc` files (parsed by the SDOC parser, not markdown). A generic
   // preset can't know a repo's spec-vs-manual filename convention, so it declares all `.sdoc` as the
   // prescriptive layer; refine by hand (split a `manual` layer, add a docs/**/*.md descriptive layer)

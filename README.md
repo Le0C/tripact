@@ -25,8 +25,9 @@ No LLM is used in this process, so the output is deterministic. Any ambiguous cl
 
   ```console
   $ tripact check                 # a spec claim exists, but no test references it
+  ✗ drift detected — 1 new-uncovered
   edge specs ↔ tests: 0/1 covered
-    NEW-UNCOVERED addition.adda-b-returns-sum — "add(a, b) returns the sum of two integers"
+    NEW-UNCOVERED addition.adda-b-returns-sum "add(a, b) returns the sum of two integers"
   ✗ drift detected                # exit 1
 
   # …tag the test with @specs:addition.adda-b-returns-sum, baseline once…
@@ -120,17 +121,23 @@ you want your user documentation checked too - see [Configuration](#configuratio
 $ tripact check
 tripact check — no sync-point found — full audit
 
+✗ drift detected — 1 new-uncovered
+  specs ↔ tests 0/1
+
 edge specs ↔ tests: 0/1 covered
   Addition
-    NEW-UNCOVERED addition.adda-b-returns-sum — "add(a, b) returns the sum of two integers" (SPEC.md:5)
+    NEW-UNCOVERED addition.adda-b-returns-sum "add(a, b) returns the sum of two integers" SPEC.md:5
 
 warning: 1 layer(s) matched no files — check the glob: tests
 
 ✗ drift detected                          # exit 1
 ```
 
-Three things to read here. The first line reports the scope: there is no `.tripact/` sidecar yet, so
+Four things to read here. The first line reports the scope: there is no `.tripact/` sidecar yet, so
 this is a full audit rather than a diff against a baseline.
+
+The headline states the verdict and the counts behind it before any detail, and the same verdict
+closes the report — a long report tells you its outcome at either end, without being scrolled.
 
 The warning is expected at this point - `test/**/*.test.ts` matches nothing because you have not
 written the test yet. It is advisory, it does not cause the exit 1, and it clears in step 5. The
@@ -156,12 +163,18 @@ test("@specs:addition.adda-b-returns-sum - adds two integers", () => {
 $ tripact check
 tripact check — no sync-point found — full audit
 
+✗ drift detected — 1 pending
+  specs ↔ tests 0/1
+
 edge specs ↔ tests: 0/1 covered
   Addition
-    PENDING       addition.adda-b-returns-sum — "add(a, b) returns the sum of two integers" (test/add.test.ts:1)
+    PENDING       addition.adda-b-returns-sum "add(a, b) returns the sum of two…" test/add.test.ts:1
 
 ✗ drift detected                          # exit 1 — linked, but awaiting a baseline
 ```
+
+The excerpt is clipped here because the line is budgeted to the terminal's width and the location
+column grew. The excerpt is the column that gives; the id and the location never shorten.
 
 The glob warning is gone: the `tests` layer matches a file now. The claim is `PENDING` rather than
 covered, because a tag alone is a claimed link and acceptance is what records it.
@@ -193,7 +206,8 @@ that same report without writing anything.
 $ tripact check
 tripact check — no sync-point found — full audit
 
-edge specs ↔ tests: 1/1 covered
+✓ level
+  specs ↔ tests 1/1
 
 ✓ level                                   # exit 0
 ```
@@ -404,6 +418,7 @@ from their signature files.
 | `openspec`  | OpenSpec           | prescriptive `openspec/specs/**/spec.md`; excludes per-change deltas under `openspec/changes/`      |
 | `kiro`      | AWS Kiro           | prescriptive `specs/requirements.md` (EARS numbered acceptance criteria)                            |
 | `cursor`    | Cursor spec-driven | prescriptive `.cursor/specs/**/*.md`; excludes `_template.md` and `tasks.md`                        |
+| `cucumber`  | Cucumber / Gherkin | prescriptive `features/**/*.feature` (scenarios as claims), parsed by the Gherkin parser            |
 | `strictdoc` | StrictDoc          | all `.sdoc` files as prescriptive, parsed by the SDOC parser                                        |
 <!-- /tripact:presets-table -->
 

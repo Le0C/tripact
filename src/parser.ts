@@ -342,11 +342,115 @@ export function parseSdocLayer(layer: string, file: string, content: string): Pa
   return { groups: [...groups.values()], atoms };
 }
 
+// --- Gherkin (UAC §3.5) ------------------------------------------------------------------------
+//
+// A `.feature` file is already a structured requirement document, so it parses by keyword rather
+// than by markdown list item. The model mirrors the `.sdoc` one: exactly one construct carries the
+// requirement statement, and everything else is structure or body that must never leak into it.
+//
+//   Feature / Rule   → structural, name the groups            (cf. [[SECTION]])
+//   Scenario / …     → ONE atom, its name is the statement    (cf. a node with STATEMENT)
+//   Given/When/Then  → body, never atom text                  (cf. RATIONALE / COMMENT)
+//   Background       → shared setup, not a requirement
+//   Examples, tables, tags, comments → never atoms
+//
+// Only English keywords are read. Gherkin's `# language:` header selects a localised keyword set,
+// and a non-English file therefore parses to zero atoms rather than to wrong ones — which the
+// vacuous-check gate (§5.4) reports rather than passing off as a clean tree.
+const GHERKIN_FEATURE_RE = /^Feature:\s*(.*)$/;
+const GHERKIN_RULE_RE = /^Rule:\s*(.*)$/;
+// `Example:` (singular) is the Gherkin 6 synonym for `Scenario:`. It must not swallow `Examples:`,
+// the data table of a Scenario Outline — the required colon is what separates them.
+const GHERKIN_SCENARIO_RE = /^(?:Scenario Outline|Scenario Template|Scenario|Example):\s*(.*)$/;
+const GHERKIN_BACKGROUND_RE = /^Background:/;
+// A docstring's content is arbitrary text that may itself contain a keyword line, so it is consumed
+// whole and never read for structure.
+const GHERKIN_DOCSTRING_RE = /^("""|```)/;
+
 /**
- * Dispatch one layer file to the parser for its format (UAC §3.4): `.sdoc` → StrictDoc parser,
- * everything else → the markdown list parser. Extension match is case-insensitive.
+ * Parse one Gherkin `.feature` layer file into its Feature/Rule groups and scenario atoms.
+ *
+ * Implements @specs:gherkin-parsing.gherkin-files-parse-keyword
+ * - spec:  [UAC.md — §3.5 Gherkin parsing]({@link ./../UAC.md})
+ * - tests: [parser.test.ts]({@link ./../test/parser.test.ts})
+ */
+export function parseGherkinLayer(layer: string, file: string, content: string): ParsedFile {
+  const groups = new Map<string, Group>();
+  const atoms: Atom[] = [];
+
+  let feature = "";
+  let rule = "";
+  let docstring: string | null = null;
+
+  const groupPathOf = () => [feature, rule].filter(Boolean).join(" > ");
+  const groupKeyOf = () => [feature, rule].filter(Boolean).map(headingKey).join(" > ");
+
+  const emit = (name: string, line: number) => {
+    const raw = name.replace(/\s+/g, " ").trim();
+    if (raw === "") return; // an unnamed scenario states no requirement, so it tracks nothing
+    const groupPath = groupPathOf();
+    const groupKey = groupKeyOf();
+    let group = groups.get(groupKey);
+    if (!group) {
+      const leaf = rule || feature;
+      group = { layer, groupPath, slug: slugify(headingKey(leaf) || leaf), file, line, tbd: false, atoms: [] };
+      groups.set(groupKey, group);
+    }
+    const norm = normalizeText(raw);
+    const atom: Atom = {
+      id: "", layer, groupPath, groupKey, index: group.atoms.length, file, line,
+      raw, norm, hash: contentHash(norm), tbd: TBD_RE.test(raw),
+    };
+    group.atoms.push(atom);
+    atoms.push(atom);
+  };
+
+  const lines = content.split(/\r?\n/);
+  for (let ln = 0; ln < lines.length; ln++) {
+    const trimmed = (lines[ln] as string).trim();
+
+    if (docstring !== null) {
+      if (trimmed.startsWith(docstring)) docstring = null;
+      continue;
+    }
+    const doc = GHERKIN_DOCSTRING_RE.exec(trimmed);
+    if (doc) {
+      docstring = doc[1] as string;
+      continue;
+    }
+    // Tags (`@wip`) and comments (`# language: en`) carry no requirement.
+    if (trimmed.startsWith("@") || trimmed.startsWith("#")) continue;
+
+    const featureMatch = GHERKIN_FEATURE_RE.exec(trimmed);
+    if (featureMatch) {
+      feature = (featureMatch[1] as string).trim();
+      rule = ""; // a new Feature closes any open Rule
+      continue;
+    }
+    const ruleMatch = GHERKIN_RULE_RE.exec(trimmed);
+    if (ruleMatch) {
+      rule = (ruleMatch[1] as string).trim();
+      continue;
+    }
+    if (GHERKIN_BACKGROUND_RE.test(trimmed)) continue;
+    const scenarioMatch = GHERKIN_SCENARIO_RE.exec(trimmed);
+    if (scenarioMatch) {
+      emit(scenarioMatch[1] as string, ln + 1);
+      continue;
+    }
+    // Steps, Examples tables, data-table rows, and prose descriptions are all body.
+  }
+  return { groups: [...groups.values()], atoms };
+}
+
+/**
+ * Dispatch one layer file to the parser for its format (UAC §3.4, §3.5): `.sdoc` → StrictDoc
+ * parser, `.feature` → Gherkin parser, everything else → the markdown list parser. Extension match
+ * is case-insensitive.
  */
 export function parseLayerFile(layer: string, file: string, content: string): ParsedFile {
-  if (file.toLowerCase().endsWith(".sdoc")) return parseSdocLayer(layer, file, content);
+  const lower = file.toLowerCase();
+  if (lower.endsWith(".sdoc")) return parseSdocLayer(layer, file, content);
+  if (lower.endsWith(".feature")) return parseGherkinLayer(layer, file, content);
   return parseMarkdownLayer(layer, file, content);
 }

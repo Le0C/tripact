@@ -124,8 +124,20 @@ describe("detectSpecSystem", () => {
     expect(detectSpecSystem(d)).toBe("cursor");
   });
 
+  it("fingerprints cucumber by .feature files under features/", () => {
+    const d = repo({ "features/posts.feature": "Feature: posts\n  Scenario: one\n    Then t\n" });
+    expect(detectSpecSystem(d)).toBe("cucumber");
+  });
+
   it("only advertises presets that are actually registered", () => {
-    expect(Object.keys(SPEC_SYSTEM_PRESETS).sort()).toEqual(["cursor", "kiro", "openspec", "spec-kit", "strictdoc"]);
+    expect(Object.keys(SPEC_SYSTEM_PRESETS).sort()).toEqual([
+      "cucumber",
+      "cursor",
+      "kiro",
+      "openspec",
+      "spec-kit",
+      "strictdoc",
+    ]);
   });
 });
 
@@ -148,6 +160,19 @@ describe("kiro preset expansion", () => {
     expect(cfg.layers.spec?.role).toBe("prescriptive");
     expect(cfg.layers.spec?.paths).toEqual(["specs/requirements.md"]);
     expect(cfg.layers.tests?.role).toBe("verificatory");
+    expect(cfg.edges).toEqual([["spec", "tests"]]);
+  });
+});
+
+describe("cucumber preset expansion", () => {
+  it("expands kind: cucumber into a features/**/*.feature prescriptive layer with Ruby test globs", () => {
+    const d = repo({ "tripact.yaml": "schemaVersion: 1\nkind: cucumber\n" });
+    const cfg = loadConfig(d);
+    expect(cfg.layers.spec?.role).toBe("prescriptive");
+    expect(cfg.layers.spec?.paths).toEqual(["features/**/*.feature"]);
+    // Cucumber's largest install base is Rails, so the suite verifying these scenarios is usually
+    // RSpec rather than the step definitions.
+    expect(cfg.layers.tests?.paths).toContain("spec/**/*_spec.rb");
     expect(cfg.edges).toEqual([["spec", "tests"]]);
   });
 });
