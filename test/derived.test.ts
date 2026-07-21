@@ -345,7 +345,7 @@ describe("derived outputs — freshness (§18.2)", () => {
     }>;
     const regen = tasks.filter((x) => x.kind === "regenerate-derived");
     expect(regen).toHaveLength(1);
-    expect(regen[0].payload).toMatchObject({
+    expect(regen[0]!.payload).toMatchObject({
       name: "greeting",
       output: "GENERATED.txt",
       invocation: "tripact generate greeting",

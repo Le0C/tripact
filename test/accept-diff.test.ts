@@ -336,7 +336,7 @@ const DRIVER = (programUrl: string): string =>
 /** Run `tripact <args>` in `cwd` with both streams pretending to be a terminal, answering `input`. */
 function runCliOnTty(args: string[], opts: { cwd: string; input: string }) {
   const { command, baseArgs } = cliInvocation();
-  const entry = baseArgs[0]; // …/dist/cli.js or …/src/cli.ts; the program module sits beside it.
+  const entry = baseArgs[0]!; // …/dist/cli.js or …/src/cli.ts; the program module sits beside it.
   const programPath = path.join(path.dirname(entry), path.basename(entry).replace(/^cli\./, "program."));
   const dir = mkdtempSync(path.join(os.tmpdir(), "tripact-tty-driver-"));
   scratch.push(dir);
@@ -378,7 +378,7 @@ describe("accept confirmation (§8.3)", () => {
       ["\n", "tripact-tty-empty-"],
     ]) {
       const repo = newRepo(files, prefix);
-      const r = runCliOnTty(["accept"], { cwd: repo, input: answer });
+      const r = runCliOnTty(["accept"], { cwd: repo, input: answer! });
       expect(r.stdout, `answer ${JSON.stringify(answer)} prompts`).toContain("Proceed?");
       expect(r.stdout, `answer ${JSON.stringify(answer)} aborts`).toContain(
         "aborted — nothing written, escalations untouched",

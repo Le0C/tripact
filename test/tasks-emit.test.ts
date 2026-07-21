@@ -148,7 +148,7 @@ describe("tripact tasks — emission (UAC §10.1)", () => {
     git(reworded, ["commit", "-m", "reword"]);
     const rw = tasksJson(reworded).tasks.filter((t) => t.kind === "reconcile-stale");
     expect(rw, "reworded stale earns one reconcile-stale task").toHaveLength(1);
-    expect(rw[0].payload.claimId).toBe("addition.addnumbers-returns-sum-two");
+    expect(rw[0]!.payload.claimId).toBe("addition.addnumbers-returns-sum-two");
 
     // B: touch only the tagged test file (claim text unchanged) → test-side-only stale, no task.
     const testSide = committedRepo("tripact-tasks-testside-");
@@ -175,8 +175,8 @@ describe("tripact tasks — emission (UAC §10.1)", () => {
 
     const regen = tasksJson(repo, ["--allow-shell"]).tasks.filter((t) => t.kind === "regenerate-derived");
     expect(regen, "the stale derived output earns one task").toHaveLength(1);
-    expect(regen[0].payload.name).toBe("cli-docs");
-    expect(regen[0].payload.invocation).toBe("tripact generate cli-docs");
+    expect(regen[0]!.payload.name).toBe("cli-docs");
+    expect(regen[0]!.payload.invocation).toBe("tripact generate cli-docs");
   });
 
   // @specs:task-emission.tripact-tasks---reconcile-prescriptivedescriptive
@@ -219,7 +219,7 @@ describe("tripact tasks — emission (UAC §10.1)", () => {
     git(reworded, ["add", "-A"]);
     git(reworded, ["commit", "-m", "reword"]);
     const rs = tasksJson(reworded).tasks.filter((t) => t.kind === "reconcile-stale");
-    expect(rs[0].payload.source).toBe("spec-atom");
+    expect(rs[0]!.payload.source).toBe("spec-atom");
   });
 
   // @specs:task-emission.task-ids-deterministic-same

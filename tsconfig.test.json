@@ -1,0 +1,17 @@
+// Typecheck-only config covering the test suite.
+//
+// The build config deliberately includes `src` alone: it emits, with `rootDir: src`, so pulling
+// `test` in there would write test output into dist. This one emits nothing and exists so the tests
+// are type-checked at all — they were not, and a required field missing from a typed `Task` fixture
+// reached a runtime TypeError instead of a compile error. `test/` is where every `@specs:` tag
+// lives, so it is the last directory that should go unchecked.
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "rootDir": ".",
+    // Vitest globals and the DOM-free node environment the suite actually runs in.
+    "types": ["node"]
+  },
+  "include": ["src", "test"]
+}

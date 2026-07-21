@@ -185,6 +185,7 @@ dismiss the rest. ${r.cli} never tags for you.
 ## Rules
 
 - ${acceptRule(r)}
+- ${UNTRUSTED_ARTIFACT_RULE}
 - \`reconcile\` proposes; you decide. Tag only a test that truly asserts the claim.
 - ${policyNote(r)}
 `;
@@ -469,12 +470,33 @@ export function agentSkills(opts?: SkillOptions): EmittedSkill[] {
  * left untouched unless `force`. Returns the repo-relative paths it wrote. Deterministic:
  * same options → byte-identical files.
  */
+/**
+ * A skill name must be a single safe path segment (UAC §1.2).
+ *
+ * `namePrefix` is a caller-supplied option that becomes a directory name, and an embedding harness
+ * could derive it from something it read rather than from a literal. `../../` would traverse. The
+ * tripact CLI passes a constant, so this guards the library surface rather than the binary — the
+ * same reason the shell gate sits at the spawn and not at its callers.
+ */
+const SAFE_SKILL_NAME = /^[a-z0-9]+(?:[-_][a-z0-9]+)*$/i;
+
+export class SkillNameError extends Error {
+  constructor(readonly name: string) {
+    super(
+      `refusing to emit a skill named "${name}": a skill name must be one path segment of letters, ` +
+        `digits, hyphens or underscores. It becomes a directory under .claude/skills/.`,
+    );
+    this.name = "SkillNameError";
+  }
+}
+
 export function emitSkills(
   repoRoot: string,
   opts: SkillOptions & { force?: boolean } = {},
 ): { written: string[] } {
   const written: string[] = [];
   for (const skill of agentSkills(opts)) {
+    if (!SAFE_SKILL_NAME.test(skill.name)) throw new SkillNameError(skill.name);
     const rel = path.join(".claude", "skills", skill.name, "SKILL.md");
     const abs = path.join(repoRoot, rel);
     if (existsSync(abs) && !opts.force) continue;
@@ -559,14 +581,25 @@ export function escalationPrompt(q: Escalation, opts?: SkillOptions): string {
     "",
     "Decide, per atom, using the TEXTS as evidence (not the ratios).",
     "",
+    // Fenced, not bare bullets. These three blocks are entirely repository text, and until now the
+    // only thing keeping it from running off into the surrounding prose was that atoms happen to be
+    // newline-free (parser.ts collapses whitespace) — protection by accident. A fence makes it
+    // deliberate: a closing fence must begin a line, and every line here starts with the `  - `
+    // bullet the kernel wrote.
     "## Old claims that no longer match",
+    "```text",
     deleted,
+    "```",
     "",
     "## New texts that match no existing claim",
+    "```text",
     created,
+    "```",
     "",
     "## Candidate pairings",
+    "```text",
     candidates,
+    "```",
     "",
     "## How to answer",
     `- Same requirement restated → \`${r.cli} resolve ${q.id} --match <old-id>="<new text>"\``,

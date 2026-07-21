@@ -2,14 +2,17 @@
 // generators (no repo needed), and e2e of the `skills` and `prompt` CLI commands against a scratch
 // repo. This surface lets a foreign harness pick up the kernel and get well-formed
 // adjudication/repair guidance and per-work-item prompts without re-deriving them.
-import { existsSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import {
   adjudicateSkill,
   agentSkills,
+  emitSkills,
   escalationPrompt,
   repairSkill,
+  SkillNameError,
   taskPrompt,
 } from "../src/skills.js";
 import type { Task } from "../src/tasks.js";
@@ -145,5 +148,22 @@ describe("skills + prompt commands (e2e)", () => {
     const r = runCli(["prompt", "no-such-id-000000"], { cwd: repo });
     expect(r.status).toBe(1);
     expect(r.stderr).toContain("no task or escalation");
+  });
+});
+
+describe("emitted skill names are safe path segments (§1.2)", () => {
+  it("@specs:agent-skill-emission.emitted-skills-name-prefix - refuses a name prefix that would traverse out of .claude/skills", () => {
+    const dir = mkdtempSync(path.join(os.tmpdir(), "tripact-skillname-"));
+    try {
+      // Not reachable from the CLI, which passes a constant — this guards the library surface, the
+      // same reason the shell gate sits at the spawn rather than at its callers.
+      expect(() => emitSkills(dir, { namePrefix: "../../escaped" })).toThrow(SkillNameError);
+      expect(() => emitSkills(dir, { namePrefix: "a/b" })).toThrow(/one path segment/);
+      expect(existsSync(path.join(dir, "..", "..", "escaped-adjudicate"))).toBe(false);
+      // An ordinary prefix still works.
+      expect(() => emitSkills(dir, { namePrefix: "my-harness" })).not.toThrow();
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });

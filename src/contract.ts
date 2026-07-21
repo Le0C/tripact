@@ -112,7 +112,7 @@ export const PUBLIC_CONTRACT: readonly ContractSurface[] = [
     cli: [["reconcile", "--json"]],
     mcpTools: [],
     schemaVersion: RECONCILE_SCHEMA_VERSION,
-    fields: ["candidates", "schemaVersion"],
+    fields: ["candidates", "schemaVersion", "trustedFields"],
   },
   {
     key: "hotlinks",

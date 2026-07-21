@@ -27,6 +27,12 @@ export interface ReconcileEntry {
 export interface ReconcileReport {
   schemaVersion: typeof RECONCILE_SCHEMA_VERSION;
   candidates: ReconcileEntry[];
+  /**
+   * Entry fields that are trusted (UAC §10.1), same allowlist rule as a task payload: everything
+   * not named is repository text. The reconcile skill points an agent straight at this document,
+   * and its candidate titles come out of test files, so it needs the boundary as much as a task does.
+   */
+  trustedFields: string[];
 }
 
 const DEFAULT_THRESHOLD = 0.5;
@@ -113,7 +119,10 @@ export function reconcile(analysis: Analysis, opts: { threshold?: number } = {})
     if (cands.length) entries.push({ claimId: v.subject, claimText: atom.norm, tagFormat, candidates: cands });
   }
   entries.sort((x, y) => (x.claimId < y.claimId ? -1 : x.claimId > y.claimId ? 1 : 0));
-  return { schemaVersion: RECONCILE_SCHEMA_VERSION, candidates: entries };
+  // Same allowlist as a task payload (UAC §10.1): everything in an entry is repository text —
+  // `claimText` is the spec's, and each candidate's `title` comes out of a test file — except
+  // `tagFormat`, which derives from the configured tagPattern.
+  return { schemaVersion: RECONCILE_SCHEMA_VERSION, candidates: entries, trustedFields: ["tagFormat"] };
 }
 
 /**

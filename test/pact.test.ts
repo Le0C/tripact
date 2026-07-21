@@ -67,7 +67,7 @@ function makeRepo(edges: string): string {
   return repo;
 }
 
-function checkJson(repo: string): { verdicts: Array<{ edge: [string, string]; subject: string }>; pact: { complete: Array<{ claim: string; sections: string[]; tests: string[] }>; testedUndocumented: Array<{ claim: string; tests: string[] }>; untiedSections: string[] }; counts: Record<string, number> } {
+function checkJson(repo: string): { verdicts: Array<{ edge: [string, string]; subject: string }>; pact: { complete: Array<{ claim: string; sections: string[]; tests: string[] }>; testedUndocumented: Array<{ claim: string; tests: string[] }>; untiedSections: string[] }; counts: Record<string, number>; exitCode: 0 | 1 | 2 } {
   const r = runCli(["check", "--json"], { cwd: repo });
   return JSON.parse(r.stdout);
 }

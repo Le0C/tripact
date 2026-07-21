@@ -27,6 +27,7 @@ skill emission below.
 ### 1.2 Agent skill emission
 
 - `tripact skills` writes six agent skills as `.claude/skills/<name>/SKILL.md` files - `tripact-detect`, `tripact-adjudicate`, `tripact-reconcile`, `tripact-repair`, `tripact-sync`, and `tripact-hotlink-decoration`
+- An emitted skill's name prefix is validated before it becomes a path segment, so a caller embedding the kernel cannot direct a skill file outside `.claude/skills/`
 - The `tripact-detect` skill drives repository initialisation end to end: it runs `tripact detect` to pick a spec-system `kind:` when one matches, classifies files into prescriptive, descriptive, and verificatory layers when none does, writes `tripact.yaml`, emits the working skills, and verifies with `tripact check` - layer classification stays a judgement task the kernel does not automate
 - The `tripact-adjudicate` skill instructs an agent to read `.tripact/escalations.json`, answer each question, and apply the answers with `tripact resolve` (§7.2)
 - The `tripact-reconcile` skill instructs an agent to work the propose-only reconcile queue (§10.3): read what each candidate test actually asserts, tag only one that genuinely asserts the claim, and dismiss the rest - the kernel proposes, and never tags on the agent's behalf
@@ -353,6 +354,7 @@ section carries no claims - it records the setup, not a requirement.
 - Each MCP read tool returns the same JSON document the corresponding CLI `--json` flag produces
 - Every MCP tool whose result reproduces repository text states the untrusted-data rule in its own description, so the guard reaches the model when the tools are registered - before any result exists to carry an injected directive
 - A result carrying repository text also carries the framing notice alongside the document, as a separate block so the document itself stays byte-identical to the CLI's
+- A tool's description states its own write behaviour accurately: `check` refreshes the escalation queue and says so, so no description claims another tool is the only one that writes
 
 ---
 

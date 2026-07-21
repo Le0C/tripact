@@ -38,7 +38,7 @@ function relativeImports(file: string): string[] {
   for (const line of src.split("\n")) {
     if (/^\s*(import|export)\s+type\s/.test(line)) continue;
     const m = line.match(/^\s*(?:import|export)\b[^"']*from\s*["']([^"']+)["']/) ?? line.match(/^\s*import\s*["']([^"']+)["']/);
-    if (m && m[1].startsWith(".")) specifiers.push(m[1]);
+    if (m?.[1]?.startsWith(".")) specifiers.push(m[1]);
   }
   return specifiers;
 }

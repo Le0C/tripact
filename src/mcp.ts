@@ -6,6 +6,10 @@
 // flag prints, off the same builders (toJsonReport, listClaims, deriveTasks) and the
 // same serialisation. `resolve` is always a write tool; `accept` is exposed only when the
 // configured accept policy is `agents`, and is absent under `human` (UAC §16.2).
+//
+// `check` also writes: it refreshes `.tripact/escalations.json`, exactly as the CLI does. Calling
+// `resolve` "the only write tool" was wrong, and wrong in an agent-facing description, so both the
+// comment and that description now say so.
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
@@ -176,7 +180,7 @@ export function buildServer(repoRoot: string, identity: ServerIdentity = {}): Mc
     "resolve",
     {
       description:
-        withUntrustedRule("Apply an adjudication answer to one escalation question (the only write tool; baselining via `accept` is not available over MCP). Pass exactly one of `match` (same requirement restated — the old claim keeps its id), `new` (genuinely new requirement), `dead` (requirement removed — the id is retired), or `dismiss` (accept an advisory fork-review fork so it is not re-emitted)."),
+        withUntrustedRule("Apply an adjudication answer to one escalation question (baselining via `accept` is not available over MCP; note `check` also writes, refreshing the escalation queue). Pass exactly one of `match` (same requirement restated — the old claim keeps its id), `new` (genuinely new requirement), `dead` (requirement removed — the id is retired), or `dismiss` (accept an advisory fork-review fork so it is not re-emitted)."),
       inputSchema: {
         questionId: z.string().describe("Escalation question id from the `escalations` or `check` tool"),
         match: z

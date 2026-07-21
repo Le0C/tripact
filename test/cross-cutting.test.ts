@@ -183,7 +183,7 @@ describe("cross-cutting: determinism", () => {
 
     // The resolution log (§7.2) is the sole timestamped artefact.
     const journal = readFileSync(path.join(dir, "journal.jsonl"), "utf8");
-    const entry = JSON.parse(journal.trim().split("\n")[0]);
+    const entry = JSON.parse(journal.trim().split("\n")[0]!);
     expect(typeof entry.at, "journal entries carry an `at` timestamp").toBe("string");
     expect(entry.at, "the journal is timestamped").toMatch(isoStamp);
   });
@@ -379,7 +379,7 @@ describe("cross-cutting: human output", () => {
     const labels = [...human.matchAll(/^ {4}([A-Z-]+) +\S+ +"/gm)].map((m) => m[1]);
     expect(labels.length, "the human report lists verdicts").toBeGreaterThan(0);
     for (const label of labels) {
-      const kind = label === "NEW-UNCOVERED" || label === "BACKLOG" ? "uncovered" : label.toLowerCase();
+      const kind = label === "NEW-UNCOVERED" || label === "BACKLOG" ? "uncovered" : label!.toLowerCase();
       expect(jsonKinds.has(kind), `human label ${label} is not a --json verdict kind`).toBe(true);
     }
     // No synonyms for the coverage vocabulary.

@@ -24,7 +24,7 @@ afterAll(() => {
 /** The live JSON document for one contract surface, from its first CLI command or its sidecar file. */
 function liveDocument(repo: string, surface: (typeof PUBLIC_CONTRACT)[number]): unknown {
   if (surface.cli.length > 0) {
-    const args = surface.cli[0];
+    const args = surface.cli[0]! as string[];
     const r = runCli(args, { cwd: repo });
     try {
       return JSON.parse(r.stdout);

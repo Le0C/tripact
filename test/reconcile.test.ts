@@ -95,9 +95,9 @@ describe("tripact reconcile — untagged-test proposals (UAC §10.3)", () => {
     const cands = JSON.parse(a.stdout).candidates[0].candidates as Array<{ line: number; score: number }>;
     expect(cands).toHaveLength(2);
     // Ranked by score: the fuller-overlap title (line 2) outranks the terser one (line 1).
-    expect(cands[0].score).toBeGreaterThan(cands[1].score);
-    expect(cands[0].line).toBe(2);
-    expect(cands[1].line).toBe(1);
+    expect(cands[0]!.score).toBeGreaterThan(cands[1]!.score);
+    expect(cands[0]!.line).toBe(2);
+    expect(cands[1]!.line).toBe(1);
 
     // An identical tree yields an identical proposal set and ranking: same bytes on a re-run.
     const b = runCli(["reconcile", "--json"], { cwd: repo });

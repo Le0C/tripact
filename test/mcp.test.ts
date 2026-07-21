@@ -42,10 +42,14 @@ async function connect(repo: string): Promise<{ client: Client; close: () => Pro
 }
 
 /** Return the single text block of a tool result. */
-function toolText(result: { content: Array<{ type: string; text?: string }> }): string {
-  const block = result.content[0];
-  expect(block.type).toBe("text");
-  return block.text ?? "";
+// The SDK types a tool result as a union wider than the text shape these tests read, so the
+// parameter is the structural minimum and the block is asserted present rather than assumed.
+function toolText(result: unknown): string {
+  const blocks = ((result as { content?: unknown }).content ?? []) as Array<{ type: string; text?: string }>;
+  const block = blocks[0];
+  expect(block, "tool result carries a content block").toBeDefined();
+  expect(block!.type).toBe("text");
+  return block!.text ?? "";
 }
 
 describe("MCP serving (§16.2)", () => {
@@ -215,6 +219,24 @@ describe("MCP untrusted-data framing (§16.2)", () => {
       const blocks = result.content.map((b) => b.text ?? "");
       expect(blocks.some((b) => /untrusted specification data/.test(b))).toBe(true);
       expect(blocks[0]).not.toMatch(/untrusted specification data/);
+    } finally {
+      await close();
+    }
+  });
+});
+
+describe("MCP descriptions are accurate about writing (§16.2)", () => {
+  it("@specs:mcp-serving.tools-description-states-own - no description claims resolve is the only write tool, since check writes too", async () => {
+    const repo = fullRepo("tripact-mcp-writes-");
+    scratch.push(repo);
+    const { client, close } = await connect(repo);
+    try {
+      const { tools } = await client.listTools();
+      const byName = new Map(tools.map((t) => [t.name, t.description ?? ""]));
+      // The old wording was wrong, and wrong in an agent-facing string.
+      for (const [, d] of byName) expect(d).not.toMatch(/the only write tool/);
+      // `check` refreshes the escalation queue, exactly as the CLI does, and says so somewhere.
+      expect((byName.get("check") ?? "") + (byName.get("resolve") ?? "")).toMatch(/escalation queue/);
     } finally {
       await close();
     }

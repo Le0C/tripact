@@ -62,7 +62,7 @@ function acceptAndCommit(repo: string, message: string, date: string): string {
   const m = acc.stdout.match(/tripact-sync-id: ([0-9a-f]+)/);
   expect(m, `no trailer in accept output:\n${acc.stdout}`).toBeTruthy();
   commitAll(repo, `${message}\n\ntripact-sync-id: ${m![1]}`, date);
-  return m![1];
+  return m![1]!;
 }
 
 function newRepo(prefix: string, files: Record<string, string>, date = D[0]!): string {
