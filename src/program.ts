@@ -14,7 +14,7 @@ import { AuditError, renderAuditHuman, runAudit } from "./audit.js";
 import { replaceBlockRegions } from "./blocks.js";
 import { listClaims, renderClaimsHuman } from "./claims.js";
 import { acceptPolicy, ConfigError, loadConfig } from "./config.js";
-import { deriveOutputs, generateContent, GenerateError, isShellAllowed, resolveGenerator, setShellAllowed } from "./derived.js";
+import { deriveOutputs, generateContent, GenerateError, isShellAllowed, OutsideRootError, resolveGenerator, resolveWriteTarget, setShellAllowed } from "./derived.js";
 import { computeAcceptanceDelta, renderDeltaHuman } from "./diff.js";
 import { analyze, buildAcceptedSidecar, collectBlockRegions, type CollectedBlock } from "./engine.js";
 import { resolve as applyResolution, ResolveError, writeEscalations } from "./escalation.js";
@@ -447,7 +447,9 @@ export function buildProgram(): Command {
             );
           }
           const content = generateContent(root, d);
-          const abs = path.join(root, d.output);
+          // Containment re-checked against the filesystem, not the spelling (UAC §18.5): the config
+          // check cannot see a symbolic link, and both the config and the tree are repo-controlled.
+          const abs = resolveWriteTarget(root, d.output);
           mkdirSync(path.dirname(abs), { recursive: true });
           writeFileSync(abs, content, "utf8");
           console.log(`wrote ${d.output} (${d.name})`);
@@ -459,7 +461,9 @@ export function buildProgram(): Command {
         const byFile = new Map<string, CollectedBlock[]>();
         for (const b of targetBlocks) byFile.set(b.file, [...(byFile.get(b.file) ?? []), b]);
         for (const [file, regions] of [...byFile.entries()].sort()) {
-          const abs = path.join(root, file);
+          // Same containment check: a block-region file is rewritten in place, so a symlinked one
+          // would edit a file outside the tree.
+          const abs = resolveWriteTarget(root, file);
           const before = readFileSync(abs, "utf8");
           const after = replaceBlockRegions(before, regions, (r) =>
             generateContent(root, { name: r.name, output: r.file, generator: r.generator }, { file: r.file, line: r.openLine }),
@@ -473,7 +477,9 @@ export function buildProgram(): Command {
           console.log(`updated ${file} (${names})`);
         }
       } catch (e) {
-        if (e instanceof GenerateError) fail(e.message); // generator failure → exit 2
+        // Both exit 2: a generator that failed and a target that escaped are config-level refusals,
+        // not drift.
+        if (e instanceof GenerateError || e instanceof OutsideRootError) fail(e.message);
         throw e;
       }
       process.exit(0);

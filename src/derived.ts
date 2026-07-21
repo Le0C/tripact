@@ -13,6 +13,8 @@
 // test/kernel-boundary.test.ts).
 
 import { spawnSync } from "node:child_process";
+import { existsSync, lstatSync, readlinkSync, realpathSync } from "node:fs";
+import path from "node:path";
 import type { Config } from "./config.js";
 
 /** The builtin `cli-reference` generator name. Reserved here; implemented by the harness. */
@@ -107,6 +109,70 @@ export function resolveGenerator(generator: string): { kind: "builtin" | "harnes
   if (generator.startsWith(SHELL_PREFIX)) return { kind: "shell", name: generator.slice(SHELL_PREFIX.length) };
   if (RESERVED_BUILTINS.has(generator)) return { kind: "builtin", name: generator };
   return { kind: "unknown", name: generator };
+}
+
+/** Raised when a write target resolves outside the repository root (UAC §18.5). */
+export class OutsideRootError extends Error {
+  constructor(readonly relPath: string, readonly resolved: string) {
+    super(
+      `refusing to write "${relPath}": it resolves to ${resolved}, outside the repository root.\n` +
+        `  The path is inside the repo but something on it is a symbolic link pointing out.\n` +
+        `  tripact.yaml and the tree are repository-controlled, so a generated artefact is never\n` +
+        `  written through a link that leaves the repository.`,
+    );
+    this.name = "OutsideRootError";
+  }
+}
+
+/**
+ * Resolve a repo-relative write target to its real location, and refuse if that leaves the root
+ * (UAC §18.5).
+ *
+ * Config validation already rejects paths that *spell* an escape (`../`, absolute). It cannot see
+ * symbolic links, because it is deliberately pure — it resolves against a notional root so the same
+ * config validates identically on any machine. So containment is checked a second time here, against
+ * the filesystem, at the moment of writing: same reasoning as putting the shell gate at the spawn
+ * rather than at its callers.
+ *
+ * The target itself usually does not exist yet, so the deepest existing ancestor is resolved and the
+ * remaining segments are re-appended. A link that stays inside the root is fine — only leaving it is
+ * refused.
+ */
+export function resolveWriteTarget(root: string, relPath: string): string {
+  const realRoot = realpathSync(root);
+  let target = path.resolve(root, relPath);
+
+  // Follow the link chain by hand rather than with realpathSync. A DANGLING symlink — one pointing
+  // at a file that does not exist yet — is exactly the escape worth catching, because writing to it
+  // creates the file it points at. `existsSync` follows links, so it reports a dangling link as
+  // absent and hides it; `lstatSync` sees the link itself.
+  for (let hops = 0; hops < 40; hops++) {
+    let link: string;
+    try {
+      if (!lstatSync(target).isSymbolicLink()) break;
+      link = readlinkSync(target);
+    } catch {
+      break; // nothing at this path at all: a genuinely new file
+    }
+    target = path.resolve(path.dirname(target), link);
+  }
+
+  // Then resolve any symlinked DIRECTORY on the way down, by realpath-ing the deepest ancestor that
+  // exists and re-appending the rest.
+  const trailing: string[] = [];
+  let probe = target;
+  while (!existsSync(probe)) {
+    const parent = path.dirname(probe);
+    if (parent === probe) break; // reached the filesystem root
+    trailing.unshift(path.basename(probe));
+    probe = parent;
+  }
+  const resolved = existsSync(probe) ? path.join(realpathSync(probe), ...trailing) : target;
+
+  if (resolved !== realRoot && !resolved.startsWith(realRoot + path.sep)) {
+    throw new OutsideRootError(relPath, resolved);
+  }
+  return resolved;
 }
 
 /**

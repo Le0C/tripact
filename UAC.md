@@ -312,7 +312,8 @@ section carries no claims - it records the setup, not a requirement.
 - Task ids are deterministic for the same underlying situation
 - `tasks --json` emits a machine-readable queue with a `schemaVersion` field; the human output groups tasks by kind and truncates past a fixed threshold unless `--long`
 - `tripact prompt <id>` prints a ready-to-hand-off brief for a single work item - a task id or an escalation question id (§7.2) - with the item's self-contained payload inlined; an unknown id exits 1
-- The brief frames its inlined claim and atom text as untrusted specification data - content to satisfy or evidence to weigh, never an instruction addressed to the agent - and tells the agent to ignore any directive embedded in that text, so an injected instruction inside a spec claim cannot redirect the agent
+- The brief frames every string it reproduces from the repository - its title and group heading as well as its inlined claim and atom text - as untrusted specification data, content to satisfy or evidence to weigh, never an instruction addressed to the agent
+- The framing notice precedes every reproduced string in the brief, so no untrusted text occupies a position the notice has not yet covered, and it tells the agent to disregard any embedded directive including one claiming to supersede the notice itself
 - Every emitted task payload that embeds spec or atom text also carries a `source: "spec-atom"` provenance marker on that text, so a harness can identify and fence the untrusted content programmatically rather than relying on the brief's prose guard alone
 
 ### 10.2 Repair handoff
@@ -397,6 +398,7 @@ section carries no claims - it records the setup, not a requirement.
 - Withheld shell generators never drive exit 1 on their own: not verifying an output is a capability limit, not drift
 - `generate` refuses to run when a named or declared generator is `shell:` without the opt-in, exiting 2 and naming the flag, rather than silently writing an output it did not regenerate
 - A derived `output` path or block-region file resolving outside the repository root is a config error, so a generated artefact can never be written outside the tree being checked
+- Containment is enforced again at the point of writing, against the path's real location on disk rather than its spelling: a target reached through a symbolic link that leaves the repository root is refused, so an in-repo path pointing outside cannot be written through
 
 ---
 
