@@ -20,6 +20,7 @@ import { analyze, buildAcceptedSidecar, collectBlockRegions, type CollectedBlock
 import { resolve as applyResolution, ResolveError, writeEscalations } from "./escalation.js";
 import { isGitRepo, repoRootOf, SYNC_POINT_TRAILER } from "./git.js";
 import { matchesGlob } from "./glob.js";
+import { resolveDisplay } from "./ascii.js";
 import { exitCodeFor, renderHuman, renderStatus, toJsonReport } from "./report.js";
 import { detectSpecSystems } from "./presets.js";
 import { loadSidecar, saveSidecar, sidecarContentHash } from "./sidecar.js";
@@ -153,7 +154,12 @@ export function buildProgram(): Command {
       if (opts.strict) analysis.strict = true;
       writeEscalations(root, analysis.escalations);
       if (opts.json) console.log(JSON.stringify(toJsonReport(analysis), null, 2));
-      else console.log(renderHuman(analysis, { long: opts.long === true }));
+      else {
+        // Design elements are a property of this invocation's stream, not of the analysis, so they
+        // are resolved here and never inside the engine (UAC Cross-Cutting: Human output).
+        const display = resolveDisplay(analysis.config, process.env, process.stdout.isTTY === true);
+        console.log(renderHuman(analysis, { long: opts.long === true, display }));
+      }
       process.exit(exitCodeFor(analysis));
     });
 

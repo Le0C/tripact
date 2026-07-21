@@ -1,5 +1,6 @@
 // Human + JSON reporters. UAC §5.2, §6.1. Deterministic: no timestamps, stable ordering.
 
+import { PLAIN, renderBanner, renderMark, type DisplayOptions, type MarkState } from "./ascii.js";
 import { CHECK_SCHEMA_VERSION } from "./contract.js";
 import type { Analysis } from "./engine.js";
 import { derivePact, type PactReport } from "./triangle.js";
@@ -169,13 +170,38 @@ export function truncateListing(items: string[], long: boolean, indent = ""): st
   return shown;
 }
 
-export function renderHuman(analysis: Analysis, opts: { long?: boolean } = {}): string {
+/**
+ * Which witness mark a finished analysis reads as (UAC Cross-Cutting: Human output).
+ *
+ * Purely presentational — it restates the exit code and the verdicts, and adds nothing. A tree that
+ * is level but has never been baselined reads as `unbaselined`: the mark is continuous, because
+ * nothing disagrees, but dim, because nothing has been recorded either.
+ */
+export function markStateFor(analysis: Analysis): MarkState {
+  if (exitCodeFor(analysis) === 0) return analysis.syncPoint ? "level" : "unbaselined";
+  // New-uncovered is the drift of something never linked at all; a displaced band understates it.
+  const newUncovered = analysis.verdicts.some((v) => v.kind === "uncovered" && v.acknowledged !== true);
+  return newUncovered ? "uncovered" : "drifted";
+}
+
+export function renderHuman(
+  analysis: Analysis,
+  opts: { long?: boolean; display?: DisplayOptions } = {},
+): string {
   const long = opts.long === true;
+  const display = opts.display ?? PLAIN;
   const lines: string[] = [];
   const head = analysis.syncPoint
     ? `sync-point ${analysis.syncPoint.commit.slice(0, 8)} · scope: diff (${analysis.changedPaths.length} changed paths)`
     : "no sync-point found — full audit";
-  lines.push(`tripact check — ${head}`);
+  if (display.mark) {
+    // Banner, then the scope line without the leading product name — the wordmark just said it.
+    lines.push(...renderBanner({ colour: display.colour, depth: display.depth }));
+    lines.push("");
+    lines.push(`check — ${head}`);
+  } else {
+    lines.push(`tripact check — ${head}`);
+  }
   if (analysis.affectedLayers.length) {
     lines.push(
       `⚠ changed code maps to layers via pathMap: ${analysis.affectedLayers.join(", ")} — their claims may no longer describe the product; re-run their tests`,
@@ -375,13 +401,29 @@ export function renderHuman(analysis: Analysis, opts: { long?: boolean } = {}): 
   }
   for (const u of analysis.unsupportedEdges) lines.push(`note: edge ${u}`);
   const code = exitCodeFor(analysis);
+  // The verdict in words. This is the line that carries the meaning; the mark beside it is a
+  // second reading of the same fact, never the only one (UAC Cross-Cutting: Human output).
+  let verdict: string;
   if (code === 0) {
     // Level: no stale/new-uncovered/orphans/escalations/derived-stale (UAC §5.1). Name the
     // acknowledged backlog count when non-zero so the debt stays visible.
     const backlog = acknowledgedBacklogCount(analysis);
-    lines.push(backlog > 0 ? `✓ level — ${backlog} acknowledged backlog items (see tripact tasks)` : "✓ level");
+    verdict = backlog > 0 ? `✓ level — ${backlog} acknowledged backlog items (see tripact tasks)` : "✓ level";
   } else {
-    lines.push("✗ drift detected");
+    verdict = "✗ drift detected";
+  }
+  if (display.mark) {
+    const state = markStateFor(analysis);
+    const mark = renderMark(state, { colour: display.colour, depth: display.depth });
+    // Caption on the middle row, beside the band that carries the state.
+    const captions = ["", verdict, state === "unbaselined" ? "no baseline recorded yet" : ""];
+    lines.push("");
+    for (const [i, row] of mark.entries()) {
+      const caption = captions[i] ?? "";
+      lines.push(caption ? `${row}  ${caption}` : row);
+    }
+  } else {
+    lines.push(verdict);
   }
   return lines.join("\n");
 }

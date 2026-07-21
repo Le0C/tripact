@@ -96,6 +96,11 @@ export const ConfigSchema = z.object({
   // tags. Declared OUTSIDE layers/edges: a code file set is never a layer role and never an edge,
   // so it never produces a coverage verdict. `tagPattern` defaults to the verificatory layer's.
   codeLinks: z.object({ paths: z.array(z.string()).min(1), tagPattern: z.string().optional() }).optional(),
+  // Human-output design elements (UAC Cross-Cutting: Human output). Each key turns off one class:
+  // `mark` the witness mark, `colour` the palette. Both default on and are suppressed anyway when
+  // the stream is not a terminal, so this block is for repositories that want them off even there.
+  // Purely presentational: nothing here reaches a `--json` document or an exit code.
+  display: z.object({ mark: z.boolean().optional(), colour: z.boolean().optional() }).optional(),
 });
 
 export type LayerConfig = z.infer<typeof LayerSchema>;

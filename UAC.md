@@ -52,6 +52,7 @@ skill emission below.
 - Config accepts an optional `accept` block whose `policy` is `human` (the default) or `agents` - whether an agent may baseline (§8.3, §16.2)
 - Config accepts optional `routing` (task class to effort tier) and `models` (effort tier to model identifier) maps, whose entries become advisory dispatch hints (§16.1)
 - Config accepts optional `commands`, `runners`, `derived`, and `codeLinks` blocks; `commands` and `runners` are validated for a driving harness but no kernel command executes them
+- Config accepts an optional `display` block whose `mark` and `colour` keys each turn off one class of human-output design element; both default on
 
 ### 2.2 Validation behaviour
 
@@ -436,6 +437,9 @@ sync-run items and passing them in; the kernel emits none itself.
 - A listing longer than a fixed threshold truncates with a closing "… and N more" line naming `--long`; `--long` prints everything
 - Human reports name verdicts and question kinds with exactly the `--json` vocabulary - no synonyms
 - A human-output change never alters any `--json` document; machine schemas evolve only through their `schemaVersion`
+- Human output carries visual design elements - the witness mark rendered on a character grid, and colour drawn from the brand palette - so that a report is recognisable and its overall state readable before the text is
+- Design elements never carry meaning alone: every state a mark or a colour expresses is also stated in words, so a plain-text or monochrome reading of a report loses nothing
+- Design elements are suppressed when the output is not a terminal, when `NO_COLOR` is set, or when the config turns them off
 
 ### Kernel/harness boundary
 
