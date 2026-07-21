@@ -56,7 +56,6 @@ No LLM is used in this process, so the output is deterministic. Any ambiguous cl
 - [Derived outputs and generators](#derived-outputs-and-generators) - `derived`, `blocks`, generator prefixes, `--allow-shell`
 - [CLI reference](#cli-reference) - every command, flag and exit code
 - [Usage](#usage) - agent instructions, loops, harnesses, CI, the library API
-- [Transitional notes](#transitional-notes) - what is still moving in 0.x
 - [Project](#project) - contributing, security, licence
 
 ## Quickstart
@@ -119,11 +118,24 @@ you want your user documentation checked too - see [Configuration](#configuratio
 
 ```console
 $ tripact check
+tripact check — no sync-point found — full audit
+
 edge specs ↔ tests: 0/1 covered
   Addition
     NEW-UNCOVERED addition.adda-b-returns-sum — "add(a, b) returns the sum of two integers" (SPEC.md:5)
+
+warning: 1 layer(s) matched no files — check the glob: tests
+
 ✗ drift detected                          # exit 1
 ```
+
+Three things to read here. The first line reports the scope: there is no `.tripact/` sidecar yet, so
+this is a full audit rather than a diff against a baseline.
+
+The warning is expected at this point - `test/**/*.test.ts` matches nothing because you have not
+written the test yet. It is advisory, it does not cause the exit 1, and it clears in step 5. The
+warning exists so that a genuinely mistyped glob is visible rather than silently reporting full
+coverage over files tripact never read.
 
 The requirement has an id now: `addition.adda-b-returns-sum`. It is derived from the claim's
 content, and it is what you tag tests with - never the prose, because prose drifts.
@@ -142,15 +154,53 @@ test("@specs:addition.adda-b-returns-sum - adds two integers", () => {
 
 ```console
 $ tripact check
-    PENDING       addition.adda-b-returns-sum          # linked, awaiting a baseline
+tripact check — no sync-point found — full audit
 
+edge specs ↔ tests: 0/1 covered
+  Addition
+    PENDING       addition.adda-b-returns-sum — "add(a, b) returns the sum of two integers" (test/add.test.ts:1)
+
+✗ drift detected                          # exit 1 — linked, but awaiting a baseline
+```
+
+The glob warning is gone: the `tests` layer matches a file now. The claim is `PENDING` rather than
+covered, because a tag alone is a claimed link and acceptance is what records it.
+
+```console
 $ tripact accept --yes
-  tripact-sync-id: 277110193e543841        # baseline written to .tripact/claims.json
+tripact diff — what acceptance would change
 
+  claims created: 1
+    addition.adda-b-returns-sum
+  claims re-anchored: 0
+  claims retired: 0
+  verified states:
+    edge specs ↔ tests: 1 newly recorded, 0 re-baselined
+      + addition.adda-b-returns-sum
+  backlog: 0 newly acknowledged, 0 covered since
+
+sidecar written: .tripact/claims.json
+include this trailer in your commit message:
+
+  tripact-sync-id: 597982a7f620f315
+```
+
+`accept` prints what it changed before writing `.tripact/claims.json`, then gives you a trailer to
+put in the commit message so the baseline is tied to a commit. Run `tripact diff` on its own to see
+that same report without writing anything.
+
+```console
 $ tripact check
+tripact check — no sync-point found — full audit
+
 edge specs ↔ tests: 1/1 covered
+
 ✓ level                                   # exit 0
 ```
+
+That last run still says _no sync-point found_ because you have not committed yet. Commit with the
+trailer above and subsequent checks scope themselves to what changed since that commit instead of
+re-auditing everything.
 
 That is the whole cycle: write a requirement, tag the test that proves it, baseline the link. From
 here `tripact check` is a gate you can put in CI, and everything else in this README is about what
@@ -805,17 +855,6 @@ const queue = deriveTasks(analysis); // the same document `tasks --json` prints
 identity. So are the prompt/skill generators: `agentSkills`, `adjudicateSkill`, `repairSkill`,
 `taskPrompt`, `escalationPrompt`. `registerHarnessGenerator` lets a harness contribute its own
 `harness:` generators, and `registerGenerator` lets it supply the reserved `cli-reference` builtin.
-
-## Transitional notes
-
-Pre-alpha, and still moving:
-
-- **No `init`, no run-book execution.** `tripact detect` fingerprints the spec systems it knows;
-  everything beyond that signature match is emitted as the `detect` skill, because classifying an
-  arbitrary repo's files is a judgement call. Run-book _execution_ stays a harness concern; skill and
-  prompt _emission_ live in the engine.
-- **Pre-alpha (0.x).** The public contract (`--json` schemas, exit codes, MCP tools) is versioned
-  but still evolving; breaking changes may land in minor 0.x bumps. Pin an exact version.
 
 ## Project
 
