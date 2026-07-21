@@ -314,7 +314,10 @@ section carries no claims - it records the setup, not a requirement.
 - `tripact prompt <id>` prints a ready-to-hand-off brief for a single work item - a task id or an escalation question id (§7.2) - with the item's self-contained payload inlined; an unknown id exits 1
 - The brief frames every string it reproduces from the repository - its title and group heading as well as its inlined claim and atom text - as untrusted specification data, content to satisfy or evidence to weigh, never an instruction addressed to the agent
 - The framing notice precedes every reproduced string in the brief, so no untrusted text occupies a position the notice has not yet covered, and it tells the agent to disregard any embedded directive including one claiming to supersede the notice itself
-- Every emitted task payload that embeds spec or atom text also carries a `source: "spec-atom"` provenance marker on that text, so a harness can identify and fence the untrusted content programmatically rather than relying on the brief's prose guard alone
+- A string is trusted only by its provenance - written by the kernel itself, or read from `tripact.yaml`, which the operator vouches for by committing it - and never by inspection, so text that merely looks harmless is still untrusted
+- Every emitted task names the payload fields that are trusted under that rule; its title and every field not named is repository-derived, so a harness fences by default and a field added later is untrusted until someone says otherwise
+- A claim id is repository-derived like the text it was minted from: slug characters permit a hyphenated directive, so an id is never trusted merely for being constrained
+- Every emitted task payload that embeds spec or atom text also carries a `source: "spec-atom"` provenance marker on that text, identifying which field holds a claim's own words
 
 ### 10.2 Repair handoff
 

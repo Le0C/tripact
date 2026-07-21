@@ -35,6 +35,23 @@ export interface Task {
   title: string;
   /** Everything an agent needs to act: self-contained, with no tripact internals required. */
   payload: Record<string, unknown>;
+  /**
+   * Payload keys that are trusted (UAC §10.1). An **allowlist**, deliberately: everything not named
+   * here — including `title` and every nested field — is repository-derived and must be fenced.
+   *
+   * Trust is decided by provenance, never by inspection. A string qualifies two ways only:
+   *   1. the kernel wrote it (a fixed instruction, an invocation it composed), or
+   *   2. it was read from `tripact.yaml`, which the operator vouches for by committing it — the
+   *      same act that trusts a Makefile.
+   *
+   * Nothing qualifies for looking harmless, which is why the content lint is advisory and cannot
+   * confer trust. Claim ids in particular do NOT qualify: they are minted from repository headings,
+   * and slug characters happily spell `ignore-all-previous-instructions`.
+   *
+   * An allowlist because it fails closed. A list of *untrusted* fields would silently pass a field
+   * added later; this way the new field is fenced until someone deliberately vouches for it.
+   */
+  trustedFields: string[];
   /** Advisory dispatch hints from `routing`/`models` config (UAC §16.1). Absent without config. */
   effort?: EffortTier;
   model?: string;
@@ -108,6 +125,7 @@ export function deriveTasks(analysis: Analysis, reconcile?: { prescriptive: stri
           tags: v.tags,
           edge: v.edge,
         },
+        trustedFields: ["source", "edge"],
       });
     }
   }
@@ -131,6 +149,7 @@ export function deriveTasks(analysis: Analysis, reconcile?: { prescriptive: stri
           "write a new tagged test only when none exists",
         ],
       },
+      trustedFields: ["tagFormat", "options"],
     });
   }
 
@@ -144,6 +163,8 @@ export function deriveTasks(analysis: Analysis, reconcile?: { prescriptive: stri
       kind: "regenerate-derived",
       title: `Derived output "${name}" is stale — regenerate it`,
       payload: { name, output: d?.output ?? "", invocation: `tripact generate ${name}` },
+      // All three are config-declared or kernel-composed — nothing here came from a spec file.
+      trustedFields: ["name", "output", "invocation"],
     });
   }
 
@@ -155,6 +176,9 @@ export function deriveTasks(analysis: Analysis, reconcile?: { prescriptive: stri
       kind: "regenerate-derived",
       title: `Block region "${b.name}" in ${b.file} is stale - regenerate it`,
       payload: { name: b.name, output: b.file, line: b.line, invocation: `tripact generate ${b.name}` },
+      // `output` is a repository file path discovered by glob, so unlike the derived-output task
+      // above it is NOT trusted; the generator name and the invocation are.
+      trustedFields: ["name", "line", "invocation"],
     });
   }
 
@@ -164,6 +188,8 @@ export function deriveTasks(analysis: Analysis, reconcile?: { prescriptive: stri
       kind: "fix-orphan-tag",
       title: `Tag @${o.tag} at ${o.file}:${o.line} references no live claim`,
       payload: { ...o },
+      // Nothing: the tag text, the path, and the dead claim's last words are all repo-derived.
+      trustedFields: [],
     });
   }
 
@@ -185,6 +211,9 @@ export function deriveTasks(analysis: Analysis, reconcile?: { prescriptive: stri
         file: group?.file ?? "",
         tagFormat: tagFormatFromPattern(pattern, "<slug>"),
       },
+      // `layer` names a config-declared layer and `tagFormat` derives from its configured pattern.
+      // The slug, heading path and file are all minted from or read out of the repository.
+      trustedFields: ["layer", "tagFormat"],
     });
   }
 
@@ -206,6 +235,9 @@ export function deriveTasks(analysis: Analysis, reconcile?: { prescriptive: stri
           instruction:
             "Judge semantically which claims lack user-facing documentation. Document user-operable behaviour only; skip internals. Follow the descriptive layer's existing voice and checklist format.",
         },
+        // The two layer names come from the config; the instruction is the kernel's own words.
+        // `claims` and `sections` are the repository's, ids and headings included.
+        trustedFields: ["prescriptiveLayer", "descriptiveLayer", "instruction"],
       });
     }
   }

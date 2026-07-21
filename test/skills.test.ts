@@ -75,6 +75,7 @@ describe("skill generators (pure)", () => {
       kind: "write-tests",
       title: 'Write tagged tests for 2 uncovered claim(s) in "Addition"',
       payload: { group: "Addition", claimIds: ["a", "b"], tagFormat: "@specs:<id>" },
+      trustedFields: ["tagFormat"],
       effort: "implementation",
     };
     const p = taskPrompt(task);

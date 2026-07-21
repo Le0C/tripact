@@ -16,6 +16,7 @@ describe("untrusted-artifact framing (§10.1)", () => {
       kind: "write-tests",
       title: "Cover the auth claims",
       payload: { group: "Auth", claims: [{ id: "auth.login", text: INJECTION }], tagFormat: "@specs:<id>" },
+      trustedFields: [],
     };
     const brief = taskPrompt(task);
     expect(brief).toContain(UNTRUSTED_ARTIFACT_NOTICE);
@@ -35,6 +36,7 @@ describe("untrusted-artifact framing (§10.1)", () => {
       kind: "write-tests",
       title: `Cover 1 uncovered claim(s) in "${INJECTION}"`,
       payload: { group: INJECTION, claims: [{ id: "auth.login", text: "a benign claim" }], tagFormat: "@specs:<id>" },
+      trustedFields: [],
     };
     const brief = taskPrompt(task);
     expect(brief.indexOf(UNTRUSTED_ARTIFACT_NOTICE)).toBeLessThan(brief.indexOf(INJECTION));
