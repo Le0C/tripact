@@ -100,4 +100,27 @@ describe("kernel/harness import boundary", () => {
       generateContent(process.cwd(), { name: "probe", output: "probe.md", generator: HOTLINK_MAP }),
     ).toThrow(GenerateError);
   });
+
+  // Implements @specs:kernelharness-boundary.kernels-own-builtin-registration
+  //
+  // Runs LAST on purpose: the generator registry is module-global, so opting in here would make the
+  // "barrel registers nothing" test above pass vacuously if it ran after this one.
+  it("exposes the kernel's own builtin registration on a subpath the barrel does not reach", async () => {
+    // Declared as a package subpath, so a harness opts in without reaching past the package surface.
+    const pkg = JSON.parse(readFileSync(path.join(SRC, "..", "package.json"), "utf8")) as {
+      exports: Record<string, { default?: string; types?: string }>;
+    };
+    expect(pkg.exports["./generators"]?.default).toBe("./dist/generators.js");
+    expect(pkg.exports["./generators"]?.types).toBe("./dist/generators.d.ts");
+    // Declaring it must not have wired it into the barrel — that is what keeps the opt-in explicit.
+    expect(reachableFrom(path.join(SRC, "index.ts")).has("generators.ts")).toBe(false);
+
+    // One import and one call is the whole opt-in, after which a kernel builtin renders in-process
+    // where the bare barrel (asserted above) still reports the wiring error.
+    const { registerBuiltinGenerators } = await import("../src/generators.js");
+    const { generateContent, PRESETS_TABLE } = await import("../src/index.js");
+    registerBuiltinGenerators();
+    const table = generateContent(process.cwd(), { name: "probe", output: "probe.md", generator: PRESETS_TABLE });
+    expect(table).toContain("| `kind:`");
+  });
 });

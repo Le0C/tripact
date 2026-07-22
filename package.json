@@ -36,6 +36,10 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./generators": {
+      "types": "./dist/generators.d.ts",
+      "default": "./dist/generators.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [

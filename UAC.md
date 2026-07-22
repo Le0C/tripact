@@ -482,6 +482,7 @@ sync-run items and passing them in; the kernel emits none itself.
 
 - No module reachable from the importable library entry point imports the binary surface (the command program, the CLI entry, or builtin-generator registration), so a harness embedding the kernel never pulls the reference CLI in with it
 - Importing the library registers no builtin generator and mutates no global state: registration is a startup side effect of the binary surface, so under a bare library import a reserved builtin name resolves to a wiring error rather than to a renderer
+- The kernel's own builtin registration is reachable on a dedicated package subpath rather than through the barrel, so a harness driving the kernel opts the kernel builtins in with one explicit import and call, while a bare library import still registers nothing
 
 ### Footprint
 

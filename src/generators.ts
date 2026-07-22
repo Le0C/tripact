@@ -13,6 +13,12 @@
 //
 // Registration is a side effect, so it is invoked from the binary surface (`cli.ts`) rather than the
 // library barrel. Importing `tripact` as a library must not mutate global state.
+//
+// A foreign harness still needs these builtins — it drives `check`, which runs the freshness pass, so
+// without them a config naming `builtin:presets-table` reports the wiring error where the region is
+// in fact fresh. This module is therefore reachable on its own package subpath, `tripact/generators`,
+// and NOT from the barrel: opting in stays one explicit import and call, and `import "tripact"` alone
+// still registers nothing (kernel/harness boundary, guarded by test/kernel-boundary.test.ts).
 
 import { HOTLINK_MAP, PRESETS_TABLE, registerGenerator, TASK_CLASSES } from "./derived.js";
 import { analyze } from "./engine.js";
