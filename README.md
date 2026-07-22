@@ -1,6 +1,11 @@
+<!--
+  The <source> stays a relative path: only GitHub reads it, and GitHub renders repo-relative SVGs
+  correctly. The <img> fallback is an absolute PNG because npm's renderer drops <picture>/<source>
+  entirely, and an SVG served from raw.githubusercontent arrives as text/plain and never renders.
+-->
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/assets/tripact-lockup-dark.svg">
-  <img src="docs/assets/tripact-lockup.svg" alt="tripact" width="340">
+  <img src="https://raw.githubusercontent.com/Le0C/tripact/main/docs/assets/tripact-lockup.png" alt="tripact" width="340">
 </picture>
 
 [![npm](https://img.shields.io/npm/v/tripact?color=DD6320)](https://www.npmjs.com/package/tripact)
@@ -32,7 +37,7 @@ emits claims, queues and ready-to-hand-off briefs, and spawns no agents of its o
 
 ## Install
 
-Requires Git and Node.js ≥ 22.
+Requires Git and Node.js ≥ 22. Tested on Linux and macOS; Windows is not supported yet.
 
 ```bash
 npm install -D tripact       # or: pnpm add -D tripact · yarn add -D tripact

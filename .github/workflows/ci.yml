@@ -17,14 +17,28 @@ concurrency:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    # Windows is not a supported platform yet, so its failures report without failing the run.
+    continue-on-error: ${{ matrix.experimental == true }}
     strategy:
       fail-fast: false
       matrix:
         # 22 is the declared floor (package.json engines); 24 is the current LTS. fs.globSync,
         # which the layer scan depends on, was experimental across 22.x, so the floor is tested
         # rather than assumed.
+        os: [ubuntu-latest]
         node: [22, 24]
+        include:
+          # macOS on the floor version: the daily development platform, so a break here is a break
+          # for the maintainer before it is one for a user.
+          - os: macos-latest
+            node: 22
+          # Windows is observational for now. The layer scan normalises path separators, so it may
+          # already work — this job is how we find out, and it must not block a release until the
+          # answer is known and the support claim is written down.
+          - os: windows-latest
+            node: 22
+            experimental: true
     steps:
       - uses: actions/checkout@v4
         with:
@@ -74,7 +88,11 @@ jobs:
         # The project's one hard rule (CONTRIBUTING.md): spec, docs and tests describe the same
         # behaviour. No --allow-shell: this repo's generators are all builtin:, so needing the
         # flag here would itself be the signal that something changed.
-        run: node dist/cli.js check
+        #
+        # --strict is the release gate: acknowledged backlog and the zero-file / zero-atom layer
+        # warnings count as drift too. The tree carries no backlog today, so the gate holds the
+        # project at that standard rather than waiting until it has slipped.
+        run: node dist/cli.js check --strict
 
       - name: Derived outputs are current
         # generate is byte-deterministic, so a dirty tree afterwards means a committed derived

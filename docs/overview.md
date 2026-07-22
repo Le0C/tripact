@@ -67,7 +67,8 @@ Five minutes from nothing to a green check on a one-requirement repository.
 
 ### 1. Install
 
-Requires Git and Node.js ≥ 22. The current release is **0.1.0**.
+Requires Git and Node.js ≥ 22. CI covers Linux and macOS; Windows runs as an observational job and
+is not a supported platform yet.
 
 ```bash
 npm install -D tripact       # or: pnpm add -D tripact · yarn add -D tripact
@@ -81,7 +82,7 @@ npx tripact --version
 
 Every example below writes bare `tripact` for readability. Either prefix each one with `npx`, or
 install globally (`npm install -g tripact`) and drop the prefix. A one-off run without installing
-anything works too: `npx tripact@0.1.0 check`.
+anything works too: `npx tripact check`.
 
 > Pre-alpha (0.x): the `--json` contract and CLI are still moving. Pin an exact version.
 
