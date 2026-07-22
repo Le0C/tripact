@@ -1,8 +1,8 @@
 # Block-level derived artefacts
 
 **Status: shipped.** Implemented in `src/blocks.ts` and specified as `UAC.md` §18.3. This repo uses
-it: the spec-system preset table in `README.md` is a `<!-- tripact:presets-table -->` region, and
-`tripact generate` fills it from the registry.
+it: the spec-system preset table in `docs/overview.md` is a `<!-- tripact:presets-table -->` region,
+and `tripact generate` fills it from the registry.
 
 This document is kept as the design record — why block regions exist and what was rejected on the
 way. Read `UAC.md` §18.3 and §18.4 for the behaviour that is actually pinned by tests; where the two
