@@ -139,7 +139,11 @@ export function deriveTasks(analysis: Analysis, reconcile?: { prescriptive: stri
       // Find-or-write (UAC §10.1): tag an existing untagged test that already asserts the claim, or
       // write a new one only when none exists. The payload names both options and the exact tag
       // format so the agent can search-then-tag before reaching for a fresh test.
-      title: `Tag an existing test or write one for ${ids.length} uncovered claim(s) in "${group}"`,
+      //
+      // The group leads the title and the instruction trails it: every task in this kind repeats the
+      // same instruction, so putting it first pushes the one part that differs between them — the
+      // group — past where a scanned column of titles is still readable (UAC §10.1).
+      title: `${group} — Tag or write a test for these claims`,
       payload: {
         group,
         claims: ids.sort().map((id) => ({ id, text: claimText.get(id) ?? "", source: SPEC_ATOM_SOURCE })),

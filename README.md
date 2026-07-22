@@ -344,11 +344,11 @@ $ tripact tasks
 tripact tasks — 1 task(s)
 
 write-tests (1):
-  write-tests-0f7f2602b3  Tag an existing test or write one for 1 uncovered claim(s) in "Addition"
+  write-tests-0f7f2602b3  Addition — Tag or write a test for these claims
 
 $ tripact prompt write-tests-0f7f2602b3 # emits the following:
 
-# tripact task: Tag an existing test or write one for 1 uncovered claim(s) in "Addition"
+# tripact task: Addition — Tag or write a test for these claims
 
 Kind: write-tests    Id: write-tests-0f7f2602b3
 

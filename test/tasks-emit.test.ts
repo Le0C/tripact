@@ -115,6 +115,18 @@ describe("tripact tasks — emission (UAC §10.1)", () => {
     expect(write!.payload.tagFormat).toBe("@specs:<id>");
   });
 
+  // @specs:task-emission.uncovered-claim-tasks-title-leads
+  it("leads the uncovered-claim task's title with its claim group, instruction trailing", () => {
+    const repo = track(fullRepo("tripact-tasks-title-"));
+    const write = tasksJson(repo).tasks.find((t) => t.kind === "write-tests")!;
+    const group = write.payload.group as string;
+    expect(group, "the fixture's uncovered claims share one group").toBeTruthy();
+    // The group occupies the head of the title, where a scanned column stays readable...
+    expect(write.title.startsWith(group)).toBe(true);
+    // ...and the find-or-write instruction, identical across every task of this kind, trails it.
+    expect(write.title).toBe(`${group} — Tag or write a test for these claims`);
+  });
+
   // @specs:task-emission.pending-verdict-emits-no
   it("emits no task for a pending verdict", () => {
     // Tagged-but-never-verified tests → both claims pending. Pending's cure is an accept, not repair.

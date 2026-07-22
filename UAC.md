@@ -306,6 +306,7 @@ section carries no claims - it records the setup, not a requirement.
 - `tripact tasks` derives a work queue from the current analysis without mutating artefacts, the sidecar, or escalations
 - One task is emitted per reworded stale claim (§4.1), per orphan tag, and per uncovered descriptive section; uncovered claims are grouped into one task per claim group
 - The uncovered-claim task is a find-or-write task: it instructs tagging an existing untagged test that already asserts the claim, or writing a new tagged test only when none exists, and its payload names both options and the exact tag format
+- The uncovered-claim task's title leads with the claim group it concerns and states the find-or-write instruction after it, so the group stays readable when a queue of titles is scanned side by side
 - A pending verdict emits no task - its cure is an accept recording the verified state, which belongs to the accept gate (§8.3), not to repair work
 - Test-side-only staleness (§4.1) emits no task; only a reworded stale claim, whose own text moved, emits a `reconcile-stale` task
 - A derived-stale output (§18.2) emits a `regenerate-derived` task naming the exact `tripact generate` invocation
