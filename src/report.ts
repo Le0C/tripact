@@ -36,6 +36,9 @@ export interface CheckReportJson {
   vacuous: boolean;
   /** Atoms whose text carries a prompt-injection signature (advisory content-lint, UAC §5.5). */
   suspiciousAtoms: Analysis["suspiciousAtoms"];
+  /** Atoms left out of the coverage denominator as placeholder or informative text (UAC §5.4).
+   *  Advisory, never drives the exit code. Additive field. */
+  excludedAtoms: Analysis["excludedAtoms"];
   /**
    * The three-way pact: spec claims, doc sections, and tests correlated on their shared test file
    * (a test tagging both `@specs:` and `@docs:`). Advisory: it feeds no verdict or exit code, and
@@ -117,6 +120,8 @@ export function toJsonReport(analysis: Analysis): CheckReportJson {
   counts["zeroFileLayers"] = analysis.zeroFileLayers.length;
   counts["zeroAtomLayers"] = analysis.zeroAtomLayers.length;
   counts["suspiciousAtoms"] = analysis.suspiciousAtoms.length;
+  counts["placeholderAtoms"] = analysis.excludedAtoms.placeholder;
+  counts["informativeAtoms"] = analysis.excludedAtoms.informative;
   return {
     schemaVersion: CHECK_SCHEMA_VERSION,
     scope: analysis.scope,
@@ -135,6 +140,7 @@ export function toJsonReport(analysis: Analysis): CheckReportJson {
     zeroAtomLayers: analysis.zeroAtomLayers,
     vacuous: analysis.vacuous,
     suspiciousAtoms: analysis.suspiciousAtoms,
+    excludedAtoms: analysis.excludedAtoms,
     pact,
     counts,
     exitCode: exitCodeFor(analysis),
@@ -503,7 +509,14 @@ export function renderHuman(
     lines.push("");
   }
   if (analysis.zeroFileLayers.length) {
-    lines.push(`warning: ${analysis.zeroFileLayers.length} layer(s) matched no files — check the glob: ${analysis.zeroFileLayers.join(", ")}`);
+    // Name the globs, not only the layer (UAC §5.4). "matched no files" alone reads like a fact
+    // about the repository; with the globs beside it, a wrong glob is visible without opening the
+    // config — which is exactly the case that reports a repository full of tests as having none.
+    lines.push(`warning: ${analysis.zeroFileLayers.length} layer(s) matched no files — check the glob:`);
+    for (const name of analysis.zeroFileLayers) {
+      const paths = analysis.config.layers[name]?.paths ?? [];
+      lines.push(`  ${name}: ${paths.join(", ")}`);
+    }
     lines.push("");
   }
   if (analysis.zeroAtomLayers.length) {
@@ -521,6 +534,16 @@ export function renderHuman(
   if (analysis.suspiciousAtoms.length) {
     lines.push(`warning: ${analysis.suspiciousAtoms.length} atom(s) carry a prompt-injection signature — review before an agent works them:`);
     lines.push(...truncateListing(analysis.suspiciousAtoms.map((s) => `  [${s.signal}] ${s.file}:${s.line} — "${excerpt(s.excerpt)}"`), long, "  "));
+    lines.push("");
+  }
+  const { placeholder, informative } = analysis.excludedAtoms;
+  if (placeholder || informative) {
+    // Say what left the denominator. An exclusion that is never reported is indistinguishable from
+    // coverage the repository never owed.
+    const parts: string[] = [];
+    if (placeholder) parts.push(`${placeholder} unfilled template placeholder(s)`);
+    if (informative) parts.push(`${informative} informative atom(s)`);
+    lines.push(`note: ${parts.join(" · ")} tracked but not coverage-checked (see tripact claims)`);
     lines.push("");
   }
   for (const u of analysis.unsupportedEdges) lines.push(`note: edge ${u}`);

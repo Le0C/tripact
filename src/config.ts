@@ -72,6 +72,10 @@ export const ConfigSchema = z.object({
   // Globs subtracted from every layer's file set after collection (UAC §2). Archived duplicates,
   // vendored trees, and generated derived outputs live here so they never parse as source atoms.
   exclude: z.array(z.string()).optional(),
+  // Heading titles whose atoms are tracked but never coverage-checked (UAC §2.1, §3.1). Omitted,
+  // the kernel's DEFAULT_INFORMATIVE_GROUPS applies; declared, the list REPLACES the default, so
+  // `informativeGroups: []` turns the exclusion off for a repository that wants every atom checked.
+  informativeGroups: z.array(z.string()).optional(),
   // accept.policy validated against ACCEPT_POLICIES in loadConfig (all-at-once, §2.2)
   accept: z.object({ policy: z.string() }).optional(),
   // values validated against EFFORT_TIERS / KNOWN_TASK_CLASSES in loadConfig so that

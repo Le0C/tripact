@@ -69,6 +69,7 @@ describe("disambiguateSlugs (M2)", () => {
     layer: "docs",
     groupPath,
     slug,
+    informative: false,
     file,
     line: 1,
     tbd: false,

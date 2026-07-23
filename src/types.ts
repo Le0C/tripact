@@ -22,6 +22,12 @@ export interface Atom {
   /** SHA-256 of `norm`. */
   hash: string;
   tbd: boolean;
+  /** Text still carrying an unfilled template placeholder (UAC §3.1). Implies `tbd`; kept as its
+   * own flag so the report can name why an atom left the coverage denominator. */
+  placeholder: boolean;
+  /** Under an informative heading — Out of Scope, Non-Goals (UAC §3.1). Tracked, never coverage-
+   * checked: a statement of what will not be built cannot be satisfied by a test asserting it. */
+  informative: boolean;
 }
 
 export interface Group {
@@ -32,6 +38,8 @@ export interface Group {
   file: string;
   line: number;
   tbd: boolean;
+  /** Under an informative heading (UAC §3.1) — excluded from D↔V section coverage like a TBD group. */
+  informative: boolean;
   atoms: Atom[];
 }
 

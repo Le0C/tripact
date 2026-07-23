@@ -233,7 +233,7 @@ export function deriveTasks(analysis: Analysis, reconcile?: { prescriptive: stri
           prescriptiveLayer: reconcile.prescriptive,
           descriptiveLayer: reconcile.descriptive,
           claims: p.atoms
-            .filter((a) => !a.tbd)
+            .filter((a) => !a.tbd && !a.informative)
             .map((a) => ({ id: a.id, group: a.groupPath, text: a.raw, source: SPEC_ATOM_SOURCE })),
           sections: d.groups.map((g) => ({ slug: g.slug, groupPath: g.groupPath, file: g.file })),
           instruction:

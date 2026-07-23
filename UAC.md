@@ -54,6 +54,7 @@ skill emission below.
 - Config accepts optional `routing` (task class to effort tier) and `models` (effort tier to model identifier) maps, whose entries become advisory dispatch hints (§16.1)
 - Config accepts optional `commands`, `runners`, `derived`, and `codeLinks` blocks; `commands` and `runners` are validated for a driving harness but no kernel command executes them
 - Config accepts an optional `display` block: `colour` turns the palette off, and `mark` opts the witness mark in, since it is off by default
+- Config accepts an optional `informativeGroups` list of heading titles naming the sections whose atoms are tracked but never coverage-checked (§3.1); a declared list replaces the built-in default rather than extending it, and an empty list turns the exclusion off entirely
 
 ### 2.2 Validation behaviour
 
@@ -67,6 +68,7 @@ skill emission below.
 - Preset expansion is user-first: a layer, an edge list, or an exclude the config declares explicitly is kept unchanged, and the preset supplies only the layers, edges, and excludes the config omits
 - Preset expansion runs before structural validation, so a `kind`-only config clears the two-layer floor through the preset's own layers
 - An unknown `kind` fails validation with exit code 2 in a message naming the accepted spec systems
+- A preset seeds its verificatory layer with colocated test globs as well as directory-anchored ones, since a test file sitting beside the source it exercises is the dominant convention in JavaScript and TypeScript repositories and a directory-anchored glob alone reports such a repository as having no tests
 - The same preset registry backs detection: each spec system declares signature globs that fingerprint it on disk from file presence alone, never from file contents
 - Detection returns every spec system whose signatures are present, not only the first: a repository matching more than one spec system is ambiguous, and its candidates are surfaced for a person or agent to choose rather than resolved silently by registry order
 - A repository is auto-assigned a single `kind` only when exactly one spec system matches; when none or several match it is left unassigned, so an ambiguous layout is never silently guessed
@@ -84,6 +86,10 @@ skill emission below.
 - Prose paragraphs that carry no requirement signal, along with code blocks, blockquotes, and nested (indented) list items, are not atoms and never receive identities
 - Atom normalisation lowercases, collapses whitespace, and strips any checkbox marker and trailing punctuation before hashing - reformatting a line without rewording it, including converting checkbox syntax to a plain bullet, does not change its content hash
 - A heading marked `(TBD)` parses normally; its atoms are tracked in the sidecar but excluded from edge coverage verdicts (§4.1)
+- An atom whose text still carries an unfilled template placeholder - a bracketed span left unsubstituted, such as `[specific capability]` - parses normally but is tracked as TBD rather than as a live requirement, so a committed but unedited spec template never becomes coverage debt
+- Placeholder detection ignores markdown links and inline code and requires the bracketed span to carry at least two words, so a requirement that legitimately cites a bracketed token is not mistaken for boilerplate
+- An atom under a heading naming a conventionally **informative** section - `Out of Scope`, `Non-Goals`, and their spellings - is tracked in the sidecar but excluded from edge coverage verdicts (§4.1), since a statement of what the project will not build cannot be satisfied by a test that asserts it
+- A heading is matched against the informative set by its numbering-stripped, case-folded title, so `## 7. Out of Scope` and `## Out-of-Scope *(mandatory)*` are both recognised
 - Parsing is deterministic: the same file bytes always produce the same groups, atoms, and hashes
 
 ### 3.2 Sidecar
@@ -191,6 +197,8 @@ judgement task offered as a reconciliation task (§10.3), not a checked edge.
 ### 5.4 Layer diagnostics
 
 - A declared layer whose paths match no files is reported as a `zeroFileLayers` warning in both the human report and `check --json`, distinguishing a mis-declared or unmatched glob from a populated layer
+- The zero-file warning names the globs the layer declared, so a wrong glob is distinguishable from an unpopulated layer without opening the config
+- The atoms excluded from coverage as placeholder or informative text are reported as an `excludedAtoms` count in both the human report and `check --json`, so text dropped from the coverage denominator is never dropped silently
 - A prescriptive or descriptive layer that matches files but parses to zero atoms is reported as a `zeroAtomLayers` warning, surfacing an unparsable format or a wrong glob
 - Layer-diagnostic warnings are advisory: an individual mis-declared layer is surfaced without, on its own, changing the exit code, so a layer may be declared before it is populated
 - A check that parsed **zero atoms across every prescriptive and descriptive layer** is **vacuous** - there is nothing to check, so it never reports level: it is drift, driving exit 1, and reports `vacuous: true` in `check --json`
@@ -219,6 +227,7 @@ judgement task offered as a reconciliation task (§10.3), not a checked edge.
 - Each listed claim carries its declaring file and line, so a claim can be opened directly from the listing and used as a navigation target (§20)
 - `claims --json` emits the same listing machine-readably with a `schemaVersion` field, including each claim's file and line
 - Dead claims are excluded by default and included with `claims --all`, each marked dead with its last text
+- A claim excluded from coverage as informative text is marked `informative` in the listing, as a TBD claim is marked `tbd`, so text outside the coverage denominator is visible in the discovery command rather than reading as an ordinary uncovered claim
 - Listing order is deterministic: layer order, then document order, with dead entries sorted by id
 - `claims` prints its full listing and exits 0 rather than following the drift convention, so a large listing survives being piped
 
@@ -308,6 +317,7 @@ section carries no claims - it records the setup, not a requirement.
 - The uncovered-claim task is a find-or-write task: it instructs tagging an existing untagged test that already asserts the claim, or writing a new tagged test only when none exists, and its payload names both options and the exact tag format
 - The uncovered-claim task's title leads with the claim group it concerns and states the find-or-write instruction after it, so the group stays readable when a queue of titles is scanned side by side
 - A pending verdict emits no task - its cure is an accept recording the verified state, which belongs to the accept gate (§8.3), not to repair work
+- A placeholder or informative atom (§3.1) emits no task, so a queue never asks an agent to write a test for a claim the kernel does not coverage-check
 - Test-side-only staleness (§4.1) emits no task; only a reworded stale claim, whose own text moved, emits a `reconcile-stale` task
 - A derived-stale output (§18.2) emits a `regenerate-derived` task naming the exact `tripact generate` invocation
 - `tripact tasks --reconcile <prescriptive>:<descriptive>` additionally emits a single layer-reconciliation task carrying both layers' full inventories, so the agent judges what documentation is missing

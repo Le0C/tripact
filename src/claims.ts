@@ -14,6 +14,9 @@ export interface ClaimListing {
   /** Best verdict across all edges naming this claim; null when none applies (TBD, dead). */
   verdict: EdgeVerdictKind | null;
   tbd: boolean;
+  /** Excluded from coverage as informative text (UAC §3.1, §6.2) — marked distinctly from `tbd`
+   * so a deliberate non-goal never reads as an ordinary uncovered claim awaiting a test. */
+  informative: boolean;
   alive: boolean;
   /** Declaring location of the claim, so it can be opened from the listing and used as a
    * navigation target (UAC §6.2). Present on alive claims; a dead claim has no live declaration. */
@@ -56,8 +59,9 @@ export function listClaims(analysis: Analysis, opts: { all?: boolean } = {}): Cl
         layer: layer.name,
         groupPath: atom.groupPath,
         text: atom.norm,
-        verdict: atom.tbd ? null : (bestBySubject.get(subject) ?? null),
+        verdict: atom.tbd || atom.informative ? null : (bestBySubject.get(subject) ?? null),
         tbd: atom.tbd,
+        informative: atom.informative,
         alive: true,
         file: atom.file,
         line: atom.line,
@@ -83,6 +87,7 @@ export function listClaims(analysis: Analysis, opts: { all?: boolean } = {}): Cl
         text: lastText,
         verdict: null,
         tbd: false,
+        informative: false,
         alive: false,
         lastText,
       });
@@ -107,10 +112,10 @@ export function renderClaimsHuman(report: ClaimsReportJson): string {
   for (const [layer, cs] of byLayer) {
     lines.push(`layer ${layer}: ${cs.filter((c) => c.alive).length} alive claims`);
     for (const c of cs) {
-      const verdict = !c.alive ? "dead" : c.tbd ? "tbd" : (c.verdict ?? "-");
+      const verdict = !c.alive ? "dead" : c.informative ? "informative" : c.tbd ? "tbd" : (c.verdict ?? "-");
       const loc = c.alive && c.file ? ` · ${c.file}:${c.line}` : "";
-      lines.push(`  ${verdict.toUpperCase().padEnd(9)} ${c.id} · ${c.groupPath}${loc}`);
-      lines.push(`            ${c.alive ? c.text : `last text: "${c.text}"`}`);
+      lines.push(`  ${verdict.toUpperCase().padEnd(11)} ${c.id} · ${c.groupPath}${loc}`);
+      lines.push(`              ${c.alive ? c.text : `last text: "${c.text}"`}`);
     }
     lines.push("");
   }

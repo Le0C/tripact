@@ -23,6 +23,51 @@ const HEADING_RE = /^(#{1,6}) (.*)$/;
 const NUMBERING_RE = /^\d+(\.\d+)*\.?\s+/;
 const TBD_RE = /\(tbd\)/i;
 
+// Headings whose atoms are tracked but never coverage-checked (UAC §3.1). These sections state what
+// a project has decided NOT to build; there is no test that can assert them, so emitting a
+// write-tests task for one asks an agent for something that cannot exist — and what comes back is a
+// tautology dressed as coverage. Matched on the numbering-stripped, case-folded heading key, so
+// `## 7. Out of Scope` and `## Out-of-Scope *(mandatory)*` both land. Overridable per repository
+// via `informativeGroups` (UAC §2.1).
+export const DEFAULT_INFORMATIVE_GROUPS = ["out of scope", "out-of-scope", "non-goals", "non goals"];
+
+/**
+ * True when `title` names an informative section. Compared on the heading key, and by prefix, so a
+ * spec-kit heading carrying a trailing annotation (`Out of Scope *(mandatory)*`) still matches
+ * while an unrelated heading that merely mentions the words in a sentence does not.
+ */
+export function isInformativeHeading(title: string, informativeGroups: string[]): boolean {
+  const key = headingKey(title);
+  return informativeGroups.some((g) => {
+    const n = headingKey(g);
+    return n.length > 0 && (key === n || key.startsWith(`${n} `) || key.startsWith(`${n}:`));
+  });
+}
+
+// An unfilled template placeholder (UAC §3.1). A spec-system template committed unedited — spec-kit's
+// `- **FR-001**: System MUST [specific capability, e.g., "allow users to create accounts"]` — parses
+// into atoms indistinguishable from real requirements, and they then sit in the backlog forever
+// because nobody can write a test for boilerplate. Such an atom is tracked as TBD instead.
+//
+// Deliberately conservative: markdown links and inline code are stripped first, and the bracketed
+// span must carry at least two words, so `supports [1..n] items` or a link is never mistaken for
+// boilerplate while `[specific capability, e.g., …]`, `[error scenario]` and `[Brief Title]` all are.
+const MD_LINK_RE = /\[[^\]]*\]\([^)]*\)/g;
+const INLINE_CODE_RE = /`[^`]*`/g;
+const BRACKET_SPAN_RE = /\[([^\]]+)\]/g;
+
+/** True when `raw` still carries an unsubstituted template placeholder. */
+export function hasTemplatePlaceholder(raw: string): boolean {
+  const stripped = raw.replace(MD_LINK_RE, "").replace(INLINE_CODE_RE, "");
+  for (const m of stripped.matchAll(BRACKET_SPAN_RE)) {
+    const inner = (m[1] as string).trim();
+    // A leading checkbox marker is `[ ]` / `[x]`, never a placeholder.
+    if (/^(x|X)?$/.test(inner)) continue;
+    if (inner.split(/\s+/).filter(Boolean).length >= 2) return true;
+  }
+  return false;
+}
+
 export function normalizeText(raw: string): string {
   let t = raw.toLowerCase();
   t = t.replace(/[*_`]/g, "");
@@ -91,10 +136,16 @@ export interface ParsedFile {
  * - spec:  [UAC.md — §3.1 Markdown parsing]({@link ./../UAC.md})
  * - tests: [parser.test.ts]({@link ./../test/parser.test.ts})
  */
-export function parseMarkdownLayer(layer: string, file: string, content: string): ParsedFile {
+export function parseMarkdownLayer(
+  layer: string,
+  file: string,
+  content: string,
+  informativeGroups: string[] = DEFAULT_INFORMATIVE_GROUPS,
+): ParsedFile {
   const displayStack: Array<string | null> = [null, null, null, null, null, null];
   const keyStack: Array<string | null> = [null, null, null, null, null, null];
   const tbdStack: boolean[] = [false, false, false, false, false, false];
+  const informativeStack: boolean[] = [false, false, false, false, false, false];
   const groups = new Map<string, Group>();
   const atoms: Atom[] = [];
   let inCodeFence = false;
@@ -104,17 +155,22 @@ export function parseMarkdownLayer(layer: string, file: string, content: string)
     // skip the H1 document title (level 0) in paths, like the reference parser
     const groupPath = displayStack.slice(1).filter(Boolean).join(" > ");
     const groupKey = keyStack.slice(1).filter(Boolean).join(" > ");
-    const tbd = tbdStack.some(Boolean);
+    // A placeholder atom is tracked as TBD (UAC §3.1) — it rides the existing exclusion rail, and
+    // `placeholder` records WHY so the report can say so rather than silently shrinking the
+    // denominator. Informative is its own flag: the claims listing names it separately.
+    const placeholder = hasTemplatePlaceholder(body);
+    const tbd = tbdStack.some(Boolean) || placeholder;
+    const informative = informativeStack.some(Boolean);
     let group = groups.get(groupKey);
     if (!group) {
       const leafKey = [...keyStack].reverse().find(Boolean) ?? groupKey;
-      group = { layer, groupPath, slug: slugify(leafKey), file, line: lineNo, tbd, atoms: [] };
+      group = { layer, groupPath, slug: slugify(leafKey), file, line: lineNo, tbd, informative, atoms: [] };
       groups.set(groupKey, group);
     }
     const norm = normalizeText(body);
     const atom: Atom = {
       id: "", layer, groupPath, groupKey, index: group.atoms.length,
-      file, line: lineNo, raw: body, norm, hash: contentHash(norm), tbd,
+      file, line: lineNo, raw: body, norm, hash: contentHash(norm), tbd, placeholder, informative,
     };
     group.atoms.push(atom);
     atoms.push(atom);
@@ -169,10 +225,12 @@ export function parseMarkdownLayer(layer: string, file: string, content: string)
       displayStack[level] = title;
       keyStack[level] = headingKey(title);
       tbdStack[level] = TBD_RE.test(title);
+      informativeStack[level] = isInformativeHeading(title, informativeGroups);
       for (let i = level + 1; i < 6; i++) {
         displayStack[i] = null;
         keyStack[i] = null;
         tbdStack[i] = false;
+        informativeStack[i] = false;
       }
       continue;
     }
@@ -260,14 +318,14 @@ export function parseSdocLayer(layer: string, file: string, content: string): Pa
     let group = groups.get(groupKey);
     if (!group) {
       const leaf = sectionStack.length ? (sectionStack[sectionStack.length - 1] as { title: string }).title : "";
-      group = { layer, groupPath, slug: slugify(headingKey(leaf) || leaf), file, line: n.line, tbd: false, atoms: [] };
+      group = { layer, groupPath, slug: slugify(headingKey(leaf) || leaf), file, line: n.line, tbd: false, informative: false, atoms: [] };
       groups.set(groupKey, group);
     }
     const norm = normalizeText(raw);
     const tbd = TBD_RE.test(raw);
     const atom: Atom = {
       id: "", layer, groupPath, groupKey, index: group.atoms.length, file, line: n.line,
-      raw, norm, hash: contentHash(norm), tbd,
+      raw, norm, hash: contentHash(norm), tbd, placeholder: false, informative: false,
     };
     group.atoms.push(atom);
     atoms.push(atom);
@@ -393,13 +451,13 @@ export function parseGherkinLayer(layer: string, file: string, content: string):
     let group = groups.get(groupKey);
     if (!group) {
       const leaf = rule || feature;
-      group = { layer, groupPath, slug: slugify(headingKey(leaf) || leaf), file, line, tbd: false, atoms: [] };
+      group = { layer, groupPath, slug: slugify(headingKey(leaf) || leaf), file, line, tbd: false, informative: false, atoms: [] };
       groups.set(groupKey, group);
     }
     const norm = normalizeText(raw);
     const atom: Atom = {
       id: "", layer, groupPath, groupKey, index: group.atoms.length, file, line,
-      raw, norm, hash: contentHash(norm), tbd: TBD_RE.test(raw),
+      raw, norm, hash: contentHash(norm), tbd: TBD_RE.test(raw), placeholder: false, informative: false,
     };
     group.atoms.push(atom);
     atoms.push(atom);
@@ -448,9 +506,18 @@ export function parseGherkinLayer(layer: string, file: string, content: string):
  * parser, `.feature` → Gherkin parser, everything else → the markdown list parser. Extension match
  * is case-insensitive.
  */
-export function parseLayerFile(layer: string, file: string, content: string): ParsedFile {
+export function parseLayerFile(
+  layer: string,
+  file: string,
+  content: string,
+  informativeGroups: string[] = DEFAULT_INFORMATIVE_GROUPS,
+): ParsedFile {
   const lower = file.toLowerCase();
+  // The informative-heading and placeholder rules are markdown-shaped: a `.sdoc` section title and a
+  // Gherkin `Feature:` are typed nodes, not prose headings, and neither format ships a template with
+  // bracketed placeholders. Threading the set into them would invent a convention their authors do
+  // not have.
   if (lower.endsWith(".sdoc")) return parseSdocLayer(layer, file, content);
   if (lower.endsWith(".feature")) return parseGherkinLayer(layer, file, content);
-  return parseMarkdownLayer(layer, file, content);
+  return parseMarkdownLayer(layer, file, content, informativeGroups);
 }

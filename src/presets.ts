@@ -33,12 +33,20 @@ export interface SpecSystemPreset {
   exclude: string[];
 }
 
-// Verificatory globs common enough to seed an empty tests layer for any system. Matching zero files
-// is fine: it still satisfies the two-layer floor and yields the correct all-uncovered baseline
-// (the tests layer is declared, just not yet tagged), exactly like a hand-authored empty second layer.
+// Verificatory globs common enough to seed a tests layer for any system (UAC §2.3). Matching zero
+// files is fine: it still satisfies the two-layer floor and yields the correct all-uncovered
+// baseline (the tests layer is declared, just not yet tagged), exactly like a hand-authored empty
+// second layer.
+//
+// These must cover COLOCATED tests, not only directory-anchored ones. A directory-anchored set
+// (`test/**`, `tests/**`) misses `libs/foo/bar.spec.ts` — and colocating a spec beside its source
+// is the dominant convention in Angular, React, Vue and Vitest projects. A repository with 401
+// passing tests then reports as having none, which reads like a real answer rather than a
+// mis-declared glob. `**/*.spec.ts` subsumes the directory-anchored TS/JS entries, so they are
+// gone; the Python and Go entries keep their own shapes.
 const COMMON_TEST_GLOBS = [
-  "test/**/*.test.ts", "tests/**/*.test.ts", "test/**/*.spec.ts", "tests/**/*.spec.ts",
-  "test/**/*.test.js", "tests/**/*.test.js", "test/**/*.spec.js", "tests/**/*.spec.js",
+  "**/*.test.ts", "**/*.spec.ts", "**/*.test.tsx", "**/*.spec.tsx",
+  "**/*.test.js", "**/*.spec.js", "**/*.test.jsx", "**/*.spec.jsx",
   "tests/**/*_test.py", "**/test_*.py", "**/*_test.go",
 ];
 

@@ -43,7 +43,9 @@ export function checkPV(
   const liveIds = new Set<string>();
   for (const atom of atoms) {
     liveIds.add(atom.id);
-    if (atom.tbd) continue; // UAC §3.1: TBD atoms tracked but excluded from coverage
+    // UAC §3.1: TBD atoms (including unfilled template placeholders) and informative atoms are
+    // tracked but excluded from coverage — there is no test that could move either verdict.
+    if (atom.tbd || atom.informative) continue;
     const atomTags = tagsById.get(atom.id) ?? [];
     let kind: EdgeVerdict["kind"];
     if (atomTags.length === 0) {

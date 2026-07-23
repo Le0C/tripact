@@ -14,7 +14,7 @@ import { escalationId } from "./escalation.js";
 import { matchesGlob } from "./glob.js";
 import { changedPathsSince, findSyncPoint, headSha, type SyncPoint } from "./git.js";
 import { assignIds } from "./id.js";
-import { contentHash, disambiguateSlugs, parseLayerFile } from "./parser.js";
+import { contentHash, DEFAULT_INFORMATIVE_GROUPS, disambiguateSlugs, parseLayerFile } from "./parser.js";
 import {
   loadSidecar,
   type Sidecar,
@@ -90,6 +90,9 @@ export interface Analysis {
   /** Spec/doc atoms whose text carries a prompt-injection signature (UAC §5.5). Advisory: their text
    * flows verbatim into task payloads and agent prompts, so a planted directive is flagged for review. */
   suspiciousAtoms: Array<{ file: string; line: number; signal: string; excerpt: string }>;
+  /** Atoms left out of the coverage denominator, by reason (UAC §5.4). Reported so that text
+   * dropped from the count is visible: a shrinking denominator otherwise looks like progress. */
+  excludedAtoms: { placeholder: number; informative: number };
 }
 
 /** A block region located in a file, with the generator its name resolves to (UAC §18.3). */
@@ -140,13 +143,24 @@ export function collectBlockRegions(repoRoot: string, config: Config): Collected
   return found.sort((a, b) => (a.file === b.file ? a.openLine - b.openLine : a.file < b.file ? -1 : 1));
 }
 
+// Directories no layer glob may ever reach into, checked per PATH SEGMENT rather than as a prefix.
+// A prefix test only guards the repository root, which was enough while every seeded glob was
+// directory-anchored; the colocated globs (`**/*.spec.ts`, UAC §2.3) walk the whole tree, so a
+// nested `libs/foo/node_modules/**` would otherwise parse as source.
+const NEVER_COLLECT = new Set(["node_modules", ".git"]);
+
+const isVendored = (p: string): boolean => p.split("/").some((seg) => NEVER_COLLECT.has(seg));
+
 export function collectFiles(repoRoot: string, globs: string[], exclude: string[] = []): Map<string, string> {
   const files = new Map<string, string>();
   const seen = new Set<string>();
   for (const g of globs) {
-    for (const rel of globSync(g, { cwd: repoRoot })) {
+    // Prune vendored directories during the walk as well as filtering the results: a broad
+    // colocated glob over a repository with an installed dependency tree is otherwise a full
+    // traversal of it on every check.
+    for (const rel of globSync(g, { cwd: repoRoot, exclude: (name) => NEVER_COLLECT.has(name) })) {
       const p = rel.split(path.sep).join("/");
-      if (p.startsWith("node_modules/") || p.startsWith(".git/") || seen.has(p)) continue;
+      if (isVendored(p) || seen.has(p)) continue;
       // Configured `exclude` globs (UAC §2) drop archived duplicates, vendored trees and generated
       // derived outputs before parsing, so they never become source atoms.
       if (exclude.some((e) => matchesGlob(p, e))) continue;
@@ -180,7 +194,7 @@ export function analyze(repoRoot: string, opts: { skipDerived?: boolean } = {}):
     const groups: Group[] = [];
     if (lc.role !== "verificatory") {
       for (const [file, content] of files) {
-        const parsed = parseLayerFile(name, file, content);
+        const parsed = parseLayerFile(name, file, content, config.informativeGroups ?? DEFAULT_INFORMATIVE_GROUPS);
         atoms.push(...parsed.atoms);
         groups.push(...parsed.groups);
       }
@@ -448,6 +462,15 @@ export function analyze(repoRoot: string, opts: { skipDerived?: boolean } = {}):
       .filter((x): x is { atom: Atom; signal: string } => x.signal !== null)
       .map((x) => ({ file: x.atom.file, line: x.atom.line, signal: x.signal, excerpt: x.atom.raw.slice(0, 80) }))
       .sort((a, b) => a.file.localeCompare(b.file) || a.line - b.line),
+    // Coverage-denominator exclusions (UAC §5.4). Counted over authoring layers only, which are the
+    // only ones carrying atoms.
+    excludedAtoms: (() => {
+      const authoring = [...layers.values()].filter((l) => l.role !== "verificatory").flatMap((l) => l.atoms);
+      return {
+        placeholder: authoring.filter((a) => a.placeholder).length,
+        informative: authoring.filter((a) => a.informative).length,
+      };
+    })(),
   };
 }
 

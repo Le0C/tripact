@@ -33,7 +33,8 @@ export function checkDV(
   const liveSlugs = new Set<string>();
   for (const g of groups) {
     liveSlugs.add(g.slug);
-    if (g.tbd) continue;
+    // UAC §3.1: a TBD or informative section is tracked but never coverage-checked.
+    if (g.tbd || g.informative) continue;
     const gh = groupHash(g);
     const gTags = tagsBySlug.get(g.slug) ?? [];
     let kind: EdgeVerdict["kind"];
