@@ -416,10 +416,12 @@ describe("cross-cutting: release integrity", () => {
   });
 
   // tsc never cleans outDir, so a source file deleted from src/ leaves its build artefact behind in
-  // dist/ forever, and `prepublishOnly: build` would publish it. The build script clears dist first.
+  // dist/ forever, and `prepublishOnly: build` would publish it. The build script clears dist first,
+  // through node rather than `rm`, so the clean still happens where no POSIX shell exists.
   it("builds from a clean dist, so a deleted source cannot linger in the tarball", () => {
     const pkg = JSON.parse(readFileSync(path.join(repoRoot, "package.json"), "utf8"));
-    expect(pkg.scripts.build, "build clears dist before compiling").toContain("rm -rf dist");
+    expect(pkg.scripts.build, "build clears dist before compiling").toMatch(/rmSync\(['"]dist['"]/);
+    expect(pkg.scripts.build, "the clean does not depend on a POSIX shell").not.toContain("rm -rf");
   });
 });
 

@@ -34,12 +34,14 @@ edges:
 accept:
   policy: agents
 
-# Block-level derived regions (UAC §18.3). The README documented the five spec-system presets in four
-# hand-maintained places, and `cursor` was added to the registry with tests without reaching any of
-# them. The table is now rendered from `SPEC_SYSTEM_PRESETS`, so adding a preset updates the docs.
+# Block-level derived regions (UAC §18.3). The documentation described the five spec-system presets
+# in four hand-maintained places, and `cursor` was added to the registry with tests without reaching
+# any of them. The table is now rendered from `SPEC_SYSTEM_PRESETS`, so adding a preset updates the
+# docs. `docs/overview.md` holds that table; it sits outside `docs/manual/**` and so is scanned by
+# name.
 blocks:
   paths:
-    - README.md
+    - docs/overview.md
     - docs/manual/**/*.md
   generators:
     presets-table: builtin:presets-table

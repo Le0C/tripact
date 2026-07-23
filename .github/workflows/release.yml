@@ -43,7 +43,7 @@ jobs:
       # Everything CI already enforces on main, re-run here: a tag is the one build that reaches
       # users, so it re-earns the guarantees rather than inheriting them from an earlier green run.
       - name: tripact check — the tree must be level
-        run: node dist/cli.js check
+        run: node dist/cli.js check --strict
 
       # A tag whose package.json version does not match it publishes something nobody asked for.
       - name: Tag matches package version
