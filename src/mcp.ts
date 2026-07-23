@@ -252,10 +252,13 @@ export function buildServer(repoRoot: string, identity: ServerIdentity = {}): Mc
           }
           const accepted = buildAcceptedSidecar(repoRoot, analysis);
           const delta = computeAcceptanceDelta(analysis.sidecar, accepted);
+          // Rendered before the write, like the CLI's pre-write summary (UAC §8.3), so the
+          // heading's tense describes the state this call is about to move the sidecar to.
+          const summary = renderDeltaHuman(delta, { mode: "accept" });
           saveSidecar(repoRoot, accepted);
           writeEscalations(repoRoot, []);
           const trailer = `${SYNC_POINT_TRAILER}: ${sidecarContentHash(accepted)}`;
-          return { content: [{ type: "text" as const, text: `${renderDeltaHuman(delta)}\n\n${trailer}` }] };
+          return { content: [{ type: "text" as const, text: `${summary}\n\n${trailer}` }] };
         }),
     );
   }

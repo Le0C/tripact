@@ -217,6 +217,7 @@ judgement task offered as a reconciliation task (§10.3), not a checked edge.
 ### 6.1 `tripact status`
 
 - `status` prints a per-layer summary - alive, dead, and TBD atom counts - and a per-edge coverage percentage
+- The per-edge line accounts for every verdict on that edge, pending included, so its parts sum to the edge's verdict count and a tagged-but-unaccepted claim is never invisible between the covered and uncovered totals
 - `status` reports the orphan-tag and open-escalation counts
 - `status` marks any zero-file layer, and any prescriptive or descriptive layer with zero atoms, as a warning alongside its per-layer counts
 - `status --json` emits the same report document the check surface produces
@@ -281,6 +282,7 @@ prints command help, not a repo orientation - orientation is a harness affordanc
 - `accept` writes the current in-memory anchoring into `.tripact/claims.json` and records verified states for every edge verdict currently **covered**
 - `accept` refuses to run (exit 1) while any `reanchor` or `split-merge` escalation is open, listing them; open `fork-review` questions never block but are named in the acceptance summary
 - `accept` prints an acceptance summary before writing: claims created, re-anchored, and retired, plus verified-state changes per edge and backlog items newly acknowledged or covered
+- The acceptance summary is headed by the command that is printing it, so the summary a write is about to act on is not titled as the read-only preview (§8.4)
 - Claims that would be re-baselined after a reword (§4.1) are listed in their own summary section with old and new text excerpts; `--yes` still prints that section before writing
 - `accept` snapshots the currently uncovered claims and sections as the acknowledged backlog (§3.2, §5.1)
 - On an interactive terminal `accept` asks for confirmation and aborts on anything but yes; `--yes` skips the prompt; without a terminal it proceeds as scripted

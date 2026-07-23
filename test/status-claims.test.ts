@@ -54,8 +54,8 @@ describe("tripact status (§6.1)", () => {
     // layer (the verificatory layer reports its file count instead).
     expect(out).toContain("layer specs (prescriptive): 2 atoms (0 TBD) · 0 dead ids retained");
     expect(out).toContain("layer docs (descriptive): 2 atoms (0 TBD) · 0 dead ids retained");
-    // Per-edge coverage percentage, with the covered/stale/uncovered breakdown.
-    expect(out).toContain("edge specs ↔ tests: 0% covered (0 covered, 0 stale, 2 uncovered)");
+    // Per-edge coverage percentage, with the full verdict breakdown (§6.1).
+    expect(out).toContain("edge specs ↔ tests: 0% covered (0 covered, 0 pending, 0 stale, 2 uncovered)");
     // Orphan-tag and open-escalation counts.
     expect(out).toContain("orphan tags: 0 · open escalations: 0");
   });

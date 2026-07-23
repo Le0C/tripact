@@ -96,7 +96,7 @@ async function baselineTree(
   // Acceptance summary before writing (UAC §8.3): created / re-anchored / retired claims, plus
   // verified-state changes per edge.
   const delta = computeAcceptanceDelta(analysis.sidecar, accepted);
-  console.log(renderDeltaHuman(delta));
+  console.log(renderDeltaHuman(delta, { mode: "accept" }));
   // Open fork-review questions never block accept (UAC §8.3), but they are named in the acceptance
   // summary so the operator knows which forks they are baselining unadjudicated.
   const openForks = analysis.escalations.filter((e) => e.kind === "fork-review");

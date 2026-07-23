@@ -590,10 +590,17 @@ export function renderStatus(analysis: Analysis): string {
   }
   for (const [edge, verdicts] of byEdge) {
     const covered = verdicts.filter((v) => v.kind === "covered").length;
+    const pending = verdicts.filter((v) => v.kind === "pending").length;
     const stale = verdicts.filter((v) => v.kind === "stale").length;
     const uncovered = verdicts.filter((v) => v.kind === "uncovered").length;
     const pct = verdicts.length ? Math.round((covered / verdicts.length) * 100) : 100;
-    lines.push(`edge ${edge}: ${pct}% covered (${covered} covered, ${stale} stale, ${uncovered} uncovered)`);
+    // Every verdict kind is named, so the parts sum to the edge's verdict count (UAC §6.1).
+    // Omitting `pending` made a whole authoring round invisible here: a repo with 59 freshly
+    // tagged claims read as "0 covered … 367 uncovered" against 426 atoms, and the 59 were
+    // nowhere in the line — the one state where a claim is tagged but not yet accepted.
+    lines.push(
+      `edge ${edge}: ${pct}% covered (${covered} covered, ${pending} pending, ${stale} stale, ${uncovered} uncovered)`,
+    );
   }
   const pact = derivePact(analysis);
   if (pact.complete.length || pact.testedUndocumented.length || pact.untiedSections.length) {

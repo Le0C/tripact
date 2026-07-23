@@ -190,9 +190,20 @@ function idList(label: string, ids: string[], lines: string[]): void {
  * Human render of the acceptance delta. `trailers` toggles the current→would-be trailer
  * footer: on for `tripact diff` (§8.4), off for the `accept` pre-write summary (§8.3),
  * which prints its own official trailer line afterwards.
+ *
+ * `mode` picks the heading (UAC §8.3). The same body serves both commands, but titling
+ * `accept`'s summary "tripact diff" mislabels the one output a person reads before
+ * confirming a write as the read-only preview that writes nothing.
  */
-export function renderDeltaHuman(d: AcceptanceDelta, opts: { trailers?: boolean } = {}): string {
-  const lines: string[] = ["tripact diff — what acceptance would change", ""];
+export function renderDeltaHuman(
+  d: AcceptanceDelta,
+  opts: { trailers?: boolean; mode?: "diff" | "accept" } = {},
+): string {
+  const heading =
+    opts.mode === "accept"
+      ? "tripact accept — what will be recorded"
+      : "tripact diff — what acceptance would change";
+  const lines: string[] = [heading, ""];
   if (deltaIsEmpty(d)) {
     lines.push("  nothing would change — the sidecar already reflects the current tree.");
   } else {
