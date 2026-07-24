@@ -7,7 +7,7 @@ aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html). While
 **0.x (pre-alpha)**, the public contract (`--json` schemas, exit codes, MCP tools) is versioned but
 still evolving, and breaking changes may land in minor 0.x releases — pin an exact version.
 
-## [0.1.0] - 2026-07-20
+## [0.1.0] - 2026-07-24
 
 This is the first public release of tripact, extracted as a standalone deterministic traceability
 kernel. There is no prior published history to summarise; earlier development happened inside a
