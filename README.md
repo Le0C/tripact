@@ -44,8 +44,7 @@ npm install -D tripact       # or: pnpm add -D tripact · yarn add -D tripact
 npx tripact --version
 ```
 
-The [quickstart](./docs/overview.md#quickstart) goes from nothing to a green check on a
-one-requirement repository in five minutes.
+The [quickstart](./docs/overview.md#quickstart) goes from zero to one passing check on an example repository in five minutes.
 
 ## Documentation
 
