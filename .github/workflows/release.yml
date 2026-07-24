@@ -55,7 +55,14 @@ jobs:
             exit 1
           fi
 
+      # Trusted publishing (OIDC) needs npm >= 11.5.1; actions/setup-node ships npm 10.x with
+      # Node 22, so upgrade it in-runner. The newer CLI is what exchanges the workflow's id-token
+      # for a short-lived publish credential — there is no long-lived NPM_TOKEN secret to leak.
+      - name: Upgrade npm for OIDC trusted publishing
+        run: npm install -g npm@latest
+
       - name: Publish
+        # Authentication is the OIDC id-token exchange with the npm trusted publisher configured
+        # for Le0C/tripact + this workflow file. Provenance is attached automatically (kept
+        # explicit for the reader) and requires this repository to be public. No NODE_AUTH_TOKEN.
         run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
