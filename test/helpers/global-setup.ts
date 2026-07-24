@@ -8,7 +8,7 @@
 // the boundary two ways so a plain `process.env.TRIPACT_TEST_CLI` read inside a test file always
 // works: (1) set it on the main process env (forks inherit it), and (2) `provide` it so the setup
 // file (test/helpers/setup-env.ts) can re-assert it inside each worker via `inject`.
-import { execFileSync } from "node:child_process";
+import { execSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -24,8 +24,11 @@ declare module "vitest" {
 }
 
 export default function setup({ provide }: GlobalSetupContext): void {
-  // `pnpm build` === `tsc`; dist/ is gitignored, so this is always a fresh emit.
-  execFileSync("pnpm", ["build"], { cwd: root, stdio: "inherit" });
+  // `pnpm build` === `tsc`; dist/ is gitignored, so this is always a fresh emit. execSync runs the
+  // command through a shell, which is what resolves the `pnpm.cmd` shim on Windows — a bare
+  // execFileSync("pnpm") spawns ENOENT there because it does not append the PATHEXT extension.
+  // A fixed command string (no args array) keeps this off the shell-arg-escaping deprecation path.
+  execSync("pnpm build", { cwd: root, stdio: "inherit" });
   if (!existsSync(distCli)) {
     throw new Error(`build did not produce ${distCli} — cannot run the suite against a missing dist`);
   }
