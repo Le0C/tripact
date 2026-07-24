@@ -255,6 +255,10 @@ export function generateContent(root: string, d: DerivedOutput, where?: { file: 
   // The trust gate (UAC §18.5), placed at the spawn rather than only at the callers so that no
   // future code path can reach execution by skipping a caller-side check.
   if (!shellAllowed) throw new ShellNotAllowedError(d.name);
+  // `shell: true` runs the command under the platform's own shell — `/bin/sh` on Linux/macOS,
+  // `cmd.exe` on Windows. The command is the user's, so its portability across shells is theirs to
+  // own; tripact's contract (capture stdout, map a non-zero exit to a GenerateError) holds on every
+  // platform. See docs/overview.md "Derived outputs and generators".
   const r = spawnSync(resolved.name, {
     cwd: root,
     shell: true,

@@ -20,6 +20,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import { git, runCli } from "./helpers/cli.js";
+import { shellNode } from "./helpers/fixture.js";
 
 const scratch: string[] = [];
 afterAll(() => {
@@ -69,7 +70,7 @@ function repo(generator: string, output = "OUT.md"): string {
 }
 
 /** A shell generator that records that it ran, then emits a body. */
-const RECORDING = `shell:touch ${MARKER} && echo body`;
+const RECORDING = shellNode(`require('fs').writeFileSync('${MARKER}','');process.stdout.write('body')`);
 
 describe("shell generator trust boundary (§18.5)", () => {
   it("does not run a shell generator without the opt-in — not even from the read-only check", () => {
