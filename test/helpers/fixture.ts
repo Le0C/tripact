@@ -91,3 +91,16 @@ export function fullRepo(prefix = "tripact-fixture-"): string {
 const AT = "@";
 export const specTag = (id: string): string => `${AT}specs:${id}`;
 export const docsTag = (slug: string): string => `${AT}docs:${slug}`;
+
+/**
+ * A cross-platform `shell:` generator for fixtures. A generator runs under the platform's shell —
+ * `/bin/sh` on Unix, `cmd.exe` on Windows (see src/derived.ts) — so a fixture written in one shell's
+ * dialect (`printf`, `$(...)`, `; exit 3`) does not behave the same on the other, which is exactly
+ * what made the Windows CI job red. Routing through `node -e` sidesteps every shell dialect: node is
+ * always present (this suite runs on it) and behaves identically on every OS.
+ *
+ * The JS `body` MUST use single quotes for strings and contain no shell metacharacters
+ * (`$ \` % & | < > ( ) ;`), so the surrounding `node -e "..."` parses the same under `sh` and
+ * `cmd.exe`. Put any logic (counters, exit codes, stderr) inside the JS, never in shell syntax.
+ */
+export const shellNode = (body: string): string => `shell:node -e "${body}"`;

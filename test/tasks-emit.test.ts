@@ -9,7 +9,7 @@ import path from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import { repairSkill } from "../src/skills.js";
 import { git, runCli } from "./helpers/cli.js";
-import { CONFIG, fullRepo, MANUAL, specTag, SPECS } from "./helpers/fixture.js";
+import { CONFIG, fullRepo, MANUAL, shellNode, specTag, SPECS } from "./helpers/fixture.js";
 
 const scratch: string[] = [];
 afterAll(() => {
@@ -179,7 +179,7 @@ describe("tripact tasks — emission (UAC §10.1)", () => {
 
   // @specs:task-emission.derived-stale-output-182-emits
   it("emits a regenerate-derived task naming the exact generate invocation for a stale derived output", () => {
-    const config = `${CONFIG}\nderived:\n  cli-docs:\n    output: docs/CLI.md\n    generator: "shell:echo fresh"\n`;
+    const config = `${CONFIG}\nderived:\n  cli-docs:\n    output: docs/CLI.md\n    generator: ${JSON.stringify(shellNode("process.stdout.write('fresh\\n')"))}\n`;
     const repo = committedRepo("tripact-tasks-derived-", { config });
     writeFileSync(path.join(repo, "docs", "CLI.md"), "stale\n"); // ≠ generator output → stale
     git(repo, ["add", "-A"]);
@@ -301,7 +301,7 @@ describe("tripact repair handoff — the emitted repair skill (UAC §10.2)", () 
 
   // @specs:repair-handoff.executing-repair-tasks-agent
   it("never edits prescriptive or descriptive artefact content — derived-output generation is the sole exception", () => {
-    const config = `${CONFIG}\nderived:\n  cli-docs:\n    output: docs/CLI.md\n    generator: "shell:printf 'fresh\\n'"\n`;
+    const config = `${CONFIG}\nderived:\n  cli-docs:\n    output: docs/CLI.md\n    generator: ${JSON.stringify(shellNode("process.stdout.write('fresh\\n')"))}\n`;
     const repo = committedRepo("tripact-kernel-readonly-", { config });
     const specsPath = path.join(repo, "SPECS.md");
     const manualPath = path.join(repo, "docs", "manual", "using.md");

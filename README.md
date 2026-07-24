@@ -37,7 +37,9 @@ emits claims, queues and ready-to-hand-off briefs, and spawns no agents of its o
 
 ## Install
 
-Requires Git and Node.js ≥ 22. Tested on Linux and macOS; Windows is not supported yet.
+Requires Git and Node.js ≥ 22. Tested in CI on Linux, macOS and Windows. One platform nuance: a
+`shell:` generator runs under the OS's own shell, so a generator command in your `tripact.yaml` must
+be valid for the platform it runs on (a Unix command won't run on Windows, and vice versa).
 
 ```bash
 npm install -D tripact       # or: pnpm add -D tripact · yarn add -D tripact

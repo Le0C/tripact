@@ -14,7 +14,7 @@ import { afterAll, describe, expect, it } from "vitest";
 import { CLI_REFERENCE, deriveOutputs, HOTLINK_MAP, RESERVED_BUILTINS } from "../src/derived.js";
 import { loadConfig } from "../src/config.js";
 import { runCli } from "./helpers/cli.js";
-import { specTag } from "./helpers/fixture.js";
+import { shellNode, specTag } from "./helpers/fixture.js";
 
 const scratch: string[] = [];
 afterAll(() => {
@@ -87,7 +87,7 @@ describe("derived outputs — declaration & generation (§18.1)", () => {
         "derived:",
         "  greeting:",
         "    output: GENERATED.txt",
-        "    generator: shell:printf 'hello world'",
+        `    generator: ${JSON.stringify(shellNode("process.stdout.write('hello world')"))}`,
         "  cli-reference:",
         "    output: CLI.md",
         "    generator: cli-reference",
@@ -99,7 +99,7 @@ describe("derived outputs — declaration & generation (§18.1)", () => {
     const outputs = deriveOutputs(cfg);
     expect(outputs.map((o) => o.name)).toEqual(["cli-reference", "greeting"]); // sorted by name
     const byName = Object.fromEntries(outputs.map((o) => [o.name, o]));
-    expect(byName["greeting"]).toMatchObject({ output: "GENERATED.txt", generator: "shell:printf 'hello world'" });
+    expect(byName["greeting"]).toMatchObject({ output: "GENERATED.txt", generator: shellNode("process.stdout.write('hello world')") });
     // A generator that is a reserved builtin NAME is accepted just the same as a shell command.
     expect(byName["cli-reference"]).toMatchObject({ output: "CLI.md", generator: "cli-reference" });
   });
@@ -192,7 +192,7 @@ describe("derived outputs — declaration & generation (§18.1)", () => {
         "derived:",
         "  greeting:",
         "    output: GENERATED.txt",
-        "    generator: shell:printf 'hello world'",
+        `    generator: ${JSON.stringify(shellNode("process.stdout.write('hello world')"))}`,
       ],
     });
     const good = runCli(["--allow-shell", "generate", "greeting"], { cwd: ok });
@@ -206,7 +206,7 @@ describe("derived outputs — declaration & generation (§18.1)", () => {
         "derived:",
         "  boom:",
         "    output: OUT.txt",
-        "    generator: \"shell:echo oops >&2; exit 3\"",
+        `    generator: ${JSON.stringify(shellNode("process.exit(3)"))}`,
       ],
     });
     const failed = runCli(["--allow-shell", "generate", "boom"], { cwd: bad });
@@ -222,10 +222,10 @@ describe("derived outputs — declaration & generation (§18.1)", () => {
         "derived:",
         "  alpha:",
         "    output: out/a.txt",
-        "    generator: shell:printf 'AAA'",
+        `    generator: ${JSON.stringify(shellNode("process.stdout.write('AAA')"))}`,
         "  beta:",
         "    output: out/b.txt",
-        "    generator: shell:printf 'BBB'",
+        `    generator: ${JSON.stringify(shellNode("process.stdout.write('BBB')"))}`,
       ],
     });
     // Named: writes alpha only.
@@ -250,7 +250,7 @@ describe("derived outputs — declaration & generation (§18.1)", () => {
         "derived:",
         "  greeting:",
         "    output: GENERATED.txt",
-        "    generator: \"shell:printf 'line1\\\\nline2\\\\n'\"",
+        `    generator: ${JSON.stringify(shellNode("process.stdout.write('line1\\nline2\\n')"))}`,
       ],
     });
     const first = runCli(["--allow-shell", "generate", "greeting"], { cwd: repo });
@@ -274,7 +274,7 @@ describe("derived outputs — freshness (§18.2)", () => {
         "derived:",
         "  greeting:",
         "    output: GENERATED.txt",
-        "    generator: shell:printf 'hello world'",
+        `    generator: ${JSON.stringify(shellNode("process.stdout.write('hello world')"))}`,
       ],
       files: { "GENERATED.txt": "STALE CONTENT" },
     });
@@ -292,7 +292,7 @@ describe("derived outputs — freshness (§18.2)", () => {
         "derived:",
         "  greeting:",
         "    output: GENERATED.txt",
-        "    generator: shell:printf 'hello world'",
+        `    generator: ${JSON.stringify(shellNode("process.stdout.write('hello world')"))}`,
       ],
     });
     baseline(missing);
@@ -312,7 +312,11 @@ describe("derived outputs — freshness (§18.2)", () => {
         "derived:",
         "  counter:",
         "    output: COUNTER.txt",
-        "    generator: \"shell:n=$(cat .ctr 2>/dev/null || echo 0); n=$((n+1)); printf %s $n > .ctr; printf %s $n\"",
+        `    generator: ${JSON.stringify(
+          shellNode(
+            "const fs=require('fs');const n=(fs.existsSync('.ctr')?Number(fs.readFileSync('.ctr','utf8')):0)+1;fs.writeFileSync('.ctr',String(n));process.stdout.write(String(n))",
+          ),
+        )}`,
       ],
       files: { "COUNTER.txt": "committed" },
     });
@@ -332,7 +336,7 @@ describe("derived outputs — freshness (§18.2)", () => {
         "derived:",
         "  greeting:",
         "    output: GENERATED.txt",
-        "    generator: shell:printf 'hello world'",
+        `    generator: ${JSON.stringify(shellNode("process.stdout.write('hello world')"))}`,
       ],
       files: { "GENERATED.txt": "STALE CONTENT" },
     });

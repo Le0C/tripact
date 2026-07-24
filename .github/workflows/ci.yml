@@ -31,11 +31,12 @@ jobs:
           # for the maintainer before it is one for a user.
           - os: macos-latest
             node: 22
-          # Windows was trialled (PR #1) and reached 382/386 once the test harness learned to build
-          # through a shell. The remaining gap is real, not cosmetic: the shell: generator feature
-          # (derived/blocks under --allow-shell) misbehaves on cmd.exe — a failing generator does
-          # not surface exit 2, and stdout newline handling differs. Until that is fixed the README's
-          # "Windows not supported yet" holds, so the experimental job is removed rather than left red.
+          # Windows on the floor version, first-class (no continue-on-error). The earlier trial
+          # (PR #1) reached 382/386; the 4 failures were Unix-shell-dialect test fixtures, not code
+          # defects, and are now written through node -e so a generator command parses the same under
+          # sh and cmd.exe. tripact itself is cross-platform (shell generators run under the OS shell).
+          - os: windows-latest
+            node: 22
     steps:
       - uses: actions/checkout@v4
         with:

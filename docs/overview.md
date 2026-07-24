@@ -897,6 +897,12 @@ become an execution.
 | `harness:` | A generator the driving harness registered at boot via `registerHarnessGenerator`. Renders in-process; spawns nothing. A harness may claim any name no builtin holds - registering a builtin's name is refused, so no harness can change what `presets-table` means in someone else's config. |
 | `shell:`   | The rest of the string is a shell command whose captured stdout becomes the output. A non-zero exit fails with exit code `2`.       |
 
+A `shell:` generator runs under the platform's own shell — `/bin/sh` on Linux and macOS, `cmd.exe`
+on Windows — so its command must be valid for the OS tripact runs on. tripact itself is
+cross-platform (tested on all three in CI); a Unix-only command in your `tripact.yaml` is the one
+thing that is not portable across them. `builtin:` and `harness:` generators render in-process and
+are unaffected.
+
 The kernel ships these builtins:
 
 | Builtin                | Renders                                                                                         |
