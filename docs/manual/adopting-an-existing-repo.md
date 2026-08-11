@@ -66,3 +66,21 @@ pairings so you do not start from zero coverage:
   verdicts, counts, or exit code.
 - Use `reconcile --json` to drive an agent through the queue instead; it carries a `schemaVersion`
   and exits 0 because a proposal is advice, not a failure.
+
+## Writing a tag that counts
+
+A tag has to be written *as a tag*. The scan reads a tag written into prose as a mention of a claim
+rather than an assertion about one, and ignores it:
+
+- Write the tag alone on a comment line above the test, or inside the test's title. Both count, so
+  pick whichever your suite already does and keep it.
+- Put an id tag and a section tag on the same dedicated line when one test asserts both. A line
+  carrying nothing but tags is still nothing but tags.
+- Expect a tag inside a sentence to be ignored, including in the comment explaining why a claim is
+  *not* asserted yet. Naming the claim there is what you want to say; it is not a claim to have
+  tested it.
+- Find every ignored mention in the `written into prose` warning that `check` prints, which names
+  each one's claim id, file and line. Read it whenever a claim reads uncovered that you believe you
+  tagged.
+- Keep writing `Implements <id>` decorations in product code as prose if you use them: `codeLinks`
+  is navigation, never coverage, and is scanned without this rule.

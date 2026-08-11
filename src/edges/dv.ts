@@ -3,7 +3,7 @@
 import { createHash } from "node:crypto";
 import type { EdgeVerdict, Group, OrphanTag } from "../types.js";
 import type { SidecarGroup } from "../sidecar.js";
-import { scanTags, type TagHit } from "./pv.js";
+import { scanDeclaredTags, type TagHit, type TagScan } from "./pv.js";
 
 /** Hash over the group's atom hashes: any atom edit changes it (UAC §4.2). */
 export function groupHash(group: Group): string {
@@ -12,8 +12,9 @@ export function groupHash(group: Group): string {
   return h.digest("hex").slice(0, 16);
 }
 
-export function scanSectionTags(files: Map<string, string>, sectionTagPattern: string): TagHit[] {
-  return scanTags(files, sectionTagPattern);
+/** Recognition applies to section tags exactly as it does to id tags (UAC §4.4). */
+export function scanSectionTags(files: Map<string, string>, sectionTagPattern: string): TagScan {
+  return scanDeclaredTags(files, sectionTagPattern);
 }
 
 export function checkDV(

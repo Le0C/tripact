@@ -160,6 +160,14 @@ skill emission below.
 Section §4.3 (Prescriptive ↔ Descriptive) is not implemented: direct spec-to-docs comparison is a
 judgement task offered as a reconciliation task (§10.3), not a checked edge.
 
+### 4.4 Tag recognition
+
+- A tag in a verificatory layer file counts towards a verdict only when it is **declared**: it sits inside a test declaration line, or on a comment line whose entire content is one or more tags - a tag written into prose is a mention, and a mention is ignored
+- Recognition is a property of the verificatory scan, applying identically to `tagPattern` (§4.1) and `sectionTagPattern` (§4.2); one dedicated comment line may carry tags of both kinds
+- Code-link scanning (§20.2) is exempt and continues to match a tag anywhere on a line: a hotlink is written into prose by design (§20.3) and produces no verdict, so a mention there cannot fabricate coverage
+- An ignored mention is never silent - it is reported as a diagnostic (§5.4), so a claim reading uncovered because its only tag sits in prose is explained rather than mysterious
+- Recognition is deterministic and line-based: the same file yields the same declared tags and the same ignored mentions, in stable order
+
 ---
 
 ## 5. Checking
@@ -203,6 +211,8 @@ judgement task offered as a reconciliation task (§10.3), not a checked edge.
 - Layer-diagnostic warnings are advisory: an individual mis-declared layer is surfaced without, on its own, changing the exit code, so a layer may be declared before it is populated
 - A check that parsed **zero atoms across every prescriptive and descriptive layer** is **vacuous** - there is nothing to check, so it never reports level: it is drift, driving exit 1, and reports `vacuous: true` in `check --json`
 - A vacuous check names the empty layers and points at the glob and format as the likely cause, rather than reporting `✓ level` over a configuration that verifies nothing
+- A verificatory tag ignored as a prose mention (§4.4) is reported as an `ignoredTags` warning in both the human report and `check --json`, naming the claim id it would have referenced with its file and line
+- The `ignoredTags` warning is advisory: it never changes the exit code on its own, since the drift it explains is already carried by the uncovered verdict it leaves behind
 - `check --strict` additionally treats any `zeroFileLayers` or `zeroAtomLayers` warning as drift, so a release pipeline gates on every layer being populated
 
 ### 5.5 Content lint

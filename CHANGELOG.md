@@ -7,6 +7,44 @@ aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html). While
 **0.x (pre-alpha)**, the public contract (`--json` schemas, exit codes, MCP tools) is versioned but
 still evolving, and breaking changes may land in minor 0.x releases — pin an exact version.
 
+## [Unreleased]
+
+### Changed
+
+- **Tag recognition — a behaviour change, and it can move your coverage numbers.** A tag in a
+  verificatory layer now counts towards a verdict only when it is written *as a tag*: alone on a
+  comment line, or inside a test's title. A tag written into prose is a mention, and a mention is
+  ignored (UAC §4.4).
+
+  ```ts
+  // @specs:calc.adds-two-numbers                  ← counts (dedicated comment line)
+  // @specs:calc.adds-two-numbers @docs:adding     ← counts (both kinds on one dedicated line)
+  test("@specs:calc.adds-two-numbers sums", …)     ← counts (test title)
+
+  // cannot assert @specs:calc.adds-two-numbers headlessly   ← ignored (prose)
+  /* see @specs:calc.adds-two-numbers for context */         ← ignored (prose)
+  ```
+
+  Previously the scan was pure text, so writing a claim id anywhere registered that claim as
+  covered — including in the comment explaining why it was *not* covered. The failure was silent
+  and inverted: the more carefully a gap was documented, the more coverage it invented.
+
+  **On upgrade, a claim whose only tag sat in prose flips to uncovered.** Nothing is dropped
+  quietly: every ignored mention is named with its id, file and line by the new `ignoredTags`
+  diagnostic, so run `tripact check` and compare before deciding whether each one was a real tag
+  in the wrong shape or an explanation that was never coverage.
+
+  `codeLinks` scanning is **unaffected**. A hotlink is written into prose by design
+  (`* Implements @specs:<id>`, §20.3) and produces no verdict, so a mention there could never
+  fabricate coverage and continues to match anywhere on a line.
+
+### Added
+
+- **`ignoredTags`** — a new advisory diagnostic in the human `check` report and in `check --json`,
+  naming each tag ignored as a prose mention with its claim id, file and line (UAC §5.4). Advisory:
+  it never changes the exit code on its own, since the uncovered verdict it leaves behind already
+  carries the drift. Additive field on the `check` surface; no schema version bump.
+
 ## [0.1.0] - 2026-07-24
 
 This is the first public release of tripact, extracted as a standalone deterministic traceability

@@ -33,7 +33,7 @@ afterAll(() => {
 
 describe("generator resolution (UAC §18.4)", () => {
   it("a builtin:, harness: and shell: prefix pick different tiers, and an unprefixed string picks none", () => {
-    // Implements @specs:generator-resolution-and.generator-string-prefixed-builtin
+    // @specs:generator-resolution-and.generator-string-prefixed-builtin
     expect(resolveGenerator("builtin:presets-table")).toEqual({ kind: "builtin", name: "presets-table" });
     expect(resolveGenerator("harness:changelog")).toEqual({ kind: "harness", name: "changelog" });
     expect(resolveGenerator("shell:node scripts/x.js")).toEqual({ kind: "shell", name: "node scripts/x.js" });
@@ -47,13 +47,13 @@ describe("generator resolution (UAC §18.4)", () => {
   });
 
   it("the bare reserved names still resolve to their builtins", () => {
-    // Implements @specs:generator-resolution-and.bare-reserved-names-cli-reference
+    // @specs:generator-resolution-and.bare-reserved-names-cli-reference
     expect(resolveGenerator(CLI_REFERENCE)).toEqual({ kind: "builtin", name: CLI_REFERENCE });
     expect(resolveGenerator(HOTLINK_MAP)).toEqual({ kind: "builtin", name: HOTLINK_MAP });
   });
 
   it("the builtin namespace is closed and a harness may not shadow it", () => {
-    // Implements @specs:generator-resolution-and.kernel-builtin-namespace-closed
+    // @specs:generator-resolution-and.kernel-builtin-namespace-closed
     expect(() => registerGenerator("not-reserved", () => "")).toThrow(/unknown builtin generator/);
     for (const reserved of RESERVED_BUILTINS) {
       expect(() => registerHarnessGenerator(reserved, () => "")).toThrow(/reserved kernel builtin/);
@@ -63,7 +63,7 @@ describe("generator resolution (UAC §18.4)", () => {
   });
 
   it("a builtin or harness generator renders in-process and spawns nothing", () => {
-    // Implements @specs:generator-resolution-and.builtin-harness-generator-renders
+    // @specs:generator-resolution-and.builtin-harness-generator-renders
     // A shell command would have to exist on PATH; this one does not, and rendering still succeeds,
     // which is only possible if no subprocess was involved.
     registerHarnessGenerator("in-process", () => "rendered without a shell");
@@ -76,7 +76,7 @@ describe("generator resolution (UAC §18.4)", () => {
   });
 
   it("a generator receives the repo root, its name, and a block region's file and line", () => {
-    // Implements @specs:generator-resolution-and.builtin-harness-generators-receive
+    // @specs:generator-resolution-and.builtin-harness-generators-receive
     registerHarnessGenerator("echo-ctx", (ctx) => JSON.stringify(ctx));
     const whole = JSON.parse(
       generateContent("/tmp/root", { name: "whole", output: "o.md", generator: "harness:echo-ctx" }),
@@ -106,7 +106,7 @@ describe("generator resolution (UAC §18.4)", () => {
 
 describe("the presets-table builtin (UAC §18.4)", () => {
   it("renders every registered preset as a markdown table, so docs follow the registry", () => {
-    // Implements @specs:generator-resolution-and.kernel-provides-presets-table-builtin
+    // @specs:generator-resolution-and.kernel-provides-presets-table-builtin
     const table = renderPresetsTable();
     const rows = table.split("\n");
     // Header, separator, then one row per preset. No preset can be left out by hand.
@@ -129,7 +129,7 @@ describe("the presets-table builtin (UAC §18.4)", () => {
   });
 
   it("the task-classes builtin renders every routable class as a bullet list", () => {
-    // Implements @specs:generator-resolution-and.kernel-provides-task-classes-builtin
+    // @specs:generator-resolution-and.kernel-provides-task-classes-builtin
     const list = renderTaskClasses();
     const rows = list.split("\n");
     expect(rows).toHaveLength(KNOWN_TASK_CLASSES.length);

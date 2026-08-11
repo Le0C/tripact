@@ -58,7 +58,7 @@ const fence = (name: string, body: string) =>
 
 describe("block-level derived regions (UAC §18.3)", () => {
   it("config accepts a blocks block and a region never produces a coverage verdict", () => {
-    // Implements @specs:block-level-derived-regions.config-accepts-optional-blocks
+    // @specs:block-level-derived-regions.config-accepts-optional-blocks
     const repo = blocksRepo(`# Doc\n\n${fence("t", "generated")}\n`, { t: "shell:printf 'generated'" });
     const res = runCli(["--allow-shell", "check", "--json"], { cwd: repo });
     const json = JSON.parse(res.stdout);
@@ -70,7 +70,7 @@ describe("block-level derived regions (UAC §18.3)", () => {
   });
 
   it("generate replaces the region and leaves the fences and surrounding file byte-identical", () => {
-    // Implements @specs:block-level-derived-regions.block-region-fenced-opening
+    // @specs:block-level-derived-regions.block-region-fenced-opening
     const before = `# Doc\n\nintro paragraph\n\n${fence("t", "OLD")}\n\ntrailing paragraph\n`;
     const repo = blocksRepo(before, { t: "shell:printf 'NEW BODY'" });
     expect(runCli(["--allow-shell", "generate"], { cwd: repo }).status).toBe(0);
@@ -83,7 +83,7 @@ describe("block-level derived regions (UAC §18.3)", () => {
   });
 
   it("regenerating a region twice produces a byte-identical file", () => {
-    // Implements @specs:block-level-derived-regions.regenerating-block-region-twice
+    // @specs:block-level-derived-regions.regenerating-block-region-twice
     // The generator ends its output with a newline, which is where an off-by-one would land: a naive
     // implementation grows the region by a blank line on every run.
     const repo = blocksRepo(`# Doc\n\n${fence("t", "x")}\n`, { t: "shell:printf 'line one\\nline two\\n'" });
@@ -94,7 +94,7 @@ describe("block-level derived regions (UAC §18.3)", () => {
   });
 
   it("the parser yields no atom and no group from inside a region, and line numbers continue", () => {
-    // Implements @specs:block-level-derived-regions.markdown-parser-produces-no
+    // @specs:block-level-derived-regions.markdown-parser-produces-no
     const doc = [
       "# Title", // 1
       "", // 2
@@ -130,7 +130,7 @@ describe("block-level derived regions (UAC §18.3)", () => {
   });
 
   it("check reports a stale region and queues a regenerate-derived task", () => {
-    // Implements @specs:block-level-derived-regions.check-regenerates-each-declared
+    // @specs:block-level-derived-regions.check-regenerates-each-declared
     const repo = blocksRepo(`# Doc\n\n${fence("t", "STALE")}\n`, { t: "shell:printf 'FRESH'" });
     const res = runCli(["--allow-shell", "check", "--json"], { cwd: repo });
     expect(res.status).toBe(1);
@@ -145,7 +145,7 @@ describe("block-level derived regions (UAC §18.3)", () => {
   });
 
   it("a stale finding is identified by name, file and line, so two regions do not collapse", () => {
-    // Implements @specs:block-level-derived-regions.block-level-derived-stale-finding-identified
+    // @specs:block-level-derived-regions.block-level-derived-stale-finding-identified
     const doc = `# Doc\n\n${fence("t", "STALE")}\n\nmiddle\n\n${fence("t", "ALSO STALE")}\n`;
     const repo = blocksRepo(doc, { t: "shell:printf 'FRESH'" });
     const json = JSON.parse(runCli(["--allow-shell", "check", "--json"], { cwd: repo }).stdout);
@@ -162,7 +162,7 @@ describe("block-level derived regions (UAC §18.3)", () => {
   });
 
   it("a non-deterministic block generator is reported as such rather than as stale", () => {
-    // Implements @specs:block-level-derived-regions.block-generator-whose-two
+    // @specs:block-level-derived-regions.block-generator-whose-two
     // Each run returns a different number, so regeneration could never make check pass. Reporting it
     // stale would be a permanent misdiagnosis of a fixable config fault.
     const counter = "shell:n=$(cat .ctr 2>/dev/null || echo 0); n=$((n+1)); echo $n > .ctr; printf \"%s\" $n";
@@ -173,7 +173,7 @@ describe("block-level derived regions (UAC §18.3)", () => {
   });
 
   it("an undeclared generator, an unclosed fence and a nested fence each exit 2", () => {
-    // Implements @specs:block-level-derived-regions.marker-naming-generator-absent
+    // @specs:block-level-derived-regions.marker-naming-generator-absent
     const undeclared = blocksRepo(`# Doc\n\n${fence("nope", "x")}\n`, { t: "shell:printf 'x'" });
     const undeclaredRes = runCli(["check"], { cwd: undeclared });
     expect(undeclaredRes.status).toBe(2);
