@@ -9,7 +9,7 @@ import { findBlockRegions, normalizeBlockBody, type BlockRegion } from "./blocks
 import { ConfigError, DEFAULT_SECTION_TAG_PATTERN, DEFAULT_TAG_PATTERN, hintsFor, loadConfig, type Config } from "./config.js";
 import { deriveOutputs, generateContent, ShellNotAllowedError } from "./derived.js";
 import { checkDV, groupHash, scanSectionTags } from "./edges/dv.js";
-import { checkPV, scanTags, type TagHit } from "./edges/pv.js";
+import { checkPV, scanDeclaredTags, type TagHit } from "./edges/pv.js";
 import { escalationId } from "./escalation.js";
 import { matchesGlob } from "./glob.js";
 import { changedPathsSince, findSyncPoint, headSha, type SyncPoint } from "./git.js";
@@ -93,6 +93,10 @@ export interface Analysis {
   /** Atoms left out of the coverage denominator, by reason (UAC §5.4). Reported so that text
    * dropped from the count is visible: a shrinking denominator otherwise looks like progress. */
   excludedAtoms: { placeholder: number; informative: number };
+  /** Verificatory tags ignored as prose mentions (UAC §4.4, §5.4). Advisory on its own: the drift is
+   * already carried by the uncovered verdict left behind. Reported so that a claim reading uncovered
+   * because its only tag sits in prose is explained rather than mysterious. */
+  ignoredTags: TagHit[];
 }
 
 /** A block region located in a file, with the generator its name resolves to (UAC §18.3). */
@@ -288,6 +292,7 @@ export function analyze(repoRoot: string, opts: { skipDerived?: boolean } = {}):
   const sidecarGroups = new Map(sidecar.groups.map((g) => [`${g.layer}:${g.slug}`, g]));
   const verdicts: EdgeVerdict[] = [];
   const orphans: OrphanTag[] = [];
+  const ignoredTags: TagHit[] = [];
   const unsupportedEdges: string[] = [];
   for (const [a, b] of config.edges) {
     const la = layers.get(a);
@@ -300,13 +305,16 @@ export function analyze(repoRoot: string, opts: { skipDerived?: boolean } = {}):
     }
     const verifCfg = config.layers[verif.name];
     if (source.role === "prescriptive") {
-      const tags: TagHit[] = scanTags(verif.files, verifCfg?.tagPattern ?? DEFAULT_TAG_PATTERN);
+      const scan = scanDeclaredTags(verif.files, verifCfg?.tagPattern ?? DEFAULT_TAG_PATTERN);
+      ignoredTags.push(...scan.ignored);
+      const tags: TagHit[] = scan.declared;
       const r = checkPV([a, b], source.atoms, tags, claimsById, hashOf);
       verdicts.push(...r.verdicts);
       orphans.push(...r.orphans);
     } else {
-      const tags = scanSectionTags(verif.files, verifCfg?.sectionTagPattern ?? DEFAULT_SECTION_TAG_PATTERN);
-      const r = checkDV([a, b], source.groups, tags, sidecarGroups, hashOf);
+      const scan = scanSectionTags(verif.files, verifCfg?.sectionTagPattern ?? DEFAULT_SECTION_TAG_PATTERN);
+      ignoredTags.push(...scan.ignored);
+      const r = checkDV([a, b], source.groups, scan.declared, sidecarGroups, hashOf);
       verdicts.push(...r.verdicts);
       orphans.push(...r.orphans);
     }
@@ -471,6 +479,8 @@ export function analyze(repoRoot: string, opts: { skipDerived?: boolean } = {}):
         informative: authoring.filter((a) => a.informative).length,
       };
     })(),
+    // Tags ignored as prose mentions (UAC §4.4, §5.4), stably ordered like the orphan list.
+    ignoredTags: ignoredTags.sort((x, y) => x.file.localeCompare(y.file) || x.line - y.line || x.id.localeCompare(y.id)),
   };
 }
 

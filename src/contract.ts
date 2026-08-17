@@ -79,6 +79,7 @@ export const PUBLIC_CONTRACT: readonly ContractSurface[] = [
       "escalations",
       "excludedAtoms",
       "exitCode",
+      "ignoredTags",
       "nonDeterministicGenerators",
       "orphans",
       "pact",

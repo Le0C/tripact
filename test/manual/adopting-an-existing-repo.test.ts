@@ -249,5 +249,72 @@ describe("manual: adopting tripact on an existing repository", () => {
     };
     expect(requeued.candidates.some((p) => p.claimId === claimId)).toBe(false);
   });
+
+  it("@docs:writing-a-tag-that-counts @specs:tag-recognition.tag-verificatory-layer-file @specs:tag-recognition.recognition-property-verificatory-scan @specs:tag-recognition.code-link-scanning-202-exempt @specs:tag-recognition.ignored-mention-never-silent - a tag counts alone on a comment line or in a title, a mention is ignored and named, and code links are untouched", () => {
+    const config = [
+      "schemaVersion: 1",
+      "layers:",
+      "  specs:",
+      "    role: prescriptive",
+      "    paths: [SPEC.md]",
+      "  tests:",
+      "    role: verificatory",
+      "    paths: [test/**/*.test.ts]",
+      "edges:",
+      "  - [specs, tests]",
+      "codeLinks:",
+      "  paths: [src/**/*.ts]",
+      "",
+    ].join("\n");
+    const untagged = repo({ "tripact.yaml": config, "SPEC.md": SPEC, "test/add.test.ts": 'test("adds", () => {});\n' });
+    const claimId = (JSON.parse(runCli(["check", "--json"], { cwd: untagged }).stdout) as {
+      verdicts: Array<{ subject: string }>;
+    }).verdicts[0]!.subject;
+
+    const verdictFor = (dir: string): string =>
+      (JSON.parse(runCli(["check", "--json"], { cwd: dir }).stdout) as {
+        verdicts: Array<{ subject: string; kind: string }>;
+      }).verdicts.find((v) => v.subject === claimId)!.kind;
+
+    // "Write the tag alone on a comment line above the test, or inside the test's title. Both count."
+    const online = repo({
+      "tripact.yaml": config,
+      "SPEC.md": SPEC,
+      "test/add.test.ts": `// ${SPEC_TAG}${claimId}\ntest("adds", () => {});\n`,
+    });
+    expect(verdictFor(online)).toBe("pending");
+    const inTitle = repo({
+      "tripact.yaml": config,
+      "SPEC.md": SPEC,
+      "test/add.test.ts": `test("${SPEC_TAG}${claimId} adds", () => {});\n`,
+    });
+    expect(verdictFor(inTitle)).toBe("pending");
+
+    // "Expect a tag inside a sentence to be ignored, including in the comment explaining why a
+    // claim is *not* asserted yet."
+    const mentioned = repo({
+      "tripact.yaml": config,
+      "SPEC.md": SPEC,
+      "test/add.test.ts": `// not asserted yet: ${SPEC_TAG}${claimId} needs a browser\ntest("adds", () => {});\n`,
+      // "Keep writing `Implements <id>` decorations in product code as prose… `codeLinks` is
+      // navigation, never coverage, and is scanned without this rule."
+      "src/add.ts": `// Implements ${SPEC_TAG}${claimId}\nexport const add = 1;\n`,
+    });
+    expect(verdictFor(mentioned)).toBe("uncovered");
+
+    // "Find every ignored mention in the `written into prose` warning that check prints, which
+    // names each one's claim id, file and line."
+    const report = JSON.parse(runCli(["check", "--json"], { cwd: mentioned }).stdout) as {
+      ignoredTags: Array<{ id: string; file: string; line: number }>;
+    };
+    expect(report.ignoredTags).toEqual([{ id: claimId, file: "test/add.test.ts", line: 1 }]);
+    expect(runCli(["check"], { cwd: mentioned }).stdout).toContain("written into prose");
+
+    // The code decoration still resolves as a hotlink, and never entered the coverage reading.
+    const hotlinks = JSON.parse(runCli(["hotlinks", "--json"], { cwd: mentioned }).stdout) as {
+      links: Array<{ claimId: string; file: string }>;
+    };
+    expect(hotlinks.links).toEqual([{ claimId, file: "src/add.ts", line: 1 }]);
+  });
 });
 

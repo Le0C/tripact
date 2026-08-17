@@ -39,6 +39,10 @@ export interface CheckReportJson {
   /** Atoms left out of the coverage denominator as placeholder or informative text (UAC §5.4).
    *  Advisory, never drives the exit code. Additive field. */
   excludedAtoms: Analysis["excludedAtoms"];
+  /** Verificatory tags ignored as prose mentions (UAC §4.4, §5.4). Advisory: never drives the exit
+   *  code on its own, since the uncovered verdict it leaves behind already carries the drift.
+   *  Additive field. */
+  ignoredTags: Analysis["ignoredTags"];
   /**
    * The three-way pact: spec claims, doc sections, and tests correlated on their shared test file
    * (a test tagging both `@specs:` and `@docs:`). Advisory: it feeds no verdict or exit code, and
@@ -122,6 +126,7 @@ export function toJsonReport(analysis: Analysis): CheckReportJson {
   counts["suspiciousAtoms"] = analysis.suspiciousAtoms.length;
   counts["placeholderAtoms"] = analysis.excludedAtoms.placeholder;
   counts["informativeAtoms"] = analysis.excludedAtoms.informative;
+  counts["ignoredTags"] = analysis.ignoredTags.length;
   return {
     schemaVersion: CHECK_SCHEMA_VERSION,
     scope: analysis.scope,
@@ -141,6 +146,7 @@ export function toJsonReport(analysis: Analysis): CheckReportJson {
     vacuous: analysis.vacuous,
     suspiciousAtoms: analysis.suspiciousAtoms,
     excludedAtoms: analysis.excludedAtoms,
+    ignoredTags: analysis.ignoredTags,
     pact,
     counts,
     exitCode: exitCodeFor(analysis),
@@ -534,6 +540,14 @@ export function renderHuman(
   if (analysis.suspiciousAtoms.length) {
     lines.push(`warning: ${analysis.suspiciousAtoms.length} atom(s) carry a prompt-injection signature — review before an agent works them:`);
     lines.push(...truncateListing(analysis.suspiciousAtoms.map((s) => `  [${s.signal}] ${s.file}:${s.line} — "${excerpt(s.excerpt)}"`), long, "  "));
+    lines.push("");
+  }
+  if (analysis.ignoredTags.length) {
+    // Name every one of them. A tightened scan that silently drops a tag is the same failure as the
+    // loose scan that silently counted it — the reader has to be able to see which it was (UAC §4.4).
+    lines.push(`warning: ${analysis.ignoredTags.length} tag(s) written into prose — not counted as coverage:`);
+    lines.push(...truncateListing(analysis.ignoredTags.map((t) => `  ${t.file}:${t.line} — ${t.id}`), long, "  "));
+    lines.push("  Write a tag alone on a comment line, or in the test's title, for it to count.");
     lines.push("");
   }
   const { placeholder, informative } = analysis.excludedAtoms;
